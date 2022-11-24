@@ -1,6 +1,18 @@
 #include <optional>
 #include <sstream>
 #include <string>
+#include <unordered_map>
+
+class CommandHandler;
+
+class CommandManager {
+  std::unordered_map<std::string, CommandHandler&> handlers;
+  void printHelp();
+
+ public:
+  void registerCommand(CommandHandler& handler);
+  void waitForCommand();
+};
 
 class CommandHandler {
  public:
