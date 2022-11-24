@@ -1,0 +1,5 @@
+src/GS
+src/player
+
+*.o
+*.zip
