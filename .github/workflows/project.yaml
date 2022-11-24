@@ -1,0 +1,19 @@
+name: Project C++ CI
+
+on: push
+
+jobs:
+  build:
+    name: Compile code
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Compile code
+        run: cd project && make
+  check-style:
+    name: Check code style
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run CLang Format
+        run: cd project && make fmt-check
