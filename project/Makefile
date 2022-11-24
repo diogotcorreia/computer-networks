@@ -15,6 +15,9 @@ all: $(TARGETS)
 fmt: $(SOURCES) $(HEADERS)
 	clang-format -i $^
 
+fmt-check: $(SOURCES) $(HEADERS)
+	clang-format -n --Werror $^
+
 src/GS: src/GS.o
 src/player: src/player.o
 
