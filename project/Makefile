@@ -6,7 +6,7 @@ SOURCES := $(wildcard */*.cpp)
 HEADERS := $(wildcard */*.hpp)
 OBJECTS := $(SOURCES:.cpp=.o)
 
-CFLAGS = -O3 -Wall
+CPPFLAGS = -std=c++17 -O3 -Wall
 
 .PHONY: all clean fmt
 
@@ -18,8 +18,8 @@ fmt: $(SOURCES) $(HEADERS)
 fmt-check: $(SOURCES) $(HEADERS)
 	clang-format -n --Werror $^
 
-src/GS: src/GS.o
-src/player: src/player.o
+src/GS:
+src/player: src/commands.o
 
 clean:
 	rm -f $(OBJECTS) $(TARGETS) project.zip

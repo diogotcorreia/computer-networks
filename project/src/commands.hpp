@@ -1,3 +1,6 @@
+#ifndef COMMANDS_H
+#define COMMANDS_H
+
 #include <optional>
 #include <sstream>
 #include <string>
@@ -34,3 +37,5 @@ class StartCommand : public CommandHandler {
   }
   void handle(std::stringstream args);
 };
+
+#endif
