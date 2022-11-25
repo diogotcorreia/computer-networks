@@ -7,25 +7,25 @@ void CommandManager::printHelp() {
 
   for (auto it = this->handlerList.begin(); it != this->handlerList.end();
        ++it) {
-    CommandHandler* handler = *it;
-    std::cout << handler->getName();
-    if (handler->getUsage()) {
-      std::cout << " " << *handler->getUsage();
+    auto handler = *it;
+    std::cout << handler->name;
+    if (handler->usage) {
+      std::cout << " " << *handler->usage;
     }
-    std::cout << "\t" << handler->getDescription();
-    if (handler->getAlias()) {
-      std::cout << "\t (Alias: " << *handler->getAlias() << ")";
+    std::cout << "\t" << handler->description;
+    if (handler->alias) {
+      std::cout << "\t (Alias: " << *handler->alias << ")";
     }
     std::cout << std::endl;
   }
   std::cout << std::endl;
 }
 
-void CommandManager::registerCommand(CommandHandler& handler) {
-  this->handlerList.push_back(&handler);
-  this->handlers.insert({handler.getName(), handler});
-  if (handler.getAlias()) {
-    this->handlers.insert({*handler.getAlias(), handler});
+void CommandManager::registerCommand(std::shared_ptr<CommandHandler> handler) {
+  this->handlerList.push_back(handler);
+  this->handlers.insert({handler->name, handler});
+  if (handler->alias) {
+    this->handlers.insert({*handler->alias, handler});
   }
 }
 
@@ -53,7 +53,7 @@ void CommandManager::waitForCommand() {
     return;
   }
 
-  handler->second.handle(line);
+  handler->second->handle(line);
 }
 
 void StartCommand::handle(std::string args) {

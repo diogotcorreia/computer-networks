@@ -11,6 +11,5 @@ int main() {
 }
 
 void registerCommands(CommandManager& manager) {
-  StartCommand startCommand;
-  manager.registerCommand(startCommand);
+  manager.registerCommand(std::make_shared<StartCommand>());
 }

@@ -8,6 +8,9 @@ OBJECTS := $(SOURCES:.cpp=.o)
 
 CPPFLAGS = -std=c++17 -O3 -Wall
 
+#CPPFLAGS += -g
+#LDFLAGS = -fsanitize=address -lasan
+
 .PHONY: all clean fmt
 
 all: $(TARGETS)
