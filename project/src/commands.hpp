@@ -22,7 +22,7 @@ class CommandHandler {
   virtual std::string getName() = 0;
   virtual std::optional<std::string> getAlias() = 0;
   virtual std::string getDescription() = 0;
-  virtual void handle(std::stringstream args) = 0;
+  virtual void handle(std::string args) = 0;
 };
 
 class StartCommand : public CommandHandler {
@@ -35,7 +35,7 @@ class StartCommand : public CommandHandler {
   std::string getDescription() {
     return "Start a new game";
   }
-  void handle(std::stringstream args);
+  void handle(std::string args);
 };
 
 #endif
