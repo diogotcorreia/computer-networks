@@ -3,11 +3,26 @@
 #include <iostream>
 
 void CommandManager::printHelp() {
-  std::cout << "Available commands:" << std::endl;
-  std::cout << "TODO" << std::endl;
+  std::cout << std::endl << "Available commands:" << std::endl;
+
+  for (auto it = this->handlerList.begin(); it != this->handlerList.end();
+       ++it) {
+    CommandHandler* handler = *it;
+    std::cout << handler->getName();
+    if (handler->getUsage()) {
+      std::cout << " " << *handler->getUsage();
+    }
+    std::cout << "\t" << handler->getDescription();
+    if (handler->getAlias()) {
+      std::cout << "\t (Alias: " << *handler->getAlias() << ")";
+    }
+    std::cout << std::endl;
+  }
+  std::cout << std::endl;
 }
 
 void CommandManager::registerCommand(CommandHandler& handler) {
+  this->handlerList.push_back(&handler);
   this->handlers.insert({handler.getName(), handler});
   if (handler.getAlias()) {
     this->handlers.insert({*handler.getAlias(), handler});
