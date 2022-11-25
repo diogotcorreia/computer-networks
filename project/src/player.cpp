@@ -1,11 +1,11 @@
+#include "player.hpp"
+
 #include <arpa/inet.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #define PORT 8080
-
-#include "packet.hpp"
 
 void start_game(int player_id, int socket, sockaddr_in *address) {
   // Create a new SNG packet
@@ -34,4 +34,16 @@ int main() {
 
   // send SNG packet
   start_game(1, fd, &address);
+
+  CommandManager commandManager;
+  registerCommands(commandManager);
+
+  while (true) {
+    commandManager.waitForCommand();
+  }
+  return 0;
+}
+
+void registerCommands(CommandManager &manager) {
+  manager.registerCommand(std::make_shared<StartCommand>());
 }
