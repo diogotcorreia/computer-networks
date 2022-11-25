@@ -15,8 +15,8 @@ all: $(TARGETS)
 fmt: $(SOURCES) $(HEADERS)
 	clang-format -i $^
 
-src/GS: src/GS.o
-src/player: src/player.o
+src/GS: src/packet.o
+src/player: src/packet.o
 
 clean:
 	rm -f $(OBJECTS) $(TARGETS) project.zip
