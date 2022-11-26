@@ -6,7 +6,8 @@ SOURCES := $(wildcard */*.cpp)
 HEADERS := $(wildcard */*.hpp)
 OBJECTS := $(SOURCES:.cpp=.o)
 
-CPPFLAGS = -std=c++17 -O3 -Wall
+CPPFLAGS = -std=c++17 -Wall
+CPPFLAGS += -O3
 
 #CPPFLAGS += -g
 #LDFLAGS = -fsanitize=address -lasan
@@ -21,8 +22,8 @@ fmt: $(SOURCES) $(HEADERS)
 fmt-check: $(SOURCES) $(HEADERS)
 	clang-format -n --Werror $^
 
-src/GS:
-src/player: src/commands.o
+src/GS: src/packet.o
+src/player: src/commands.o src/packet.o
 
 clean:
 	rm -f $(OBJECTS) $(TARGETS) project.zip
