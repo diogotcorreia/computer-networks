@@ -17,7 +17,7 @@ class PlayerState {
 
   PlayerState();
   ~PlayerState();
-  void resolve_server_address(std::string hostname, std::string port);
+  void resolveServerAddress(std::string hostname, std::string port);
 };
 
 void registerCommands(CommandManager& manager);

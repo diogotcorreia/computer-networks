@@ -17,7 +17,7 @@
 int main() {
   GameServerState state;
   state.registerPacketHandlers();
-  state.resolve_server_address(PORT);
+  state.resolveServerAddress(PORT);
 
   // listen for connections
 
@@ -109,7 +109,7 @@ void GameServerState::setup_sockets() {
   }
 }
 
-void GameServerState::resolve_server_address(std::string port) {
+void GameServerState::resolveServerAddress(std::string port) {
   struct addrinfo hints;
 
   // Get UDP address

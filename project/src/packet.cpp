@@ -147,17 +147,3 @@ void wait_for_packet(Packet &packet, int socket) {
 
   packet.deserialize(data);
 }
-
-Packet *receive_packet(int socket, struct sockaddr *address,
-                       socklen_t *addrlen) {
-  // TODO: change this to a dynamic buffer
-  char buffer[128];
-
-  // TODO: change hardcoded 128 to dynamic buffer size
-  int n = recvfrom(socket, buffer, 128, 0, address, addrlen);
-  if (n == -1) {
-    perror("recvfrom");
-    exit(1);
-  }
-  return deserialize(buffer);
-}

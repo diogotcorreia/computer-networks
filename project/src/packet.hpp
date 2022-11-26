@@ -72,7 +72,4 @@ void send_packet(Packet &packet, int socket, struct sockaddr *address,
 
 void wait_for_packet(Packet &packet, int socket);
 
-Packet *receive_packet(int socket, struct sockaddr *address,
-                       socklen_t *addrlen);
-
 #endif

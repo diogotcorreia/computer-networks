@@ -25,7 +25,7 @@ class GameServerState {
 
   GameServerState();
   ~GameServerState();
-  void resolve_server_address(std::string port);
+  void resolveServerAddress(std::string port);
   void registerPacketHandlers();
   void callPacketHandler(std::string packet_id, std::stringstream& stream,
                          Address& addr_from);
