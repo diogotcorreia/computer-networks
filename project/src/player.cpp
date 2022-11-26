@@ -8,31 +8,17 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+// TODO read from args
+#define HOSTNAME "127.0.0.1"
 #define PORT "8080"
 
 int main() {
-  int fd, errcode;
-  struct addrinfo hints, *res;
-
-  // Create a socket
-  if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
-    perror("socket failed");
-    exit(EXIT_FAILURE);
-  }
-
-  // Create a server address
-  memset(&hints, 0, sizeof hints);
-  hints.ai_family = AF_INET;       // IPv4
-  hints.ai_socktype = SOCK_DGRAM;  // UDP socket
-
-  // Get the server address
-  errcode = getaddrinfo("127.0.0.1", PORT, &hints, &res);
-  if (errcode != 0) /*error*/
-    exit(1);
+  PlayerState state;
+  state.resolve_server_address(HOSTNAME, PORT);
 
   // TESTING
   // send SNG packet
-  start_game(1, fd, res);
+  start_game(1, state.udp_socket_fd, state.server_udp_addr);
   CommandManager commandManager;
   registerCommands(commandManager);
 
@@ -65,3 +51,58 @@ void start_game(int player_id, int socket, addrinfo *res) {
   delete rsg;
   fflush(stdout);
 };
+
+PlayerState::PlayerState() {
+  this->setup_sockets();
+}
+
+PlayerState::~PlayerState() {
+  // TODO check return of close (?)
+  close(this->udp_socket_fd);
+  close(this->tcp_socket_fd);
+  freeaddrinfo(this->server_udp_addr);
+  freeaddrinfo(this->server_tcp_addr);
+}
+
+void PlayerState::setup_sockets() {
+  // Create a UDP socket
+  if ((this->udp_socket_fd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
+    // TODO consider using exceptions (?)
+    perror("Failed to create a UDP socket");
+    exit(EXIT_FAILURE);
+  }
+
+  // Create a TCP socket
+  if ((this->tcp_socket_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+    // TODO consider using exceptions (?)
+    perror("Failed to create a TCP socket");
+    exit(EXIT_FAILURE);
+  }
+}
+
+void PlayerState::resolve_server_address(std::string hostname,
+                                         std::string port) {
+  struct addrinfo hints;
+  const char *host = hostname.c_str();
+  const char *port_str = port.c_str();
+
+  // Get UDP address
+  memset(&hints, 0, sizeof hints);
+  hints.ai_family = AF_INET;       // IPv4
+  hints.ai_socktype = SOCK_DGRAM;  // UDP socket
+  if (getaddrinfo(host, port_str, &hints, &this->server_udp_addr) != 0) {
+    // TODO consider using exceptions (?)
+    perror("Failed to get address for UDP connection");
+    exit(EXIT_FAILURE);
+  }
+
+  // Get TCP address
+  memset(&hints, 0, sizeof hints);
+  hints.ai_family = AF_INET;        // IPv4
+  hints.ai_socktype = SOCK_STREAM;  // TCP socket
+  if (getaddrinfo(host, port_str, &hints, &this->server_tcp_addr) != 0) {
+    // TODO consider using exceptions (?)
+    perror("Failed to get address for TCP connection");
+    exit(1);
+  }
+}
