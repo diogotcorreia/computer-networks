@@ -39,16 +39,16 @@ void start_game(int player_id, int socket, addrinfo *res) {
 
   // TESTING: Sending and receiving a packet
   send_packet(packet_out, socket, res->ai_addr, res->ai_addrlen);
-  Packet *packet_in = receive_packet(socket, NULL, NULL);
-  ReplyStartGameClientbound *rsg = (ReplyStartGameClientbound *)packet_in;
-  if (rsg->success) {
+
+  ReplyStartGameClientbound rsg;
+  wait_for_packet(rsg, socket);
+  if (rsg.success) {
     printf("Game started successfully\n");
-    printf("Number of letters: %d, Max errors: %d", rsg->n_letters,
-           rsg->max_errors);
+    printf("Number of letters: %d, Max errors: %d", rsg.n_letters,
+           rsg.max_errors);
   } else {
     printf("Game failed to start");
   }
-  delete rsg;
   fflush(stdout);
 };
 
