@@ -83,7 +83,9 @@ void ReplyStartGameClientbound::deserialize(std::stringstream &buffer) {
   auto success_str = readString(buffer, 3);
   if (strcmp(success_str.get(), "OK") == 0) {
     success = true;
+    readSpace(buffer);
     n_letters = readInt(buffer);
+    readSpace(buffer);
     max_errors = readInt(buffer);
   } else if (strcmp(success_str.get(), "NOK") == 0) {
     success = false;
