@@ -30,8 +30,9 @@ class RSG : public Packet {
 
 Packet *deserialize(char *buffer);
 
-void send_packet(Packet *packet, int socket, struct sockaddr_in *address);
+void send_packet(Packet *packet, int socket, struct sockaddr *address,
+                 size_t addrlen);
 
-Packet *receive_packet(int socket, struct sockaddr_in *address, size_t len);
+Packet *receive_packet(int socket, struct sockaddr *address);
 
 #endif
