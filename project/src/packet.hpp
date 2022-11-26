@@ -1,6 +1,8 @@
 #ifndef PACKET_H
 #define PACKET_H
 
+#include <sys/socket.h>
+
 #include <sstream>
 
 class Packet {
@@ -34,8 +36,9 @@ class ReplyStartGameClientbound : public Packet {
 Packet *deserialize(char *buffer);
 
 void send_packet(Packet &packet, int socket, struct sockaddr *address,
-                 size_t addrlen);
+                 socklen_t addrlen);
 
-Packet *receive_packet(int socket, struct sockaddr *address);
+Packet *receive_packet(int socket, struct sockaddr *address,
+                       socklen_t *addrlen);
 
 #endif

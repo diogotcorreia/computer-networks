@@ -53,7 +53,7 @@ void start_game(int player_id, int socket, addrinfo *res) {
 
   // TESTING: Sending and receiving a packet
   send_packet(packet_out, socket, res->ai_addr, res->ai_addrlen);
-  Packet *packet_in = receive_packet(socket, res->ai_addr);
+  Packet *packet_in = receive_packet(socket, NULL, NULL);
   ReplyStartGameClientbound *rsg = (ReplyStartGameClientbound *)packet_in;
   if (rsg->success) {
     printf("Game started successfully\n");

@@ -38,7 +38,8 @@ int main() {
 
   printf("Listening for connections\n");
   // TESTING: receiving and sending a packet
-  Packet *packet = receive_packet(fd, (struct sockaddr *)&addr);
+  socklen_t addrlen = sizeof addr;
+  Packet *packet = receive_packet(fd, (struct sockaddr *)&addr, &addrlen);
   StartGameServerbound *sng = (StartGameServerbound *)packet;
   printf("Received SNG packet with player_id: %d\n", sng->player_id);
   delete sng;
@@ -46,7 +47,7 @@ int main() {
   rsg.success = true;
   rsg.n_letters = 5;
   rsg.max_errors = 5;
-  send_packet(rsg, fd, (struct sockaddr *)&addr, sizeof(addr));
+  send_packet(rsg, fd, (struct sockaddr *)&addr, addrlen);
   freeaddrinfo(res);
   close(fd);
 }

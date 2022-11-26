@@ -1,6 +1,5 @@
 #include "packet.hpp"
 
-#include <sys/socket.h>
 #include <sys/types.h>
 
 #include <cstring>
@@ -52,7 +51,7 @@ Packet *deserialize(char *buffer) {
 // Packet sending and receiving
 // TODO: probably can reduce number of arguments
 void send_packet(Packet &packet, int socket, struct sockaddr *address,
-                 size_t addrlen) {
+                 socklen_t addrlen) {
   const std::stringstream buffer = packet.serialize();
   // ERROR HERE: address type changes in client and server
   int n = sendto(socket, buffer.str().c_str(), buffer.str().length(), 0,
@@ -63,14 +62,13 @@ void send_packet(Packet &packet, int socket, struct sockaddr *address,
   }
 }
 
-Packet *receive_packet(int socket, struct sockaddr *address) {
+Packet *receive_packet(int socket, struct sockaddr *address,
+                       socklen_t *addrlen) {
   // TODO: change this to a dynamic buffer
   char buffer[128];
 
-  socklen_t addrlen = sizeof(address);
-  // TODO: change hardcoded 128 to dinamic buffer size
-  int n =
-      recvfrom(socket, buffer, 128, 0, (struct sockaddr *)&address, &addrlen);
+  // TODO: change hardcoded 128 to dynamic buffer size
+  int n = recvfrom(socket, buffer, 128, 0, address, addrlen);
   if (n == -1) {
     perror("recvfrom");
     exit(1);
