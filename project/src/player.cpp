@@ -13,13 +13,13 @@
 
 void start_game(int player_id, int socket, addrinfo *res) {
   // Create a new SNG packet
-  SNG *packet_out = new SNG();
+  StartGameServerbound *packet_out = new StartGameServerbound();
   packet_out->player_id = player_id;
 
   // TESTING: Sending and receiving a packet
   send_packet(packet_out, socket, res->ai_addr, res->ai_addrlen);
   Packet *packet_in = receive_packet(socket, res->ai_addr);
-  RSG *rsg = (RSG *)packet_in;
+  ReplyStartGameClientbound *rsg = (ReplyStartGameClientbound *)packet_in;
   if (rsg->success) {
     printf("Game started successfully\n");
     printf("Number of letters: %d, Max errors: %d", rsg->n_letters,

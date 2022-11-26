@@ -6,24 +6,24 @@
 #include <cstring>
 
 // Packet type seriliazation and deserialization methods
-std::stringstream SNG::serialize() {
+std::stringstream StartGameServerbound::serialize() {
   std::stringstream buffer;
   buffer << "SNG " << player_id << std::endl;
   return buffer;
 };
 
-void SNG::deserialize(std::stringstream &buffer) {
+void StartGameServerbound::deserialize(std::stringstream &buffer) {
   buffer >> player_id;
 };
 
-std::stringstream RSG::serialize() {
+std::stringstream ReplyStartGameClientbound::serialize() {
   std::stringstream buffer;
-  buffer << "RSG" << success << " " << n_letters << " " << max_errors
+  buffer << "RSG " << success << " " << n_letters << " " << max_errors
          << std::endl;
   return buffer;
 };
 
-void RSG::deserialize(std::stringstream &buffer) {
+void ReplyStartGameClientbound::deserialize(std::stringstream &buffer) {
   buffer >> success >> n_letters >> max_errors;
 };
 
@@ -34,11 +34,11 @@ Packet *deserialize(char *buffer) {
   ss << buffer;
   if (ss >> opcode) {
     if (strcmp(opcode, "SNG") == 0) {
-      SNG *packet = new SNG();
+      StartGameServerbound *packet = new StartGameServerbound();
       packet->deserialize(ss);
       return packet;
     } else if (strcmp(opcode, "RSG") == 0) {
-      RSG *packet = new RSG();
+      ReplyStartGameClientbound *packet = new ReplyStartGameClientbound();
       packet->deserialize(ss);
       return packet;
     } else {

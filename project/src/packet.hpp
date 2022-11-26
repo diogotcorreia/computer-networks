@@ -9,16 +9,16 @@ class Packet {
   virtual void deserialize(std::stringstream &buffer) = 0;
 };
 
-// Start New Game Packet
-class SNG : public Packet {
+// Start New Game Packet (SNG)
+class StartGameServerbound : public Packet {
  public:
   int player_id;
   std::stringstream serialize();
   void deserialize(std::stringstream &buffer);
 };
 
-// Reply to Start Game Packet
-class RSG : public Packet {
+// Reply to Start Game Packet (RSG)
+class ReplyStartGameClientbound : public Packet {
  public:
   bool success;
   int n_letters;
