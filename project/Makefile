@@ -6,7 +6,8 @@ SOURCES := $(wildcard */*.cpp)
 HEADERS := $(wildcard */*.hpp)
 OBJECTS := $(SOURCES:.cpp=.o)
 
-CPPFLAGS = -std=c++17 -O3 -Wall
+CPPFLAGS = -std=c++17 -Wall
+CPPFLAGS += -O3
 
 #CPPFLAGS += -g
 #LDFLAGS = -fsanitize=address -lasan

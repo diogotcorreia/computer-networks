@@ -41,10 +41,11 @@ int main() {
   Packet *packet = receive_packet(fd, (struct sockaddr *)&addr);
   StartGameServerbound *sng = (StartGameServerbound *)packet;
   printf("Received SNG packet with player_id: %d\n", sng->player_id);
-  ReplyStartGameClientbound *rsg = new ReplyStartGameClientbound();
-  rsg->success = true;
-  rsg->n_letters = 5;
-  rsg->max_errors = 5;
+  delete sng;
+  ReplyStartGameClientbound rsg;
+  rsg.success = true;
+  rsg.n_letters = 5;
+  rsg.max_errors = 5;
   send_packet(rsg, fd, (struct sockaddr *)&addr, sizeof(addr));
   freeaddrinfo(res);
   close(fd);

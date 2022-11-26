@@ -51,12 +51,12 @@ Packet *deserialize(char *buffer) {
 
 // Packet sending and receiving
 // TODO: probably can reduce number of arguments
-void send_packet(Packet *packet, int socket, struct sockaddr *address,
+void send_packet(Packet &packet, int socket, struct sockaddr *address,
                  size_t addrlen) {
-  const std::stringstream buffer = packet->serialize();
+  const std::stringstream buffer = packet.serialize();
   // ERROR HERE: address type changes in client and server
   int n = sendto(socket, buffer.str().c_str(), buffer.str().length(), 0,
-                 (struct sockaddr *)address, addrlen);
+                 address, addrlen);
   if (n == -1) {
     perror("sendto");
     exit(1);
