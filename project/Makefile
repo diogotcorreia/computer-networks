@@ -7,9 +7,19 @@ HEADERS := $(wildcard */*.hpp)
 OBJECTS := $(SOURCES:.cpp=.o)
 
 CPPFLAGS = -std=c++17 -Wall
-CPPFLAGS += -O3
 
-#CPPFLAGS += -g
+# Run `make OPTIM=no` to disable -O3
+ifeq ($(strip $(OPTIM)), no)
+	CPPFLAGS += -O0
+else
+	CPPFLAGS += -O3
+endif
+
+# Run `make DEBUG=true` to run with debug symbols
+ifeq ($(strip $(DEBUG)), yes)
+	CPPFLAGS += -g
+endif
+
 #LDFLAGS = -fsanitize=address -lasan
 
 .PHONY: all clean fmt
