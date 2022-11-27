@@ -53,6 +53,7 @@ void wait_for_udp_packet(GameServerState &server_state) {
   char buffer[SOCKET_BUFFER_LEN];
 
   // TODO: change hardcoded len to dynamic buffer size
+  addr_from.size = sizeof(addr_from.addr);
   int n = recvfrom(server_state.udp_socket_fd, buffer, SOCKET_BUFFER_LEN, 0,
                    (struct sockaddr *)&addr_from.addr, &addr_from.size);
   addr_from.socket = server_state.udp_socket_fd;
