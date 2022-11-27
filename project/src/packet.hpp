@@ -8,8 +8,7 @@
 #include <sstream>
 #include <stdexcept>
 
-#define SOCKET_BUFFER_LEN (256)
-#define PACKET_ID_LEN (3)
+#include "constants.hpp"
 
 class Packet {
  private:
