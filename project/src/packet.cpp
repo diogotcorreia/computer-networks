@@ -127,7 +127,7 @@ void send_packet(Packet &packet, int socket, struct sockaddr *address,
                  address, addrlen);
   if (n == -1) {
     perror("sendto");
-    exit(1);
+    exit(EXIT_FAILURE);
   }
 }
 
@@ -140,7 +140,7 @@ void wait_for_packet(Packet &packet, int socket) {
   // TODO handle case where UDP response never arrives
   if (n == -1) {
     perror("recvfrom");
-    exit(1);
+    exit(EXIT_FAILURE);
   }
 
   data << buffer;
