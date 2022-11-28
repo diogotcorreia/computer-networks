@@ -148,7 +148,7 @@ class RevealWordClientbound : public Packet {
   bool success;
 
   std::stringstream serialize();
-  void deserialize(std::stringstream &buffer);
+  void deserialize(std::stringstream &buffer, int wordLen);
 };
 
 Packet *deserialize(char *buffer);

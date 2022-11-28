@@ -226,6 +226,36 @@ void QuitGameServerbound::deserialize(std::stringstream &buffer) {
   readPacketDelimiter(buffer);
 };
 
+std::stringstream RevealWordServerbound::serialize() {
+  std::stringstream buffer;
+  buffer << RevealWordServerbound::ID << " " << player_id << std::endl;
+  return buffer;
+};
+
+void RevealWordServerbound::deserialize(std::stringstream &buffer) {
+  buffer >> std::noskipws;
+  readPacketId(buffer, RevealWordServerbound::ID);
+  readSpace(buffer);
+  player_id = readInt(buffer);
+  readPacketDelimiter(buffer);
+};
+
+std::stringstream RevealWordClientbound::serialize() {
+  std::stringstream buffer;
+  // TODO: check status formatting in buffer
+  buffer << RevealWordClientbound::ID << " " << word << std::endl;
+  return buffer;
+};
+
+void RevealWordClientbound::deserialize(std::stringstream &buffer,
+                                        int wordLen) {
+  buffer >> std::noskipws;
+  readPacketId(buffer, RevealWordClientbound::ID);
+  readSpace(buffer);
+  word = readString(buffer, wordLen).get();
+  readPacketDelimiter(buffer);
+};
+
 // Packet sending and receiving
 // TODO: probably can reduce number of arguments
 void send_packet(Packet &packet, int socket, struct sockaddr *address,
