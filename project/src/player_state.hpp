@@ -22,6 +22,7 @@ class PlayerState {
   void startGame(ClientGame* game);
   void resolveServerAddress(std::string hostname, std::string port);
   void sendPacket(Packet& packet);
+  void sendPacket(TcpPacket& packet);
   void waitForPacket(Packet& packet);
 };
 

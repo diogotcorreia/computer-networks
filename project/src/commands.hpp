@@ -44,6 +44,15 @@ class StartCommand : public CommandHandler {
   StartCommand() : CommandHandler("start", "sg", "PLID", "Start a new game") {}
 };
 
+class ScoreboardCommand : public CommandHandler {
+  void handle(std::string args, PlayerState& state);
+
+ public:
+  ScoreboardCommand()
+      : CommandHandler("scoreboard", "sb", std::nullopt,
+                       "Display the scoreboard") {}
+};
+
 void write_word(std::ostream& stream, char* word, int word_len);
 
 #endif

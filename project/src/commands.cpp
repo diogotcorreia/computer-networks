@@ -92,10 +92,18 @@ void StartCommand::handle(std::string args, PlayerState& state) {
               << ", Max errors: " << rsg.max_errors << std::endl;
     std::cout << "Guess the word: ";
     write_word(std::cout, game->getWordProgress(), game->getWordLen());
-    std::cout << "\n";
+    std::cout << std::endl;
   } else {
     std::cout << "Game failed to start" << std::endl;
   }
+}
+
+void ScoreboardCommand::handle(std::string args, PlayerState& state) {
+  ScoreboardServerbound scoreboard_packet;
+
+  state.sendPacket(scoreboard_packet);
+
+  std::cout << "[DEBUG] Asked for scoreboard" << std::endl;
 }
 
 void write_word(std::ostream& stream, char* word, int word_len) {

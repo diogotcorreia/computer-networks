@@ -1,6 +1,7 @@
 #include "packet.hpp"
 
 #include <sys/types.h>
+#include <unistd.h>
 
 #include <cstring>
 #include <iomanip>
@@ -22,8 +23,7 @@ void Packet::readPacketId(std::stringstream &buffer, const char *packet_id) {
 }
 
 void Packet::readChar(std::stringstream &buffer, char chr) {
-  char c = buffer.get();
-  if (!buffer.good() || c != chr) {
+  if (readChar(buffer) != chr) {
     throw InvalidPacketException();
   }
 }
@@ -266,8 +266,46 @@ void RevealWordClientbound::deserialize(std::stringstream &buffer,
   readPacketDelimiter(buffer);
 };
 
+void TcpPacket::writeString(int fd, const std::string &str) {
+  if (write(fd, str.c_str(), str.length()) != (ssize_t)str.length()) {
+    throw PacketSerializationException();
+  }
+}
+
+void TcpPacket::readChar(int fd, char chr) {
+  if (readChar(fd) != chr) {
+    throw InvalidPacketException();
+  }
+}
+
+char TcpPacket::readChar(int fd) {
+  char c = 0;
+  if (read(fd, &c, 1) != 1) {
+    throw InvalidPacketException();
+  }
+  return c;
+}
+
+void TcpPacket::readSpace(int fd) {
+  readChar(fd, ' ');
+}
+
+void TcpPacket::readPacketDelimiter(int fd) {
+  readChar(fd, '\n');
+}
+
+void ScoreboardServerbound::send(int fd) {
+  std::stringstream stream;
+  stream << ScoreboardServerbound::ID << std::endl;
+  writeString(fd, stream.str());
+}
+
+void ScoreboardServerbound::receive(int fd) {
+  // Serverbound packets don't read their ID
+  readPacketDelimiter(fd);
+}
+
 // Packet sending and receiving
-// TODO: probably can reduce number of arguments
 void send_packet(Packet &packet, int socket, struct sockaddr *address,
                  socklen_t addrlen) {
   const std::stringstream buffer = packet.serialize();
