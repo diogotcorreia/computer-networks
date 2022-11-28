@@ -3,6 +3,7 @@
 #include <sys/types.h>
 
 #include <cstring>
+#include <iomanip>
 
 void Packet::readPacketId(std::stringstream &buffer, const char *packet_id) {
   char current_char;
@@ -60,7 +61,10 @@ int32_t Packet::readInt(std::stringstream &buffer) {
 // Packet type seriliazation and deserialization methods
 std::stringstream StartGameServerbound::serialize() {
   std::stringstream buffer;
-  buffer << StartGameServerbound::ID << " " << player_id << std::endl;
+  buffer << StartGameServerbound::ID << " " << std::setfill('0') << std::setw(6)
+         << player_id;
+  buffer.copyfmt(std::ios(NULL));  // reset formatting
+  buffer << std::endl;
   return buffer;
 };
 
