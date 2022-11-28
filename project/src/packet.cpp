@@ -403,10 +403,8 @@ void ScoreboardClientbound::receive(int fd) {
   auto status = readString(fd);
   if (status == "OK") {
     this->status = OK;
-    readSpace(fd);
     file_name = readString(fd);
     int file_size = readInt(fd);  // TODO change to long?
-    readSpace(fd);
     readAndSaveToFile(fd, file_name, file_size);
   } else if (status == "EMTPY") {
     this->status = EMPTY;

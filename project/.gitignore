@@ -3,3 +3,6 @@ src/player
 
 *.o
 *.zip
+
+# Files sent from server
+*.txt
