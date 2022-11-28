@@ -5,6 +5,11 @@
 #include <cstring>
 #include <iomanip>
 
+void Packet::writePlayerId(std::stringstream &buffer, const int player_id) {
+  buffer << std::setfill('0') << std::setw(PLAYER_ID_MAX_LEN) << player_id;
+  buffer.copyfmt(std::ios(NULL));  // reset formatting
+}
+
 void Packet::readPacketId(std::stringstream &buffer, const char *packet_id) {
   char current_char;
   while (*packet_id != '\0') {
@@ -61,9 +66,8 @@ int32_t Packet::readInt(std::stringstream &buffer) {
 // Packet type seriliazation and deserialization methods
 std::stringstream StartGameServerbound::serialize() {
   std::stringstream buffer;
-  buffer << StartGameServerbound::ID << " " << std::setfill('0')
-         << std::setw(PLAYER_ID_MAX_LEN) << player_id;
-  buffer.copyfmt(std::ios(NULL));  // reset formatting
+  buffer << StartGameServerbound::ID << " ";
+  writePlayerId(buffer, player_id);
   buffer << std::endl;
   return buffer;
 };
@@ -109,8 +113,9 @@ void ReplyStartGameClientbound::deserialize(std::stringstream &buffer) {
 
 std::stringstream GuessLetterServerbound::serialize() {
   std::stringstream buffer;
-  buffer << GuessLetterServerbound::ID << " " << player_id << " " << guess
-         << " " << trial << std::endl;
+  buffer << GuessLetterServerbound::ID << " ";
+  writePlayerId(buffer, player_id);
+  buffer << " " << guess << " " << trial << std::endl;
   return buffer;
 };
 
@@ -170,8 +175,9 @@ void GuessLetterClientbound::deserialize(std::stringstream &buffer) {
 
 std::stringstream GuessWordServerbound::serialize() {
   std::stringstream buffer;
-  buffer << GuessWordServerbound::ID << " " << player_id << " " << guess
-         << std::endl;
+  buffer << GuessWordServerbound::ID << " ";
+  writePlayerId(buffer, player_id);
+  buffer << " " << guess << std::endl;
   return buffer;
 };
 

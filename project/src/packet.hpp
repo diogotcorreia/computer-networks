@@ -15,6 +15,7 @@ class Packet {
   void readChar(std::stringstream &buffer, char chr);
 
  protected:
+  void writePlayerId(std::stringstream &buffer, const int player_id);
   void readPacketId(std::stringstream &buffer, const char *id);
   void readSpace(std::stringstream &buffer);
   char readChar(std::stringstream &buffer);
