@@ -4,7 +4,7 @@
 
 #include "packet.hpp"
 
-int Game::getWordLen() {
+size_t Game::getWordLen() {
   return wordLen;
 }
 int Game::getMaxErrors() {

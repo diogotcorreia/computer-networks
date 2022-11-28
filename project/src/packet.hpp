@@ -78,9 +78,8 @@ class GuessLetterServerbound : public Packet {
 };
 
 class GuessLetterClientbound : public Packet {
-  enum status { OK, WIN, DUP, NOK, OVR, INV, ERR };
-
  public:
+  enum status { OK, WIN, DUP, NOK, OVR, INV, ERR };
   static constexpr const char *ID = "RLG";
   status status;
   int trial;
@@ -97,15 +96,15 @@ class GuessWordServerbound : public Packet {
   int player_id;
   char *guess;
   int trial;
+  int wordLen;
 
   std::stringstream serialize();
-  void deserialize(std::stringstream &buffer, int wordLen);
+  void deserialize(std::stringstream &buffer);
 };
 
 class GuessWordClientbound : public Packet {
-  enum status { WIN, NOK, OVR, INV, ERR };
-
  public:
+  enum status { WIN, NOK, OVR, INV, ERR };
   static constexpr const char *ID = "RWG";
   status status;
   int trial;
@@ -144,11 +143,12 @@ class RevealWordServerbound : public Packet {
 class RevealWordClientbound : public Packet {
  public:
   static constexpr const char *ID = "RRV";
+  int wordLen;
   char *word;
   bool success;
 
   std::stringstream serialize();
-  void deserialize(std::stringstream &buffer, int wordLen);
+  void deserialize(std::stringstream &buffer);
 };
 
 Packet *deserialize(char *buffer);

@@ -44,6 +44,64 @@ class StartCommand : public CommandHandler {
   StartCommand() : CommandHandler("start", "sg", "PLID", "Start a new game") {}
 };
 
+class GuessLetterCommand : public CommandHandler {
+  void handle(std::string args, PlayerState& state);
+
+ public:
+  GuessLetterCommand()
+      : CommandHandler("play", "pl", "letter", "Guess a letter") {}
+};
+
+class GuessWordCommand : public CommandHandler {
+  void handle(std::string args, PlayerState& state);
+
+ public:
+  GuessWordCommand() : CommandHandler("guess", "gw", "word", "Guess a word") {}
+};
+
+class ScoreboardCommand : public CommandHandler {
+  void handle(std::string args, PlayerState& state);
+
+ public:
+  ScoreboardCommand()
+      : CommandHandler("scoreboard", "sb", "", "Show scoreboard") {}
+};
+
+class HintCommand : public CommandHandler {
+  void handle(std::string args, PlayerState& state);
+
+ public:
+  HintCommand() : CommandHandler("hint", "h", "", "Show hint") {}
+};
+
+class StateCommand : public CommandHandler {
+  void handle(std::string args, PlayerState& state);
+
+ public:
+  StateCommand() : CommandHandler("state", "st", "", "Show state") {}
+};
+
+class QuitCommand : public CommandHandler {
+  void handle(std::string args, PlayerState& state);
+
+ public:
+  QuitCommand() : CommandHandler("quit", "", "", "Quit game") {}
+};
+
+class ExitCommand : public CommandHandler {
+  void handle(std::string args, PlayerState& state);
+
+ public:
+  ExitCommand() : CommandHandler("exit", "", "", "Exit application") {}
+};
+
+class RevealCommand : public CommandHandler {
+  void handle(std::string args, PlayerState& state);
+
+ public:
+  RevealCommand() : CommandHandler("reveal", "rv", "", "Reveal word") {}
+};
+
 void write_word(std::ostream& stream, char* word, int word_len);
 
 #endif

@@ -1,6 +1,8 @@
 #ifndef GAME_H
 #define GAME_H
 
+#include <cstddef>
+
 class Game {
  protected:
   int playerId;
@@ -12,7 +14,7 @@ class Game {
 
  public:
   int getPlayerId();
-  int getWordLen();
+  size_t getWordLen();
   int getMaxErrors();
   int getCurrentTrial();
   char *getWordProgress();
