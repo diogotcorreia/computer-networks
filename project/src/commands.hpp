@@ -53,6 +53,15 @@ class ScoreboardCommand : public CommandHandler {
                        "Display the scoreboard") {}
 };
 
+class HintCommand : public CommandHandler {
+  void handle(std::string args, PlayerState& state);
+
+ public:
+  HintCommand()
+      : CommandHandler("hint", "h", std::nullopt,
+                       "Get a hint for the current word") {}
+};
+
 void write_word(std::ostream& stream, char* word, int word_len);
 
 #endif

@@ -6,3 +6,4 @@ src/player
 
 # Files sent from server
 *.txt
+*.jpeg

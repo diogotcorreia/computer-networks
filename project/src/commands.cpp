@@ -114,6 +114,28 @@ void ScoreboardCommand::handle(std::string args, PlayerState& state) {
   }
 }
 
+void HintCommand::handle(std::string args, PlayerState& state) {
+  if (!state.hasActiveGame()) {
+    std::cout << "There is no on-going game. Please start a game using the "
+                 "'start' command."
+              << std::endl;
+    return;
+  }
+  HintServerbound hint_packet;
+  hint_packet.player_id = state.game->getPlayerId();
+
+  state.sendPacket(hint_packet);
+
+  HintClientbound packet_reply;
+  state.waitForPacket(packet_reply);
+  if (packet_reply.status == 0) {  // TODO try to use enum
+    std::cout << "Received hint and saved to file." << std::endl;
+    std::cout << "Path: " << packet_reply.file_name << std::endl;
+  } else {
+    std::cout << "No hint available :(" << std::endl;
+  }
+}
+
 void write_word(std::ostream& stream, char* word, int word_len) {
   for (int i = 0; i < word_len; ++i) {
     if (i != 0) {

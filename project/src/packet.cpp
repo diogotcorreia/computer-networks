@@ -9,11 +9,6 @@
 #include <iostream>
 #include <string>
 
-void Packet::writePlayerId(std::stringstream &buffer, const int player_id) {
-  buffer << std::setfill('0') << std::setw(PLAYER_ID_MAX_LEN) << player_id;
-  buffer.copyfmt(std::ios(NULL));  // reset formatting
-}
-
 void Packet::readPacketId(std::stringstream &buffer, const char *packet_id) {
   char current_char;
   while (*packet_id != '\0') {
@@ -70,7 +65,7 @@ int32_t Packet::readInt(std::stringstream &buffer) {
 std::stringstream StartGameServerbound::serialize() {
   std::stringstream buffer;
   buffer << StartGameServerbound::ID << " ";
-  writePlayerId(buffer, player_id);
+  write_player_id(buffer, player_id);
   buffer << std::endl;
   return buffer;
 };
@@ -117,7 +112,7 @@ void ReplyStartGameClientbound::deserialize(std::stringstream &buffer) {
 std::stringstream GuessLetterServerbound::serialize() {
   std::stringstream buffer;
   buffer << GuessLetterServerbound::ID << " ";
-  writePlayerId(buffer, player_id);
+  write_player_id(buffer, player_id);
   buffer << " " << guess << " " << trial << std::endl;
   return buffer;
 };
@@ -179,7 +174,7 @@ void GuessLetterClientbound::deserialize(std::stringstream &buffer) {
 std::stringstream GuessWordServerbound::serialize() {
   std::stringstream buffer;
   buffer << GuessWordServerbound::ID << " ";
-  writePlayerId(buffer, player_id);
+  write_player_id(buffer, player_id);
   buffer << " " << guess << std::endl;
   return buffer;
 };
@@ -354,16 +349,16 @@ void TcpPacket::readAndSaveToFile(int fd, const std::string &file_name,
   while (remaining_size > 0) {
     to_read = std::min(remaining_size, (size_t)FILE_BUFFER_LEN);
     n = read(fd, buffer, to_read);
-    if (n >= 0 && (size_t)n != to_read) {
+    if (n <= 0) {
       file.close();
       throw InvalidPacketException();
     }
-    file.write(buffer, to_read);
+    file.write(buffer, n);
     if (!file.good()) {
       file.close();
       throw IOException();
     }
-    remaining_size -= to_read;
+    remaining_size -= n;
   }
 
   file.close();
@@ -414,6 +409,59 @@ void ScoreboardClientbound::receive(int fd) {
   readPacketDelimiter(fd);
 }
 
+void HintServerbound::send(int fd) {
+  std::stringstream stream;
+  stream << HintServerbound::ID << " ";
+  write_player_id(stream, player_id);
+  stream << std::endl;
+  writeString(fd, stream.str());
+}
+
+void HintServerbound::receive(int fd) {
+  // Serverbound packets don't read their ID
+  readSpace(fd);
+  player_id = readInt(fd);
+  if (player_id < 0 || player_id > PLAYER_ID_MAX) {
+    throw InvalidPacketException();  // TODO maybe need to verify that string is
+                                     // 6 digits
+  }
+  readPacketDelimiter(fd);
+}
+
+void HintClientbound::send(int fd) {
+  std::stringstream stream;
+  stream << HintClientbound::ID << " ";
+  if (status == OK) {
+    stream << "OK ";
+    // TODO read from file system
+    stream << "hint.txt 4 "
+           << "test";
+  } else if (status == NOK) {
+    stream << "NOK ";
+  } else {
+    throw PacketSerializationException();
+  }
+  stream << std::endl;
+  writeString(fd, stream.str());
+}
+
+void HintClientbound::receive(int fd) {
+  readPacketId(fd, HintClientbound::ID);
+  readSpace(fd);
+  auto status = readString(fd);
+  if (status == "OK") {
+    this->status = OK;
+    file_name = readString(fd);
+    int file_size = readInt(fd);  // TODO change to long?
+    readAndSaveToFile(fd, file_name, file_size);
+  } else if (status == "NOK") {
+    this->status = NOK;
+  } else {
+    throw InvalidPacketException();
+  }
+  readPacketDelimiter(fd);
+}
+
 // Packet sending and receiving
 void send_packet(Packet &packet, int socket, struct sockaddr *address,
                  socklen_t addrlen) {
@@ -442,4 +490,9 @@ void wait_for_packet(Packet &packet, int socket) {
   data << buffer;
 
   packet.deserialize(data);
+}
+
+void write_player_id(std::stringstream &buffer, const int player_id) {
+  buffer << std::setfill('0') << std::setw(PLAYER_ID_MAX_LEN) << player_id;
+  buffer.copyfmt(std::ios(NULL));  // reset formatting
 }
