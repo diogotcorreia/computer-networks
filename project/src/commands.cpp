@@ -2,6 +2,9 @@
 
 #include <iostream>
 
+#include "game.hpp"
+#include "packet.hpp"
+
 void CommandManager::printHelp() {
   std::cout << std::endl << "Available commands:" << std::endl;
 
@@ -29,7 +32,7 @@ void CommandManager::registerCommand(std::shared_ptr<CommandHandler> handler) {
   }
 }
 
-void CommandManager::waitForCommand() {
+void CommandManager::waitForCommand(PlayerState& state) {
   this->printHelp();
   std::cout << "> ";
 
@@ -53,10 +56,53 @@ void CommandManager::waitForCommand() {
     return;
   }
 
-  handler->second->handle(line);
+  handler->second->handle(line, state);
 }
 
-void StartCommand::handle(std::string args) {
-  std::cout << "Executed start command with args `" << args << "`! :)"
-            << std::endl;
+void StartCommand::handle(std::string args, PlayerState& state) {
+  long player_id;
+  try {
+    size_t converted = 0;
+    player_id = std::stol(args, &converted, 10);
+    if (converted != args.length() || player_id <= 0 ||
+        player_id > PLAYER_ID_MAX) {
+      throw std::runtime_error("invalid player id");
+    }
+  } catch (...) {
+    std::cout << "Invalid player ID. It must be a positive number up to "
+              << PLAYER_ID_MAX_LEN << " digits" << std::endl;
+    return;
+  }
+
+  // Ask the game server to start a game
+  StartGameServerbound packet_out;
+  packet_out.player_id = player_id;
+
+  // TESTING: Sending and receiving a packet
+  state.sendPacket(packet_out);
+
+  ReplyStartGameClientbound rsg;
+  state.waitForPacket(rsg);
+  if (rsg.success) {
+    ClientGame* game = new ClientGame(player_id, rsg.n_letters, rsg.max_errors);
+    state.startGame(game);
+
+    std::cout << "Game started successfully" << std::endl;
+    std::cout << "Number of letters: " << rsg.n_letters
+              << ", Max errors: " << rsg.max_errors << std::endl;
+    std::cout << "Guess the word: ";
+    write_word(std::cout, game->getWordProgress(), game->getWordLen());
+    std::cout << "\n";
+  } else {
+    std::cout << "Game failed to start" << std::endl;
+  }
+}
+
+void write_word(std::ostream& stream, char* word, int word_len) {
+  for (int i = 0; i < word_len; ++i) {
+    if (i != 0) {
+      stream << ' ';
+    }
+    stream << word[i];
+  }
 }

@@ -15,8 +15,10 @@ class Packet {
   void readChar(std::stringstream &buffer, char chr);
 
  protected:
+  void writePlayerId(std::stringstream &buffer, const int player_id);
   void readPacketId(std::stringstream &buffer, const char *id);
   void readSpace(std::stringstream &buffer);
+  char readChar(std::stringstream &buffer);
   void readPacketDelimiter(std::stringstream &buffer);
   std::unique_ptr<char[]> readString(std::stringstream &buffer, size_t max_len);
   int32_t readInt(std::stringstream &buffer);
@@ -62,6 +64,91 @@ class ReplyStartGameClientbound : public Packet {
 
   std::stringstream serialize();
   void deserialize(std::stringstream &buffer);
+};
+
+class GuessLetterServerbound : public Packet {
+ public:
+  static constexpr const char *ID = "PLG";
+  int player_id;
+  char guess;
+  int trial;
+
+  std::stringstream serialize();
+  void deserialize(std::stringstream &buffer);
+};
+
+class GuessLetterClientbound : public Packet {
+  enum status { OK, WIN, DUP, NOK, OVR, INV, ERR };
+
+ public:
+  static constexpr const char *ID = "RLG";
+  status status;
+  int trial;
+  int n;
+  int *pos;
+
+  std::stringstream serialize();
+  void deserialize(std::stringstream &buffer);
+};
+
+class GuessWordServerbound : public Packet {
+ public:
+  static constexpr const char *ID = "PWG";
+  int player_id;
+  char *guess;
+  int trial;
+
+  std::stringstream serialize();
+  void deserialize(std::stringstream &buffer, int wordLen);
+};
+
+class GuessWordClientbound : public Packet {
+  enum status { WIN, NOK, OVR, INV, ERR };
+
+ public:
+  static constexpr const char *ID = "RWG";
+  status status;
+  int trial;
+
+  std::stringstream serialize();
+  void deserialize(std::stringstream &buffer);
+};
+
+class QuitGameServerbound : public Packet {
+ public:
+  static constexpr const char *ID = "QUT";
+  int player_id;
+
+  std::stringstream serialize();
+  void deserialize(std::stringstream &buffer);
+};
+
+class QuitGameClientbound : public Packet {
+ public:
+  static constexpr const char *ID = "RQT";
+  bool success;
+
+  std::stringstream serialize();
+  void deserialize(std::stringstream &buffer);
+};
+
+class RevealWordServerbound : public Packet {
+ public:
+  static constexpr const char *ID = "REV";
+  int player_id;
+
+  std::stringstream serialize();
+  void deserialize(std::stringstream &buffer);
+};
+
+class RevealWordClientbound : public Packet {
+ public:
+  static constexpr const char *ID = "RRV";
+  char *word;
+  bool success;
+
+  std::stringstream serialize();
+  void deserialize(std::stringstream &buffer, int wordLen);
 };
 
 Packet *deserialize(char *buffer);
