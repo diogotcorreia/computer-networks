@@ -103,7 +103,6 @@ void ScoreboardCommand::handle(std::string args, PlayerState& state) {
 
   state.sendPacket(scoreboard_packet);
 
-  std::cout << "[DEBUG] Asked for scoreboard" << std::endl;
   ScoreboardClientbound packet_reply;
   state.waitForPacket(packet_reply);
   if (packet_reply.status == 0) {  // TODO try to use enum
