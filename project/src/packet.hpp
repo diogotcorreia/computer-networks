@@ -10,6 +10,42 @@
 
 #include "constants.hpp"
 
+// Thrown when the PacketID does not match what was expected
+class UnexpectedPacketException : public std::runtime_error {
+ public:
+  UnexpectedPacketException()
+      : std::runtime_error("Packet ID does not match what was expected") {}
+};
+
+// Thrown when the PacketID is correct, but the schema is wrong
+class InvalidPacketException : public std::runtime_error {
+ public:
+  InvalidPacketException()
+      : std::runtime_error("Schema of the received packet is incorrect") {}
+};
+
+// Thrown when serialization error occurs
+class PacketSerializationException : public std::runtime_error {
+ public:
+  PacketSerializationException()
+      : std::runtime_error("Error while serializing packet") {}
+};
+
+// Thrown when timeout for reading/writing packet occurs
+class ConnectionTimeoutException : public std::runtime_error {
+ public:
+  ConnectionTimeoutException()
+      : std::runtime_error("Timed out while waiting for or sending packet") {}
+};
+
+// Thrown when an error related to I/O occurs
+class IOException : public std::runtime_error {
+ public:
+  IOException()
+      : std::runtime_error(
+            "IO error while reading/writting from/to filesystem") {}
+};
+
 class Packet {
  private:
   void readChar(std::stringstream &buffer, char chr);
@@ -28,20 +64,6 @@ class Packet {
   virtual void deserialize(std::stringstream &buffer) = 0;
 
   virtual ~Packet() = default;
-};
-
-// Thrown when the PacketID does not match what was expected
-class UnexpectedPacketException : public std::runtime_error {
- public:
-  UnexpectedPacketException()
-      : std::runtime_error("Packet ID does not match what was expected") {}
-};
-
-// Thrown when the PacketID is correct, but the schema is wrong
-class InvalidPacketException : public std::runtime_error {
- public:
-  InvalidPacketException()
-      : std::runtime_error("Schema of the received packet is incorrect") {}
 };
 
 // Start New Game Packet (SNG)
@@ -151,7 +173,48 @@ class RevealWordClientbound : public Packet {
   void deserialize(std::stringstream &buffer, int wordLen);
 };
 
-Packet *deserialize(char *buffer);
+class TcpPacket {
+ private:
+  void readChar(int fd, char chr);
+
+ protected:
+  void writeString(int fd, const std::string &str);
+  void writePlayerId(int fd, const int player_id);
+  void readPacketId(int fd, const char *id);
+  void readSpace(int fd);
+  char readChar(int fd);
+  void readPacketDelimiter(int fd);
+  std::string readString(const int fd);
+  int32_t readInt(const int fd);
+  void readAndSaveToFile(const int fd, const std::string &file_name,
+                         const size_t file_size);
+
+ public:
+  virtual void send(int fd) = 0;
+  virtual void receive(int fd) = 0;
+
+  virtual ~TcpPacket() = default;
+};
+
+class ScoreboardServerbound : public TcpPacket {
+ public:
+  static constexpr const char *ID = "GSB";
+
+  void send(int fd);
+  void receive(int fd);
+};
+
+class ScoreboardClientbound : public TcpPacket {
+  enum status { OK, EMPTY };
+
+ public:
+  static constexpr const char *ID = "RSB";
+  status status;
+  std::string file_name;
+
+  void send(int fd);
+  void receive(int fd);
+};
 
 void send_packet(Packet &packet, int socket, struct sockaddr *address,
                  socklen_t addrlen);

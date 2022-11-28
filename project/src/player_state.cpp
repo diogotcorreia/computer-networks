@@ -66,12 +66,24 @@ void PlayerState::resolveServerAddress(std::string hostname, std::string port) {
 }
 
 void PlayerState::sendPacket(Packet &packet) {
-  // TODO support TCP
   send_packet(packet, udp_socket_fd, server_udp_addr->ai_addr,
               server_udp_addr->ai_addrlen);
 }
 
+void PlayerState::sendPacket(TcpPacket &packet) {
+  if (connect(tcp_socket_fd, server_tcp_addr->ai_addr,
+              server_tcp_addr->ai_addrlen) != 0) {
+    throw new ConnectionTimeoutException();
+  }
+  packet.send(tcp_socket_fd);
+  // TODO does this need closing?
+}
+
 void PlayerState::waitForPacket(Packet &packet) {
-  // TODO support TCP
   wait_for_packet(packet, udp_socket_fd);
+}
+
+void PlayerState::waitForPacket(TcpPacket &packet) {
+  packet.receive(tcp_socket_fd);
+  // TODO does this need closing?
 }

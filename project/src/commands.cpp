@@ -92,9 +92,25 @@ void StartCommand::handle(std::string args, PlayerState& state) {
               << ", Max errors: " << rsg.max_errors << std::endl;
     std::cout << "Guess the word: ";
     write_word(std::cout, game->getWordProgress(), game->getWordLen());
-    std::cout << "\n";
+    std::cout << std::endl;
   } else {
     std::cout << "Game failed to start" << std::endl;
+  }
+}
+
+void ScoreboardCommand::handle(std::string args, PlayerState& state) {
+  ScoreboardServerbound scoreboard_packet;
+
+  state.sendPacket(scoreboard_packet);
+
+  ScoreboardClientbound packet_reply;
+  state.waitForPacket(packet_reply);
+  if (packet_reply.status == 0) {  // TODO try to use enum
+    std::cout << "Received scoreboard and saved to file." << std::endl;
+    std::cout << "Path: " << packet_reply.file_name << std::endl;
+    // TODO print scoreboard (?)
+  } else {
+    std::cout << "Empty scoreboard" << std::endl;
   }
 }
 
