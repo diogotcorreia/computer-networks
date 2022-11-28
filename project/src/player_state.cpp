@@ -14,6 +14,11 @@ PlayerState::~PlayerState() {
   close(this->tcp_socket_fd);
   freeaddrinfo(this->server_udp_addr);
   freeaddrinfo(this->server_tcp_addr);
+  delete this->game;
+}
+
+bool PlayerState::hasActiveGame() {
+  return this->game != NULL;
 }
 
 void PlayerState::startGame(ClientGame *game) {

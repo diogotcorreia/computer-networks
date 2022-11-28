@@ -51,7 +51,6 @@ class Packet {
   void readChar(std::stringstream &buffer, char chr);
 
  protected:
-  void writePlayerId(std::stringstream &buffer, const int player_id);
   void readPacketId(std::stringstream &buffer, const char *id);
   void readSpace(std::stringstream &buffer);
   char readChar(std::stringstream &buffer);
@@ -216,9 +215,32 @@ class ScoreboardClientbound : public TcpPacket {
   void receive(int fd);
 };
 
+class HintServerbound : public TcpPacket {
+ public:
+  static constexpr const char *ID = "GHL";
+  int player_id;
+
+  void send(int fd);
+  void receive(int fd);
+};
+
+class HintClientbound : public TcpPacket {
+  enum status { OK, NOK };
+
+ public:
+  static constexpr const char *ID = "RHL";
+  status status;
+  std::string file_name;
+
+  void send(int fd);
+  void receive(int fd);
+};
+
 void send_packet(Packet &packet, int socket, struct sockaddr *address,
                  socklen_t addrlen);
 
 void wait_for_packet(Packet &packet, int socket);
+
+void write_player_id(std::stringstream &buffer, const int player_id);
 
 #endif
