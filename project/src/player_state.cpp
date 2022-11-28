@@ -1,5 +1,9 @@
 #include "player_state.hpp"
 
+#include <unistd.h>
+
+#include <cstring>
+
 PlayerState::PlayerState() {
   this->setupSockets();
 }

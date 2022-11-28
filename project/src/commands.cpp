@@ -2,6 +2,9 @@
 
 #include <iostream>
 
+#include "game.hpp"
+#include "packet.hpp"
+
 void CommandManager::printHelp() {
   std::cout << std::endl << "Available commands:" << std::endl;
 

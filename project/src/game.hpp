@@ -11,7 +11,6 @@ class Game {
   int numErrors;
 
  public:
-  ~Game();
   int getPlayerId();
   int getWordLen();
   int getMaxErrors();

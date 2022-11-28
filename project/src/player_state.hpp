@@ -3,6 +3,9 @@
 
 #include <netdb.h>
 
+#include "game.hpp"
+#include "packet.hpp"
+
 class PlayerState {
   void setupSockets();
 

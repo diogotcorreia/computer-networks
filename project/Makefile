@@ -22,8 +22,8 @@ fmt: $(SOURCES) $(HEADERS)
 fmt-check: $(SOURCES) $(HEADERS)
 	clang-format -n --Werror $^
 
-src/GS: src/packet.o
-src/player: src/commands.o src/packet.o
+src/GS: src/game.o src/packet.o
+src/player: src/commands.o src/game.o src/packet.o src/player_state.o
 
 clean:
 	rm -f $(OBJECTS) $(TARGETS) project.zip
