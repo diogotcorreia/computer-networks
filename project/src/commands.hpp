@@ -44,4 +44,6 @@ class StartCommand : public CommandHandler {
   StartCommand() : CommandHandler("start", "sg", "PLID", "Start a new game") {}
 };
 
+void write_word(std::ostream& stream, char* word, int word_len);
+
 #endif

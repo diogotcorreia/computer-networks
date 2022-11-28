@@ -61,8 +61,8 @@ int32_t Packet::readInt(std::stringstream &buffer) {
 // Packet type seriliazation and deserialization methods
 std::stringstream StartGameServerbound::serialize() {
   std::stringstream buffer;
-  buffer << StartGameServerbound::ID << " " << std::setfill('0') << std::setw(6)
-         << player_id;
+  buffer << StartGameServerbound::ID << " " << std::setfill('0')
+         << std::setw(PLAYER_ID_MAX_LEN) << player_id;
   buffer.copyfmt(std::ios(NULL));  // reset formatting
   buffer << std::endl;
   return buffer;

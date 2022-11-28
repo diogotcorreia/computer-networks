@@ -19,6 +19,14 @@ int Game::getCurrentTrial() {
   return currentTrial;
 }
 
+char* Game::getWordProgress() {
+  return wordProgress;
+}
+
+int Game::getNumErrors() {
+  return numErrors;
+}
+
 void Game::updateWordChar(int index, char letter) {
   if (index > wordLen) {
     return;
@@ -67,6 +75,10 @@ ServerGame::ServerGame(int playerId) {
   this->currentTrial = 0;
   this->wordProgress = new char[wordLen];
   memset(this->wordProgress, '_', wordLen);
+}
+
+ServerGame::~ServerGame() {
+  // TODO
 }
 
 bool ServerGame::play(char letter) {
