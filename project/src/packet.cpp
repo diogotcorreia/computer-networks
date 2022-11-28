@@ -22,6 +22,14 @@ void Packet::readChar(std::stringstream &buffer, char chr) {
   }
 }
 
+char Packet::readChar(std::stringstream &buffer) {
+  char c = buffer.get();
+  if (!buffer.good()) {
+    throw InvalidPacketException();
+  }
+  return c;
+}
+
 void Packet::readSpace(std::stringstream &buffer) {
   readChar(buffer, ' ');
 }
@@ -95,26 +103,127 @@ void ReplyStartGameClientbound::deserialize(std::stringstream &buffer) {
   readPacketDelimiter(buffer);
 };
 
-// Packet deserilization and creation
-Packet *deserialize(char *buffer) {
-  char opcode[4];
-  std::stringstream ss;
-  ss << buffer;
-  if (ss >> opcode) {
-    if (strcmp(opcode, "SNG") == 0) {
-      StartGameServerbound *packet = new StartGameServerbound();
-      packet->deserialize(ss);
-      return packet;
-    } else if (strcmp(opcode, "RSG") == 0) {
-      ReplyStartGameClientbound *packet = new ReplyStartGameClientbound();
-      packet->deserialize(ss);
-      return packet;
-    } else {
-      throw std::runtime_error("Invalid opcode");
+std::stringstream GuessLetterServerbound::serialize() {
+  std::stringstream buffer;
+  buffer << GuessLetterServerbound::ID << " " << player_id << " " << guess
+         << " " << trial << std::endl;
+  return buffer;
+};
+
+void GuessLetterServerbound::deserialize(std::stringstream &buffer) {
+  buffer >> std::noskipws;
+  readPacketId(buffer, GuessLetterServerbound::ID);
+  readSpace(buffer);
+  player_id = readInt(buffer);
+  readSpace(buffer);
+  guess = readChar(buffer);
+  readSpace(buffer);
+  trial = readInt(buffer);
+  readPacketDelimiter(buffer);
+};
+
+std::stringstream GuessLetterClientbound::serialize() {
+  std::stringstream buffer;
+  buffer << GuessLetterClientbound::ID << " " << status << " " << trial << " "
+         << n << " " << pos << std::endl;
+  return buffer;
+};
+
+void GuessLetterClientbound::deserialize(std::stringstream &buffer) {
+  buffer >> std::noskipws;
+  readPacketId(buffer, GuessLetterClientbound::ID);
+  readSpace(buffer);
+  auto success = readString(buffer, 3);
+  readSpace(buffer);
+  trial = readInt(buffer);
+
+  if (strcmp(success.get(), "OK") == 0) {
+    status = OK;
+    readSpace(buffer);
+    n = readInt(buffer);
+    int pos_[n];
+    for (int i = 0; i < n; ++i) {
+      readSpace(buffer);
+      pos_[i] = readInt(buffer);
     }
+    pos = pos_;
+  } else if (strcmp(success.get(), "WIN") == 0) {
+    status = WIN;
+  } else if (strcmp(success.get(), "DUP") == 0) {
+    status = DUP;
+  } else if (strcmp(success.get(), "NOK") == 0) {
+    status = NOK;
+  } else if (strcmp(success.get(), "OVR") == 0) {
+    status = OVR;
+  } else if (strcmp(success.get(), "INV") == 0) {
+    status = INV;
+  } else if (strcmp(success.get(), "ERR") == 0) {
+    status = ERR;
   } else {
-    throw std::runtime_error("Invalid opcode");
+    throw InvalidPacketException();
   }
+};
+
+std::stringstream GuessWordServerbound::serialize() {
+  std::stringstream buffer;
+  buffer << GuessWordServerbound::ID << " " << player_id << " " << guess
+         << std::endl;
+  return buffer;
+};
+
+void GuessWordServerbound::deserialize(std::stringstream &buffer, int wordLen) {
+  buffer >> std::noskipws;
+  readPacketId(buffer, GuessWordServerbound::ID);
+  readSpace(buffer);
+  player_id = readInt(buffer);
+  readSpace(buffer);
+  guess = readString(buffer, wordLen).get();
+  readSpace(buffer);
+  trial = readInt(buffer);
+  readPacketDelimiter(buffer);
+};
+
+std::stringstream GuessWordClientbound::serialize() {
+  std::stringstream buffer;
+  buffer << GuessWordClientbound::ID << " " << status << " " << std::endl;
+  return buffer;
+};
+
+void GuessWordClientbound::deserialize(std::stringstream &buffer) {
+  buffer >> std::noskipws;
+  readPacketId(buffer, GuessWordClientbound::ID);
+  readSpace(buffer);
+  auto success = readString(buffer, 3);
+  readSpace(buffer);
+  trial = readInt(buffer);
+
+  if (strcmp(success.get(), "WIN") == 0) {
+    status = WIN;
+  } else if (strcmp(success.get(), "NOK") == 0) {
+    status = NOK;
+  } else if (strcmp(success.get(), "OVR") == 0) {
+    status = OVR;
+  } else if (strcmp(success.get(), "INV") == 0) {
+    status = INV;
+  } else if (strcmp(success.get(), "ERR") == 0) {
+    status = ERR;
+  } else {
+    throw InvalidPacketException();
+  }
+};
+
+std::stringstream QuitGameServerbound::serialize() {
+  std::stringstream buffer;
+  buffer << QuitGameClientbound::ID << " " << player_id << std::endl;
+  return buffer;
+};
+
+void QuitGameServerbound::deserialize(std::stringstream &buffer) {
+  buffer >> std::noskipws;
+  readPacketId(buffer, QuitGameClientbound::ID);
+  readSpace(buffer);
+  player_id = readInt(buffer);
+  readPacketDelimiter(buffer);
 };
 
 // Packet sending and receiving

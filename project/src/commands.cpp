@@ -29,7 +29,7 @@ void CommandManager::registerCommand(std::shared_ptr<CommandHandler> handler) {
   }
 }
 
-void CommandManager::waitForCommand() {
+void CommandManager::waitForCommand(PlayerState& state) {
   this->printHelp();
   std::cout << "> ";
 
@@ -53,10 +53,31 @@ void CommandManager::waitForCommand() {
     return;
   }
 
-  handler->second->handle(line);
+  handler->second->handle(line, state);
 }
 
-void StartCommand::handle(std::string args) {
+void StartCommand::handle(std::string args, PlayerState& state) {
+  // TODO validate args
+  int player_id = atoi(args.c_str());
+
+  // Ask the game server to start a game
+  StartGameServerbound packet_out;
+  packet_out.player_id = player_id;
+
+  // TESTING: Sending and receiving a packet
+  state.sendPacket(packet_out);
+
+  ReplyStartGameClientbound rsg;
+  state.waitForPacket(rsg);
+  if (rsg.success) {
+    std::cout << "Game started successfully" << std::endl;
+    std::cout << "Number of letters: " << rsg.n_letters
+              << ", Max errors: " << rsg.max_errors << std::endl;
+    ClientGame* game = new ClientGame(player_id, rsg.n_letters, rsg.max_errors);
+    state.startGame(game);
+  } else {
+    std::cout << "Game failed to start" << std::endl;
+  }
   std::cout << "Executed start command with args `" << args << "`! :)"
             << std::endl;
 }

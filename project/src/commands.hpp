@@ -8,6 +8,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "player.hpp"
+
 class CommandHandler;
 
 class CommandManager {
@@ -17,7 +19,7 @@ class CommandManager {
 
  public:
   void registerCommand(std::shared_ptr<CommandHandler> handler);
-  void waitForCommand();
+  void waitForCommand(PlayerState& state);
 };
 
 class CommandHandler {
@@ -32,11 +34,11 @@ class CommandHandler {
   const std::optional<const char*> alias;
   const std::optional<const char*> usage;
   const char* description;
-  virtual void handle(std::string args) = 0;
+  virtual void handle(std::string args, PlayerState& state) = 0;
 };
 
 class StartCommand : public CommandHandler {
-  void handle(std::string args);
+  void handle(std::string args, PlayerState& state);
 
  public:
   StartCommand() : CommandHandler("start", "sg", "PLID", "Start a new game") {}
