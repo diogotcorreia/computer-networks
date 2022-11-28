@@ -38,6 +38,14 @@ class ConnectionTimeoutException : public std::runtime_error {
       : std::runtime_error("Timed out while waiting for or sending packet") {}
 };
 
+// Thrown when an error related to I/O occurs
+class IOException : public std::runtime_error {
+ public:
+  IOException()
+      : std::runtime_error(
+            "IO error while reading/writting from/to filesystem") {}
+};
+
 class Packet {
  private:
   void readChar(std::stringstream &buffer, char chr);
@@ -176,8 +184,10 @@ class TcpPacket {
   void readSpace(int fd);
   char readChar(int fd);
   void readPacketDelimiter(int fd);
-  std::unique_ptr<char[]> readString(int fd, size_t max_len);
-  int32_t readInt(int fd);
+  std::string readString(const int fd);
+  int32_t readInt(const int fd);
+  void readAndSaveToFile(const int fd, const std::string &file_name,
+                         const size_t file_size);
 
  public:
   virtual void send(int fd) = 0;
@@ -189,6 +199,18 @@ class TcpPacket {
 class ScoreboardServerbound : public TcpPacket {
  public:
   static constexpr const char *ID = "GSB";
+
+  void send(int fd);
+  void receive(int fd);
+};
+
+class ScoreboardClientbound : public TcpPacket {
+  enum status { OK, EMPTY };
+
+ public:
+  static constexpr const char *ID = "RSB";
+  status status;
+  std::string file_name;
 
   void send(int fd);
   void receive(int fd);

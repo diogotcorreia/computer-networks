@@ -4,7 +4,10 @@
 #include <unistd.h>
 
 #include <cstring>
+#include <fstream>
 #include <iomanip>
+#include <iostream>
+#include <string>
 
 void Packet::writePlayerId(std::stringstream &buffer, const int player_id) {
   buffer << std::setfill('0') << std::setw(PLAYER_ID_MAX_LEN) << player_id;
@@ -272,6 +275,16 @@ void TcpPacket::writeString(int fd, const std::string &str) {
   }
 }
 
+void TcpPacket::readPacketId(int fd, const char *packet_id) {
+  char current_char;
+  while (*packet_id != '\0') {
+    if (read(fd, &current_char, 1) != 1 || current_char != *packet_id) {
+      throw UnexpectedPacketException();
+    }
+    ++packet_id;
+  }
+}
+
 void TcpPacket::readChar(int fd, char chr) {
   if (readChar(fd) != chr) {
     throw InvalidPacketException();
@@ -294,6 +307,68 @@ void TcpPacket::readPacketDelimiter(int fd) {
   readChar(fd, '\n');
 }
 
+std::string TcpPacket::readString(const int fd) {
+  std::string result;
+  char c = -1;
+
+  while (c != ' ') {  // TODO do we need to check for EOF?
+    if (read(fd, &c, 1) != 1) {
+      throw new InvalidPacketException();
+    }
+    result += c;
+  }
+
+  result.pop_back();
+
+  return result;
+}
+
+int32_t TcpPacket::readInt(const int fd) {
+  std::string int_str = readString(fd);
+  try {
+    size_t converted = 0;
+    int32_t result = std::stol(int_str, &converted, 10);
+    if (converted != int_str.length() || std::iswspace(int_str.at(0))) {
+      throw InvalidPacketException();
+    }
+    return result;
+  } catch (InvalidPacketException &ex) {
+    throw ex;
+  } catch (...) {
+    throw InvalidPacketException();
+  }
+}
+
+void TcpPacket::readAndSaveToFile(int fd, const std::string &file_name,
+                                  const size_t file_size) {
+  std::ofstream file(file_name);
+
+  if (!file.good()) {
+    throw IOException();
+  }
+
+  size_t remaining_size = file_size;
+  size_t to_read;
+  ssize_t n;
+  char buffer[FILE_BUFFER_LEN];
+  while (remaining_size > 0) {
+    to_read = std::min(remaining_size, (size_t)FILE_BUFFER_LEN);
+    n = read(fd, buffer, to_read);
+    if (n >= 0 && (size_t)n != to_read) {
+      file.close();
+      throw InvalidPacketException();
+    }
+    file.write(buffer, to_read);
+    if (!file.good()) {
+      file.close();
+      throw IOException();
+    }
+    remaining_size -= to_read;
+  }
+
+  file.close();
+}
+
 void ScoreboardServerbound::send(int fd) {
   std::stringstream stream;
   stream << ScoreboardServerbound::ID << std::endl;
@@ -302,6 +377,42 @@ void ScoreboardServerbound::send(int fd) {
 
 void ScoreboardServerbound::receive(int fd) {
   // Serverbound packets don't read their ID
+  readPacketDelimiter(fd);
+}
+
+void ScoreboardClientbound::send(int fd) {
+  std::stringstream stream;
+  stream << ScoreboardClientbound::ID << " ";
+  if (status == OK) {
+    stream << "OK ";
+    // TODO read from actual scoreboard or something
+    stream << "scoreboard.txt 4 "
+           << "test";
+  } else if (status == EMPTY) {
+    stream << "EMPTY ";
+  } else {
+    throw PacketSerializationException();
+  }
+  stream << std::endl;
+  writeString(fd, stream.str());
+}
+
+void ScoreboardClientbound::receive(int fd) {
+  readPacketId(fd, ScoreboardClientbound::ID);
+  readSpace(fd);
+  auto status = readString(fd);
+  if (status == "OK") {
+    this->status = OK;
+    readSpace(fd);
+    file_name = readString(fd);
+    int file_size = readInt(fd);  // TODO change to long?
+    readSpace(fd);
+    readAndSaveToFile(fd, file_name, file_size);
+  } else if (status == "EMTPY") {
+    this->status = EMPTY;
+  } else {
+    throw InvalidPacketException();
+  }
   readPacketDelimiter(fd);
 }
 

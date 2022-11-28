@@ -24,6 +24,7 @@ class PlayerState {
   void sendPacket(Packet& packet);
   void sendPacket(TcpPacket& packet);
   void waitForPacket(Packet& packet);
+  void waitForPacket(TcpPacket& packet);
 };
 
 #endif

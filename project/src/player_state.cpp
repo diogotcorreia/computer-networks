@@ -83,3 +83,8 @@ void PlayerState::waitForPacket(Packet &packet) {
   // TODO support TCP
   wait_for_packet(packet, udp_socket_fd);
 }
+
+void PlayerState::waitForPacket(TcpPacket &packet) {
+  // TODO support TCP
+  packet.receive(tcp_socket_fd);
+}

@@ -104,6 +104,15 @@ void ScoreboardCommand::handle(std::string args, PlayerState& state) {
   state.sendPacket(scoreboard_packet);
 
   std::cout << "[DEBUG] Asked for scoreboard" << std::endl;
+  ScoreboardClientbound packet_reply;
+  state.waitForPacket(packet_reply);
+  if (packet_reply.status == 0) {  // TODO try to use enum
+    std::cout << "Received scoreboard and saved to file." << std::endl;
+    std::cout << "Path: " << packet_reply.file_name << std::endl;
+    // TODO print scoreboard (?)
+  } else {
+    std::cout << "Empty scoreboard" << std::endl;
+  }
 }
 
 void write_word(std::ostream& stream, char* word, int word_len) {
