@@ -101,14 +101,12 @@ void StartCommand::handle(std::string args, PlayerState& state) {
 
 void GuessLetterCommand::handle(std::string args, PlayerState& state) {
   char guess;
-  try {
-    if (args.length() != 1 || args[0] < 'a' || args[0] > 'z') {
-      throw std::runtime_error("invalid play argument");
-    }
-  } catch (...) {
-    std::cout << "Invalid argument. It must be a single character" << std::endl;
+
+  if (args.length() != 1 || args[0] < 'a' || args[0] > 'z') {
+    std::cout << "Invalid letter. It must be a single letter" << std::endl;
     return;
   }
+
   guess = args[0];
   GuessLetterServerbound packet_out;
   packet_out.player_id = state.game->getPlayerId();
@@ -129,7 +127,7 @@ void GuessLetterCommand::handle(std::string args, PlayerState& state) {
     std::cout << "Word progress: ";
     write_word(std::cout, state.game->getWordProgress(),
                state.game->getWordLen());
-    std::cout << "\n";
+    std::cout << std::endl;
     std::cout << "Current trial: " << state.game->getCurrentTrial()
               << std::endl;
     std::cout << "Number of errors: " << state.game->getNumErrors()
@@ -159,7 +157,7 @@ void GuessLetterCommand::handle(std::string args, PlayerState& state) {
 }
 
 void GuessWordCommand::handle(std::string args, PlayerState& state) {
-  if (args.length() == state.game->getWordLen()) {
+  if (args.length() != state.game->getWordLen()) {
     std::cout << "Invalid argument. It must be a word of length "
               << state.game->getWordLen() << std::endl;
     return;
@@ -168,7 +166,7 @@ void GuessWordCommand::handle(std::string args, PlayerState& state) {
   packet_out.player_id = state.game->getPlayerId();
   packet_out.trial = state.game->getCurrentTrial();
   packet_out.wordLen = state.game->getWordLen();
-  strcpy(packet_out.guess, args.c_str());
+  packet_out.guess = args.c_str();
   state.sendPacket(packet_out);
 
   GuessWordClientbound rwg;

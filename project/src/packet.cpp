@@ -131,31 +131,26 @@ void GuessLetterServerbound::deserialize(std::stringstream &buffer) {
 
 std::stringstream GuessLetterClientbound::serialize() {
   std::stringstream buffer;
+  buffer << GuessLetterClientbound::ID << " ";
   if (status == OK) {
-    buffer << GuessLetterClientbound::ID << " "
-           << "OK"
-           << " " << trial << " " << n << " " << pos << std::endl;
+    buffer << "OK"
+           << " " << trial << " " << n << " " << pos;
   } else if (status == WIN) {
-    buffer << GuessLetterClientbound::ID << " "
-           << "NOK" << std::endl;
+    buffer << "NOK";
   } else if (status == DUP) {
-    buffer << GuessLetterClientbound::ID << " "
-           << "DUP" << std::endl;
+    buffer << "DUP";
   } else if (status == NOK) {
-    buffer << GuessLetterClientbound::ID << " "
-           << "NOK" << std::endl;
+    buffer << "NOK";
   } else if (status == OVR) {
-    buffer << GuessLetterClientbound::ID << " "
-           << "OVR" << std::endl;
+    buffer << "OVR";
   } else if (status == INV) {
-    buffer << GuessLetterClientbound::ID << " "
-           << "INV" << std::endl;
+    buffer << "INV";
   } else if (status == ERR) {
-    buffer << GuessLetterClientbound::ID << " "
-           << "ERR" << std::endl;
+    buffer << "ERR";
   } else {
-    throw InvalidPacketException();
+    throw PacketSerializationException();
   }
+  buffer << std::endl;
   return buffer;
 };
 
@@ -216,21 +211,21 @@ void GuessWordServerbound::deserialize(std::stringstream &buffer) {
 
 std::stringstream GuessWordClientbound::serialize() {
   std::stringstream buffer;
-  std::string statusString;
+  buffer << GuessWordClientbound::ID << " ";
   if (status == WIN) {
-    statusString = "WIN";
+    buffer << "WIN";
   } else if (status == NOK) {
-    statusString = "NOK";
+    buffer << "NOK";
   } else if (status == OVR) {
-    statusString = "OVR";
+    buffer << "OVR";
   } else if (status == INV) {
-    statusString = "INV";
+    buffer << "INV";
   } else if (status == ERR) {
-    statusString = "ERR";
+    buffer << "ERR";
   } else {
     throw InvalidPacketException();
   }
-  buffer << GuessWordClientbound::ID << " " << statusString << std::endl;
+  buffer << std::endl;
   return buffer;
 };
 
@@ -273,13 +268,13 @@ void QuitGameServerbound::deserialize(std::stringstream &buffer) {
 
 std::stringstream QuitGameClientbound::serialize() {
   std::stringstream buffer;
+  buffer << QuitGameClientbound::ID << " ";
   if (success) {
-    buffer << QuitGameClientbound::ID << " "
-           << "OK" << std::endl;
+    buffer << "OK";
   } else {
-    buffer << QuitGameClientbound::ID << " "
-           << "ERR" << std::endl;
+    buffer << "ERR";
   }
+  buffer << std::endl;
   return buffer;
 };
 

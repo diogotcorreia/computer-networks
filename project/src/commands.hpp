@@ -105,7 +105,8 @@ class RevealCommand : public CommandHandler {
   void handle(std::string args, PlayerState& state);
 
  public:
-  RevealCommand() : CommandHandler("reveal", "rv", "", "Reveal word") {}
+  RevealCommand()
+      : CommandHandler("reveal", "rv", std::nullopt, "Reveal word") {}
 };
 
 void write_word(std::ostream& stream, char* word, int word_len);
