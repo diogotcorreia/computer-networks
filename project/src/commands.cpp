@@ -238,7 +238,7 @@ void RevealCommand::handle(std::string args, PlayerState& state) {
     std::cout << "Word: " << rrv.word << std::endl;
   } else {
     std::cout << "Error revealing the word" << std::endl;
-   }
+  }
 }
 
 void ScoreboardCommand::handle(std::string args, PlayerState& state) {

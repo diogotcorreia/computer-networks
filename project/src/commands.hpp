@@ -71,7 +71,6 @@ class ScoreboardCommand : public CommandHandler {
 class HintCommand : public CommandHandler {
   void handle(std::string args, PlayerState& state);
 
-
  public:
   HintCommand()
       : CommandHandler("hint", "h", std::nullopt,
@@ -89,14 +88,17 @@ class QuitCommand : public CommandHandler {
   void handle(std::string args, PlayerState& state);
 
  public:
-  QuitCommand() : CommandHandler("quit", std::nullopt, std::nullopt, "Quit game") {}
+  QuitCommand()
+      : CommandHandler("quit", std::nullopt, std::nullopt, "Quit game") {}
 };
 
 class ExitCommand : public CommandHandler {
   void handle(std::string args, PlayerState& state);
 
  public:
-  ExitCommand() : CommandHandler("exit", std::nullopt, std::nullopt, "Exit application") {}
+  ExitCommand()
+      : CommandHandler("exit", std::nullopt, std::nullopt, "Exit application") {
+  }
 };
 
 class RevealCommand : public CommandHandler {
