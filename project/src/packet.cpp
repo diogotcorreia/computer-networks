@@ -119,7 +119,7 @@ std::stringstream GuessLetterServerbound::serialize() {
 
 void GuessLetterServerbound::deserialize(std::stringstream &buffer) {
   buffer >> std::noskipws;
-  readPacketId(buffer, GuessLetterServerbound::ID);
+  // Serverbound packets don't read their ID
   readSpace(buffer);
   player_id = readInt(buffer);
   readSpace(buffer);
@@ -203,7 +203,7 @@ std::stringstream GuessWordServerbound::serialize() {
 
 void GuessWordServerbound::deserialize(std::stringstream &buffer) {
   buffer >> std::noskipws;
-  readPacketId(buffer, GuessWordServerbound::ID);
+  // Serverbound packets don't read their ID
   readSpace(buffer);
   player_id = readInt(buffer);
   readSpace(buffer);
@@ -264,7 +264,7 @@ std::stringstream QuitGameServerbound::serialize() {
 
 void QuitGameServerbound::deserialize(std::stringstream &buffer) {
   buffer >> std::noskipws;
-  readPacketId(buffer, QuitGameServerbound::ID);
+  // Serverbound packets don't read their ID
   readSpace(buffer);
   player_id = readInt(buffer);
   readPacketDelimiter(buffer);
@@ -299,7 +299,7 @@ std::stringstream RevealWordServerbound::serialize() {
 
 void RevealWordServerbound::deserialize(std::stringstream &buffer) {
   buffer >> std::noskipws;
-  readPacketId(buffer, RevealWordServerbound::ID);
+  // Serverbound packets don't read their ID
   readSpace(buffer);
   player_id = readInt(buffer);
   readPacketDelimiter(buffer);
