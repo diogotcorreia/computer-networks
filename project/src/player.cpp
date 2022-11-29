@@ -34,7 +34,6 @@ void registerCommands(CommandManager &manager) {
   manager.registerCommand(std::make_shared<GuessWordCommand>());
   manager.registerCommand(std::make_shared<ScoreboardCommand>());
   manager.registerCommand(std::make_shared<HintCommand>());
-  manager.registerCommand(std::make_shared<StateCommand>());
   manager.registerCommand(std::make_shared<QuitCommand>());
   manager.registerCommand(std::make_shared<ExitCommand>());
   manager.registerCommand(std::make_shared<RevealCommand>());
