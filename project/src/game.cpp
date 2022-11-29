@@ -49,7 +49,6 @@ ClientGame::ClientGame(int playerId, int wordLen, int maxErrors) {
   this->currentTrial = 0;
   this->wordProgress = new char[wordLen];
   memset(this->wordProgress, '_', wordLen);
-  this->wordProgress[wordLen] = '\0';
   this->numErrors = 0;
 }
 
