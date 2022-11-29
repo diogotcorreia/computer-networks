@@ -189,6 +189,10 @@ void GuessLetterClientbound::deserialize(std::stringstream &buffer) {
   }
 };
 
+GuessWordServerbound::~GuessWordServerbound() {
+  delete[] guess;
+}
+
 std::stringstream GuessWordServerbound::serialize() {
   std::stringstream buffer;
   buffer << GuessWordServerbound::ID << " ";

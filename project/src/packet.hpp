@@ -121,6 +121,7 @@ class GuessWordServerbound : public Packet {
 
   std::stringstream serialize();
   void deserialize(std::stringstream &buffer);
+  ~GuessWordServerbound();
 };
 
 class GuessWordClientbound : public Packet {
