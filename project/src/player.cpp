@@ -30,6 +30,8 @@ int main(int argc, char *argv[]) {
 
 void registerCommands(CommandManager &manager) {
   manager.registerCommand(std::make_shared<StartCommand>());
+  manager.registerCommand(std::make_shared<ScoreboardCommand>());
+  manager.registerCommand(std::make_shared<HintCommand>());
 }
 
 ClientConfig::ClientConfig(int argc, char *argv[]) {

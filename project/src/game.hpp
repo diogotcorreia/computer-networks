@@ -26,7 +26,7 @@ class Game {
 
 class ServerGame : public Game {
  private:
-  char *word;
+  const char *word;
 
  public:
   ServerGame(int playerId);

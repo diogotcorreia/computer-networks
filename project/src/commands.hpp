@@ -64,35 +64,39 @@ class ScoreboardCommand : public CommandHandler {
 
  public:
   ScoreboardCommand()
-      : CommandHandler("scoreboard", "sb", "", "Show scoreboard") {}
+      : CommandHandler("scoreboard", "sb", std::nullopt,
+                       "Display the scoreboard") {}
 };
 
 class HintCommand : public CommandHandler {
   void handle(std::string args, PlayerState& state);
 
+
  public:
-  HintCommand() : CommandHandler("hint", "h", "", "Show hint") {}
+  HintCommand()
+      : CommandHandler("hint", "h", std::nullopt,
+                       "Get a hint for the current word") {}
 };
 
 class StateCommand : public CommandHandler {
   void handle(std::string args, PlayerState& state);
 
  public:
-  StateCommand() : CommandHandler("state", "st", "", "Show state") {}
+  StateCommand() : CommandHandler("state", "st", std::nullopt, "Show state") {}
 };
 
 class QuitCommand : public CommandHandler {
   void handle(std::string args, PlayerState& state);
 
  public:
-  QuitCommand() : CommandHandler("quit", "", "", "Quit game") {}
+  QuitCommand() : CommandHandler("quit", std::nullopt, std::nullopt, "Quit game") {}
 };
 
 class ExitCommand : public CommandHandler {
   void handle(std::string args, PlayerState& state);
 
  public:
-  ExitCommand() : CommandHandler("exit", "", "", "Exit application") {}
+  ExitCommand() : CommandHandler("exit", std::nullopt, std::nullopt, "Exit application") {}
 };
 
 class RevealCommand : public CommandHandler {

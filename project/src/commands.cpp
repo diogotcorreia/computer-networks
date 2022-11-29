@@ -93,7 +93,7 @@ void StartCommand::handle(std::string args, PlayerState& state) {
               << ", Max errors: " << rsg.max_errors << std::endl;
     std::cout << "Guess the word: ";
     write_word(std::cout, game->getWordProgress(), game->getWordLen());
-    std::cout << "\n";
+    std::cout << std::endl;
   } else {
     std::cout << "Game failed to start" << std::endl;
   }
@@ -238,6 +238,44 @@ void RevealCommand::handle(std::string args, PlayerState& state) {
     std::cout << "Word: " << rrv.word << std::endl;
   } else {
     std::cout << "Error revealing the word" << std::endl;
+   }
+}
+
+void ScoreboardCommand::handle(std::string args, PlayerState& state) {
+  ScoreboardServerbound scoreboard_packet;
+
+  state.sendPacket(scoreboard_packet);
+
+  ScoreboardClientbound packet_reply;
+  state.waitForPacket(packet_reply);
+  if (packet_reply.status == 0) {  // TODO try to use enum
+    std::cout << "Received scoreboard and saved to file." << std::endl;
+    std::cout << "Path: " << packet_reply.file_name << std::endl;
+    // TODO print scoreboard (?)
+  } else {
+    std::cout << "Empty scoreboard" << std::endl;
+  }
+}
+
+void HintCommand::handle(std::string args, PlayerState& state) {
+  if (!state.hasActiveGame()) {
+    std::cout << "There is no on-going game. Please start a game using the "
+                 "'start' command."
+              << std::endl;
+    return;
+  }
+  HintServerbound hint_packet;
+  hint_packet.player_id = state.game->getPlayerId();
+
+  state.sendPacket(hint_packet);
+
+  HintClientbound packet_reply;
+  state.waitForPacket(packet_reply);
+  if (packet_reply.status == 0) {  // TODO try to use enum
+    std::cout << "Received hint and saved to file." << std::endl;
+    std::cout << "Path: " << packet_reply.file_name << std::endl;
+  } else {
+    std::cout << "No hint available :(" << std::endl;
   }
 }
 
