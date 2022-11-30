@@ -124,9 +124,7 @@ void GuessLetterCommand::handle(std::string args, PlayerState& state) {
   GuessLetterClientbound rlg;
   state.waitForPacket(rlg);
   if (rlg.status == GuessLetterClientbound::status::OK) {
-    printf("number of positions: %d", rlg.n);
     for (int i = 0; i < rlg.n; i++) {
-      printf("pos %d", rlg.pos[i]);
       state.game->updateWordChar(rlg.pos[i], guess);
     }
     state.game->updateCurrentTrial();
@@ -182,7 +180,6 @@ void GuessWordCommand::handle(std::string args, PlayerState& state) {
   packet_out.wordLen = state.game->getWordLen();
   packet_out.guess = strdup(args.c_str());
   state.sendPacket(packet_out);
-
   GuessWordClientbound rwg;
   state.waitForPacket(rwg);
   if (rwg.status == GuessWordClientbound::status::WIN) {
