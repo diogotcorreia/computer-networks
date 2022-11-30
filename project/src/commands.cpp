@@ -56,7 +56,13 @@ void CommandManager::waitForCommand(PlayerState& state) {
     return;
   }
 
-  handler->second->handle(line, state);
+  try {
+    handler->second->handle(line, state);
+  } catch (std::exception& e) {
+    std::cout << "[ERROR] " << e.what() << std::endl;
+  } catch (...) {
+    std::cout << "[ERROR] An unknown error occurred." << std::endl;
+  }
 }
 
 void StartCommand::handle(std::string args, PlayerState& state) {

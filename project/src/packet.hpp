@@ -14,28 +14,39 @@
 class UnexpectedPacketException : public std::runtime_error {
  public:
   UnexpectedPacketException()
-      : std::runtime_error("Packet ID does not match what was expected") {}
+      : std::runtime_error(
+            "The server did not reply with the expected response, so it was "
+            "ignored. Please try again or connect to a different game "
+            "server.") {}
 };
 
 // Thrown when the PacketID is correct, but the schema is wrong
 class InvalidPacketException : public std::runtime_error {
  public:
   InvalidPacketException()
-      : std::runtime_error("Schema of the received packet is incorrect") {}
+      : std::runtime_error(
+            "The response given by the server is not correctly structured, so "
+            "it was ignored. Please try again or connect to a different game "
+            "server.") {}
 };
 
 // Thrown when serialization error occurs
 class PacketSerializationException : public std::runtime_error {
  public:
   PacketSerializationException()
-      : std::runtime_error("Error while serializing packet") {}
+      : std::runtime_error(
+            "There was an error while preparing a request to the game server, "
+            "please try again and restart the client if the problem "
+            "persists.") {}
 };
 
 // Thrown when timeout for reading/writing packet occurs
 class ConnectionTimeoutException : public std::runtime_error {
  public:
   ConnectionTimeoutException()
-      : std::runtime_error("Timed out while waiting for or sending packet") {}
+      : std::runtime_error(
+            "Could not connect to the game server, please check your internet "
+            "connection and try again.") {}
 };
 
 // Thrown when an error related to I/O occurs
