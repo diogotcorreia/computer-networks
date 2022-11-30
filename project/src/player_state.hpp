@@ -8,6 +8,8 @@
 
 class PlayerState {
   void setupSockets();
+  void sendUdpPacket(Packet& packet);
+  void waitForUdpPacket(Packet& packet);
 
  public:
   ClientGame* game = NULL;
@@ -21,9 +23,8 @@ class PlayerState {
   ~PlayerState();
   void startGame(ClientGame* game);
   void resolveServerAddress(std::string hostname, std::string port);
-  void sendPacket(Packet& packet);
+  void sendUdpPacketAndWaitForReply(Packet& out_packet, Packet& in_packet);
   void sendPacket(TcpPacket& packet);
-  void waitForPacket(Packet& packet);
   void waitForPacket(TcpPacket& packet);
 };
 

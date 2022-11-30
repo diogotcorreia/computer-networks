@@ -84,11 +84,8 @@ void StartCommand::handle(std::string args, PlayerState& state) {
   StartGameServerbound packet_out;
   packet_out.player_id = player_id;
 
-  // TESTING: Sending and receiving a packet
-  state.sendPacket(packet_out);
-
   ReplyStartGameClientbound rsg;
-  state.waitForPacket(rsg);
+  state.sendUdpPacketAndWaitForReply(packet_out, rsg);
   if (rsg.success) {
     ClientGame* game = new ClientGame(player_id, rsg.n_letters, rsg.max_errors);
     state.startGame(game);
