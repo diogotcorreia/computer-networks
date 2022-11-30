@@ -243,7 +243,7 @@ void ExitCommand::handle(std::string args, PlayerState& state) {
   } else {
     std::cout << "Game quit failed. Player id is not valid" << std::endl;
   }
-  // TODO: exit.state() and closing everything down properly;
+  exit(EXIT_SUCCESS);
 }
 
 void RevealCommand::handle(std::string args, PlayerState& state) {
