@@ -101,6 +101,12 @@ void StartCommand::handle(std::string args, PlayerState& state) {
 
 void GuessLetterCommand::handle(std::string args, PlayerState& state) {
   char guess;
+  if (!state.hasActiveGame()) {
+    std::cout << "There is no on-going game. Please start a game using the "
+                 "'start' command."
+              << std::endl;
+    return;
+  }
 
   if (args.length() != 1 || args[0] < 'a' || args[0] > 'z') {
     std::cout << "Invalid letter. It must be a single letter" << std::endl;
@@ -118,7 +124,9 @@ void GuessLetterCommand::handle(std::string args, PlayerState& state) {
   GuessLetterClientbound rlg;
   state.waitForPacket(rlg);
   if (rlg.status == GuessLetterClientbound::status::OK) {
+    printf("number of positions: %d", rlg.n);
     for (int i = 0; i < rlg.n; i++) {
+      printf("pos %d", rlg.pos[i]);
       state.game->updateWordChar(rlg.pos[i], guess);
     }
     state.game->updateCurrentTrial();
@@ -157,6 +165,12 @@ void GuessLetterCommand::handle(std::string args, PlayerState& state) {
 }
 
 void GuessWordCommand::handle(std::string args, PlayerState& state) {
+  if (!state.hasActiveGame()) {
+    std::cout << "There is no on-going game. Please start a game using the "
+                 "'start' command."
+              << std::endl;
+    return;
+  }
   if (args.length() != state.game->getWordLen()) {
     std::cout << "Invalid argument. It must be a word of length "
               << state.game->getWordLen() << std::endl;
@@ -197,6 +211,13 @@ void GuessWordCommand::handle(std::string args, PlayerState& state) {
 }
 
 void QuitCommand::handle(std::string args, PlayerState& state) {
+  if (!state.hasActiveGame()) {
+    std::cout << "There is no on-going game. Please start a game using the "
+                 "'start' command."
+              << std::endl;
+    return;
+  }
+
   QuitGameServerbound packet_out;
   packet_out.player_id = state.game->getPlayerId();
   state.sendPacket(packet_out);
@@ -211,6 +232,9 @@ void QuitCommand::handle(std::string args, PlayerState& state) {
 }
 
 void ExitCommand::handle(std::string args, PlayerState& state) {
+  if (!state.hasActiveGame()) {
+    exit(EXIT_SUCCESS);
+  }
   QuitGameServerbound packet_out;
   packet_out.player_id = state.game->getPlayerId();
   state.sendPacket(packet_out);
@@ -226,6 +250,12 @@ void ExitCommand::handle(std::string args, PlayerState& state) {
 }
 
 void RevealCommand::handle(std::string args, PlayerState& state) {
+  if (!state.hasActiveGame()) {
+    std::cout << "There is no on-going game. Please start a game using the "
+                 "'start' command."
+              << std::endl;
+    return;
+  }
   RevealWordServerbound packet_out;
   packet_out.player_id = state.game->getPlayerId();
 

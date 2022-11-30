@@ -31,7 +31,7 @@ void Game::updateWordChar(int index, char letter) {
   if (index > wordLen) {
     return;
   }
-  wordProgress[index] = letter;
+  wordProgress[index - 1] = letter;
 }
 
 void Game::updateCurrentTrial() {
@@ -46,7 +46,7 @@ ClientGame::ClientGame(int playerId, int wordLen, int maxErrors) {
   this->playerId = playerId;
   this->wordLen = wordLen;
   this->maxErrors = maxErrors;
-  this->currentTrial = 0;
+  this->currentTrial = 1;
   this->wordProgress = new char[wordLen];
   memset(this->wordProgress, '_', wordLen);
   this->numErrors = 0;
