@@ -167,7 +167,6 @@ class RevealWordClientbound : public Packet {
   static constexpr const char *ID = "RRV";
   size_t wordLen;
   std::unique_ptr<char[]> word;
-  bool success;
 
   std::stringstream serialize();
   void deserialize(std::stringstream &buffer);

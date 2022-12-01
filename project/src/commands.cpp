@@ -60,8 +60,11 @@ void CommandManager::waitForCommand(PlayerState& state) {
   handler->second->handle(line, state);
 }
 
+/* Command handlers */
+
 void StartCommand::handle(std::string args, PlayerState& state) {
   long player_id;
+  // Argument parsing
   try {
     size_t converted = 0;
     player_id = std::stol(args, &converted, 10);
@@ -74,197 +77,186 @@ void StartCommand::handle(std::string args, PlayerState& state) {
               << PLAYER_ID_MAX_LEN << " digits" << std::endl;
     return;
   }
-
-  // Ask the game server to start a game
+  // Populate and send packet
   StartGameServerbound packet_out;
   packet_out.player_id = player_id;
-
-  // TESTING: Sending and receiving a packet
   state.sendPacket(packet_out);
-
+  // Wait for reply
   ReplyStartGameClientbound rsg;
   state.waitForPacket(rsg);
+  // Check status
   if (rsg.success) {
+    // Start game
     ClientGame* game = new ClientGame(player_id, rsg.n_letters, rsg.max_errors);
     state.startGame(game);
-
+    // Output game info
     std::cout << "Game started successfully" << std::endl;
-    std::cout << "Number of letters: " << rsg.n_letters
-              << ", Max errors: " << rsg.max_errors << std::endl;
-    std::cout << "Guess the word: ";
-    write_word(std::cout, game->getWordProgress(), game->getWordLen());
-    std::cout << std::endl;
+    print_game_progress(state);
   } else {
     std::cout << "Game failed to start" << std::endl;
   }
 }
 
 void GuessLetterCommand::handle(std::string args, PlayerState& state) {
-  char guess;
-  if (!state.hasActiveGame()) {
-    std::cout << "There is no on-going game. Please start a game using the "
-                 "'start' command."
-              << std::endl;
-    return;
-  }
-
+  // Check if there is a game running
+  if (!is_game_active(state)) return;
+  // Argument parsing
   if (args.length() != 1 || args[0] < 'a' || args[0] > 'z') {
     std::cout << "Invalid letter. It must be a single letter" << std::endl;
     return;
   }
-
-  guess = args[0];
+  char guess = args[0];
+  // Populate and send packet
   GuessLetterServerbound packet_out;
   packet_out.player_id = state.game->getPlayerId();
   packet_out.guess = guess;
   packet_out.trial = state.game->getCurrentTrial();
-
   state.sendPacket(packet_out);
-
+  // Wait for reply
   GuessLetterClientbound rlg;
   state.waitForPacket(rlg);
+
+  // Check packet status
+  if (rlg.status == GuessLetterClientbound::status::ERR) {
+    std::cout
+        << "Letter guess failed. Player id is not valid or game is not started"
+        << std::endl;
+    return;
+  }
+  state.game->updateCurrentTrial(rlg.trial + 1);
   if (rlg.status == GuessLetterClientbound::status::OK) {
+    // Update game state
     for (int i = 0; i < rlg.n; i++) {
       state.game->updateWordChar(rlg.pos[i], guess);
     }
-    state.game->updateCurrentTrial();
-
     std::cout << "Letter guessed successfully" << std::endl;
-    std::cout << "Word progress: ";
-    write_word(std::cout, state.game->getWordProgress(),
-               state.game->getWordLen());
-    std::cout << std::endl;
-    std::cout << "Current trial: " << state.game->getCurrentTrial()
-              << std::endl;
-    std::cout << "Number of errors: " << state.game->getNumErrors()
-              << std::endl;
+    // Output game info
+    print_game_progress(state);
   } else if (rlg.status == GuessLetterClientbound::status::WIN) {
-    state.game->updateCurrentTrial();
+    // Update game state
     for (size_t i = 0; i < state.game->getWordLen(); i++) {
       if (state.game->getWordProgress()[i] == '_') {
         state.game->updateWordChar(i, guess);
       }
     }
+    state.game->finishGame();
+    // Output game info
+    std::cout << "You won!" << std::endl;
+    print_game_progress(state);
   } else if (rlg.status == GuessLetterClientbound::status::DUP) {
     std::cout << "Letter already guessed" << std::endl;
   } else if (rlg.status == GuessLetterClientbound::status::NOK) {
-    state.game->updateCurrentTrial();
     std::cout << "Letter is not in the word" << std::endl;
+    state.game->updateNumErrors();
   } else if (rlg.status == GuessLetterClientbound::status::OVR) {
-    state.game->updateCurrentTrial();
+    state.game->updateNumErrors();
+    state.game->finishGame();
     std::cout << "Game is over" << std::endl;
   } else if (rlg.status == GuessLetterClientbound::status::INV) {
     std::cout << "Communicated trial number is not valid" << std::endl;
-  } else if (rlg.status == GuessLetterClientbound::status::ERR) {
-    std::cout
-        << "Letter guess failed. Player id is not valid or game is not started"
-        << std::endl;
-  }
+  };
 }
 
 void GuessWordCommand::handle(std::string args, PlayerState& state) {
-  if (!state.hasActiveGame()) {
-    std::cout << "There is no on-going game. Please start a game using the "
-                 "'start' command."
-              << std::endl;
-    return;
-  }
+  // Check if there is a game running
+  if (!is_game_active(state)) return;
+  // Argument parsing
   if (args.length() != state.game->getWordLen()) {
     std::cout << "Invalid argument. It must be a word of length "
               << state.game->getWordLen() << std::endl;
     return;
   }
+  // Populate and send packet
   GuessWordServerbound packet_out;
   packet_out.player_id = state.game->getPlayerId();
   packet_out.trial = state.game->getCurrentTrial();
   packet_out.wordLen = state.game->getWordLen();
   packet_out.guess = strdup(args.c_str());
   state.sendPacket(packet_out);
+  // Wait for reply
   GuessWordClientbound rwg;
   state.waitForPacket(rwg);
-  if (rwg.status == GuessWordClientbound::status::WIN) {
-    state.game->updateCurrentTrial();
-    for (size_t i = 0; i < state.game->getWordLen(); i++) {
-      state.game->updateWordChar(i, args[i]);
-    }
-    std::cout << "Word guessed successfully" << std::endl;
-    std::cout << "Current trial: " << state.game->getCurrentTrial()
-              << std::endl;
-    std::cout << "Number of errors: " << state.game->getNumErrors()
-              << std::endl;
-  } else if (rwg.status == GuessWordClientbound::status::NOK) {
-    state.game->updateCurrentTrial();
-    std::cout << "Word is not the correct one" << std::endl;
-  } else if (rwg.status == GuessWordClientbound::status::OVR) {
-    state.game->updateCurrentTrial();
-    std::cout << "Game is over" << std::endl;
-  } else if (rwg.status == GuessWordClientbound::status::INV) {
-    std::cout << "Communicated wrong trial number" << std::endl;
-  } else if (rwg.status == GuessWordClientbound::status::ERR) {
+  // Check packet status
+  if (rwg.status == GuessWordClientbound::status::ERR) {
     std::cout
         << "Word guess failed. Player id is not valid or game is not started"
         << std::endl;
+    return;
+  }
+  state.game->updateCurrentTrial(rwg.trial + 1);
+  if (rwg.status == GuessWordClientbound::status::WIN) {
+    // Update game state
+    for (size_t i = 0; i < state.game->getWordLen(); i++) {
+      state.game->updateWordChar(i, args[i]);
+    }
+    state.game->finishGame();
+    // Output game info
+    std::cout << "You won!" << std::endl;
+    print_game_progress(state);
+  } else if (rwg.status == GuessWordClientbound::status::NOK) {
+    state.game->updateNumErrors();
+    std::cout << "Word is not the correct one" << std::endl;
+  } else if (rwg.status == GuessWordClientbound::status::OVR) {
+    state.game->updateNumErrors();
+    state.game->finishGame();
+    std::cout << "Game is over" << std::endl;
+  } else if (rwg.status == GuessWordClientbound::status::INV) {
+    std::cout << "Communicated wrong trial number" << std::endl;
   }
 }
 
 void QuitCommand::handle(std::string args, PlayerState& state) {
-  if (!state.hasActiveGame()) {
-    std::cout << "There is no on-going game. Please start a game using the "
-                 "'start' command."
-              << std::endl;
-    return;
-  }
-
+  // Check if there is a game running
+  if (!is_game_active(state)) return;
+  // Populate and send packet
   QuitGameServerbound packet_out;
   packet_out.player_id = state.game->getPlayerId();
   state.sendPacket(packet_out);
-
+  // Wait for reply
   QuitGameClientbound rq;
   state.waitForPacket(rq);
+  // Check packet status
   if (rq.success) {
     std::cout << "Game quit successfully" << std::endl;
+    state.game->finishGame();
   } else {
     std::cout << "Game quit failed. Player id is not valid" << std::endl;
   }
 }
 
 void ExitCommand::handle(std::string args, PlayerState& state) {
-  if (!state.hasActiveGame()) {
-    exit(EXIT_SUCCESS);
-  }
-  QuitGameServerbound packet_out;
-  packet_out.player_id = state.game->getPlayerId();
-  state.sendPacket(packet_out);
-
-  QuitGameClientbound rq;
-  state.waitForPacket(rq);
-  if (rq.success) {
-    std::cout << "Game quit successfully" << std::endl;
-  } else {
-    std::cout << "Game quit failed. Player id is not valid" << std::endl;
+  if (state.hasActiveGame()) {
+    // Populate and send packet
+    QuitGameServerbound packet_out;
+    packet_out.player_id = state.game->getPlayerId();
+    state.sendPacket(packet_out);
+    // Wait for reply
+    QuitGameClientbound rq;
+    state.waitForPacket(rq);
+    // Check packet status
+    if (rq.success) {
+      std::cout << "Game quit successfully" << std::endl;
+      state.game->finishGame();
+    } else {
+      std::cout << "Game quit failed." << std::endl;
+      return;
+    }
   }
   exit(EXIT_SUCCESS);
 }
 
 void RevealCommand::handle(std::string args, PlayerState& state) {
-  if (!state.hasActiveGame()) {
-    std::cout << "There is no on-going game. Please start a game using the "
-                 "'start' command."
-              << std::endl;
-    return;
-  }
+  // Check if there is a game running
+  if (!is_game_active(state)) return;
+  // Populate and send packet
   RevealWordServerbound packet_out;
   packet_out.player_id = state.game->getPlayerId();
-
   state.sendPacket(packet_out);
+  // Wait for reply
   RevealWordClientbound rrv;
   rrv.wordLen = state.game->getWordLen();
   state.waitForPacket(rrv);
-  if (rrv.success) {
-    std::cout << "Word: " << rrv.word.get() << std::endl;
-  } else {
-    std::cout << "Error revealing the word" << std::endl;
-  }
+  std::cout << "Word: " << rrv.word.get() << std::endl;
 }
 
 void ScoreboardCommand::handle(std::string args, PlayerState& state) {
@@ -284,17 +276,13 @@ void ScoreboardCommand::handle(std::string args, PlayerState& state) {
 }
 
 void HintCommand::handle(std::string args, PlayerState& state) {
-  if (!state.hasActiveGame()) {
-    std::cout << "There is no on-going game. Please start a game using the "
-                 "'start' command."
-              << std::endl;
-    return;
-  }
+  // Check if there is a game running
+  if (!is_game_active(state)) return;
+  // Populate and send packet
   HintServerbound hint_packet;
   hint_packet.player_id = state.game->getPlayerId();
-
   state.sendPacket(hint_packet);
-
+  // Wait for reply
   HintClientbound packet_reply;
   state.waitForPacket(packet_reply);
   if (packet_reply.status == 0) {  // TODO try to use enum
@@ -312,4 +300,22 @@ void write_word(std::ostream& stream, char* word, int word_len) {
     }
     stream << word[i];
   }
+}
+
+bool is_game_active(PlayerState& state) {
+  if (!state.hasActiveGame()) {
+    std::cout << "There is no on-going game. Please start a game using the "
+                 "'start' command."
+              << std::endl;
+  }
+  return state.hasActiveGame();
+}
+
+void print_game_progress(PlayerState& state) {
+  std::cout << "Word progress: ";
+  write_word(std::cout, state.game->getWordProgress(),
+             state.game->getWordLen());
+  std::cout << std::endl;
+  std::cout << "Current trial: " << state.game->getCurrentTrial() << std::endl;
+  std::cout << "Number of errors: " << state.game->getNumErrors() << std::endl;
 }

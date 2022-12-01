@@ -18,7 +18,7 @@ PlayerState::~PlayerState() {
 }
 
 bool PlayerState::hasActiveGame() {
-  return this->game != NULL;
+  return this->game != NULL && this->game->getIsActive();
 }
 
 void PlayerState::startGame(ClientGame *game) {

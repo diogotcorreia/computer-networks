@@ -341,8 +341,6 @@ void RevealWordClientbound::deserialize(std::stringstream &buffer) {
   readSpace(buffer);
   auto readWord = readString(buffer, wordLen);
   word = std::unique_ptr(std::move(readWord));
-  printf("deserialized word");
-  fflush(stdout);
 };
 
 void TcpPacket::writeString(int fd, const std::string &str) {

@@ -27,6 +27,10 @@ int Game::getNumErrors() {
   return numErrors;
 }
 
+bool Game::getIsActive() {
+  return isActive;
+}
+
 void Game::updateWordChar(int index, char letter) {
   if (index > wordLen) {
     return;
@@ -34,8 +38,8 @@ void Game::updateWordChar(int index, char letter) {
   wordProgress[index - 1] = letter;
 }
 
-void Game::updateCurrentTrial() {
-  this->currentTrial++;
+void Game::updateCurrentTrial(int num) {
+  this->currentTrial = num;
 }
 
 void Game::updateNumErrors() {
@@ -46,14 +50,16 @@ ClientGame::ClientGame(int playerId, int wordLen, int maxErrors) {
   this->playerId = playerId;
   this->wordLen = wordLen;
   this->maxErrors = maxErrors;
-  this->currentTrial = 1;
   this->wordProgress = new char[wordLen];
   memset(this->wordProgress, '_', wordLen);
-  this->numErrors = 0;
 }
 
 ClientGame::~ClientGame() {
   delete[] this->wordProgress;
+}
+
+void ClientGame::finishGame() {
+  this->isActive = false;
 }
 
 ServerGame::ServerGame(int playerId) {
@@ -71,7 +77,6 @@ ServerGame::ServerGame(int playerId) {
   } else {
     // TODO handle exception
   }
-  this->currentTrial = 0;
   this->wordProgress = new char[wordLen];
   memset(this->wordProgress, '_', wordLen);
 }
@@ -113,5 +118,10 @@ bool ServerGame::isOver() {
       return false;
     }
   }
+  setActive(false);
   return true;
+}
+
+void ServerGame::setActive(bool active) {
+  this->isActive = active;
 }

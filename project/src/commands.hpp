@@ -111,4 +111,7 @@ class RevealCommand : public CommandHandler {
 
 void write_word(std::ostream& stream, char* word, int word_len);
 
+bool is_game_active(PlayerState& state);
+
+void print_game_progress(PlayerState& state);
 #endif
