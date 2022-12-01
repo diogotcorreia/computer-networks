@@ -258,9 +258,10 @@ void RevealCommand::handle(std::string args, PlayerState& state) {
 
   state.sendPacket(packet_out);
   RevealWordClientbound rrv;
+  rrv.wordLen = state.game->getWordLen();
   state.waitForPacket(rrv);
   if (rrv.success) {
-    std::cout << "Word: " << rrv.word << std::endl;
+    std::cout << "Word: " << rrv.word.get() << std::endl;
   } else {
     std::cout << "Error revealing the word" << std::endl;
   }

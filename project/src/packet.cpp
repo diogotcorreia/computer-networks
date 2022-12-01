@@ -47,8 +47,6 @@ std::unique_ptr<char[]> Packet::readString(std::stringstream &buffer,
   auto str = std::make_unique<char[]>(max_len + 1);
   buffer.get(str.get(), max_len + 1, ' ');
   if (!buffer.good()) {
-    printf("Invalid packet in readString");
-    fflush(stdout);
     throw InvalidPacketException();
   }
   return str;
@@ -314,10 +312,6 @@ void QuitGameClientbound::deserialize(std::stringstream &buffer) {
   readPacketDelimiter(buffer);
 };
 
-// RevealWordClientbound::~RevealWordClientbound() {
-//  delete[] word;
-//}
-
 std::stringstream RevealWordServerbound::serialize() {
   std::stringstream buffer;
   buffer << RevealWordServerbound::ID << " ";
@@ -337,7 +331,7 @@ void RevealWordServerbound::deserialize(std::stringstream &buffer) {
 std::stringstream RevealWordClientbound::serialize() {
   std::stringstream buffer;
   // TODO: check status formatting in buffer
-  buffer << RevealWordClientbound::ID << " " << word << std::endl;
+  buffer << RevealWordClientbound::ID << " " << word.get() << std::endl;
   return buffer;
 };
 
@@ -345,7 +339,8 @@ void RevealWordClientbound::deserialize(std::stringstream &buffer) {
   buffer >> std::noskipws;
   readPacketId(buffer, RevealWordClientbound::ID);
   readSpace(buffer);
-  word = readString(buffer, wordLen - 1).get();
+  auto readWord = readString(buffer, wordLen);
+  word = std::unique_ptr(std::move(readWord));
   printf("deserialized word");
   fflush(stdout);
 };
