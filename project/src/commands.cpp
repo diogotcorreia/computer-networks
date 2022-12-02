@@ -133,7 +133,7 @@ void GuessLetterCommand::handle(std::string args, PlayerState& state) {
   if (rlg.status == GuessLetterClientbound::status::OK) {
     // Update game state
     for (int i = 0; i < rlg.n; i++) {
-      state.game->updateWordChar(rlg.pos[i], guess);
+      state.game->updateWordChar(rlg.pos[i] - 1, guess);
     }
     std::cout << "Letter guessed successfully" << std::endl;
     // Output game info

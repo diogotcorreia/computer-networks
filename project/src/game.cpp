@@ -32,10 +32,10 @@ bool Game::getIsActive() {
 }
 
 void Game::updateWordChar(int index, char letter) {
-  if (index > wordLen) {
+  if (index >= wordLen || index < 0) {
     return;
   }
-  wordProgress[index - 1] = letter;
+  wordProgress[index] = letter;
 }
 
 void Game::updateCurrentTrial(int num) {
