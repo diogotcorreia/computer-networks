@@ -6,8 +6,8 @@
 #define DEFAULT_HOSTNAME "localhost"
 #define DEFAULT_PORT "58044"
 
-#define UDP_TIMEOUT_SECONDS 5
-#define UDP_RESEND_TRIES 4
+#define UDP_TIMEOUT_SECONDS 4
+#define UDP_RESEND_TRIES 3
 
 #define SOCKET_BUFFER_LEN (256)
 #define PACKET_ID_LEN (3)

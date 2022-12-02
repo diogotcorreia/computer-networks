@@ -484,7 +484,7 @@ void wait_for_packet(Packet &packet, int socket) {
   timeout.tv_sec = UDP_TIMEOUT_SECONDS;  // wait for a response before throwing
   timeout.tv_usec = 0;
 
-  int ready_fd = select(1, &file_descriptors, NULL, NULL, &timeout);
+  int ready_fd = select(socket + 1, &file_descriptors, NULL, NULL, &timeout);
   if (ready_fd == -1) {
     // TODO consider throwing exception instead
     perror("select");

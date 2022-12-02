@@ -79,7 +79,7 @@ void PlayerState::sendUdpPacketAndWaitForReply(Packet &out_packet,
       this->sendUdpPacket(out_packet);
       this->waitForUdpPacket(in_packet);
       return;
-    } catch (std::exception &e) {
+    } catch (ConnectionTimeoutException &e) {
       if (triesLeft == 0) {
         throw;
       }
