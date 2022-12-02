@@ -34,7 +34,7 @@ void CommandManager::registerCommand(std::shared_ptr<CommandHandler> handler) {
 }
 
 void CommandManager::waitForCommand(PlayerState& state) {
-  this->printHelp();
+  print_game_progress(state);
   std::cout << "> ";
 
   std::string line;
@@ -97,7 +97,6 @@ void StartCommand::handle(std::string args, PlayerState& state) {
     state.startGame(game);
     // Output game info
     std::cout << "Game started successfully" << std::endl;
-    print_game_progress(state);
   } else {
     std::cout << "Game failed to start" << std::endl;
   }
@@ -136,8 +135,6 @@ void GuessLetterCommand::handle(std::string args, PlayerState& state) {
       state.game->updateWordChar(rlg.pos[i] - 1, guess);
     }
     std::cout << "Letter guessed successfully" << std::endl;
-    // Output game info
-    print_game_progress(state);
   } else if (rlg.status == GuessLetterClientbound::status::WIN) {
     // Update game state
     for (size_t i = 0; i < state.game->getWordLen(); i++) {
@@ -145,10 +142,10 @@ void GuessLetterCommand::handle(std::string args, PlayerState& state) {
         state.game->updateWordChar(i, guess);
       }
     }
-    state.game->finishGame();
     // Output game info
-    std::cout << "You won!" << std::endl;
     print_game_progress(state);
+    state.game->finishGame();
+    std::cout << "You won!" << std::endl;
   } else if (rlg.status == GuessLetterClientbound::status::DUP) {
     std::cout << "Letter already guessed" << std::endl;
   } else if (rlg.status == GuessLetterClientbound::status::NOK) {
@@ -156,6 +153,7 @@ void GuessLetterCommand::handle(std::string args, PlayerState& state) {
     state.game->updateNumErrors();
   } else if (rlg.status == GuessLetterClientbound::status::OVR) {
     state.game->updateNumErrors();
+    print_game_progress(state);
     state.game->finishGame();
     std::cout << "Game is over" << std::endl;
   } else if (rlg.status == GuessLetterClientbound::status::INV) {
@@ -195,15 +193,16 @@ void GuessWordCommand::handle(std::string args, PlayerState& state) {
     for (size_t i = 0; i < state.game->getWordLen(); i++) {
       state.game->updateWordChar(i, args[i]);
     }
-    state.game->finishGame();
     // Output game info
-    std::cout << "You won!" << std::endl;
     print_game_progress(state);
+    state.game->finishGame();
+    std::cout << "You won!" << std::endl;
   } else if (rwg.status == GuessWordClientbound::status::NOK) {
     state.game->updateNumErrors();
     std::cout << "Word is not the correct one" << std::endl;
   } else if (rwg.status == GuessWordClientbound::status::OVR) {
     state.game->updateNumErrors();
+    print_game_progress(state);
     state.game->finishGame();
     std::cout << "Game is over" << std::endl;
   } else if (rwg.status == GuessWordClientbound::status::INV) {
@@ -318,10 +317,15 @@ bool is_game_active(PlayerState& state) {
 }
 
 void print_game_progress(PlayerState& state) {
-  std::cout << "Word progress: ";
+  if (!state.hasActiveGame()) {
+    return;
+  }
+  std::cout << std::endl << "Word progress: ";
   write_word(std::cout, state.game->getWordProgress(),
              state.game->getWordLen());
   std::cout << std::endl;
   std::cout << "Current trial: " << state.game->getCurrentTrial() << std::endl;
-  std::cout << "Number of errors: " << state.game->getNumErrors() << std::endl;
+  std::cout << "Number of errors: " << state.game->getNumErrors() << "/"
+            << state.game->getMaxErrors() << std::endl
+            << std::endl;
 }

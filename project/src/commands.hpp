@@ -15,9 +15,9 @@ class CommandHandler;
 class CommandManager {
   std::vector<std::shared_ptr<CommandHandler>> handlerList;
   std::unordered_map<std::string, std::shared_ptr<CommandHandler>> handlers;
-  void printHelp();
 
  public:
+  void printHelp();
   void registerCommand(std::shared_ptr<CommandHandler> handler);
   void waitForCommand(PlayerState& state);
 };
@@ -114,4 +114,5 @@ void write_word(std::ostream& stream, char* word, int word_len);
 bool is_game_active(PlayerState& state);
 
 void print_game_progress(PlayerState& state);
+
 #endif

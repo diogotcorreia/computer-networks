@@ -22,6 +22,8 @@ int main(int argc, char *argv[]) {
   CommandManager commandManager;
   registerCommands(commandManager);
 
+  commandManager.printHelp();
+
   while (true) {
     commandManager.waitForCommand(state);
   }
