@@ -387,7 +387,7 @@ std::string TcpPacket::readString(const int fd) {
 
   while (c != ' ') {  // TODO do we need to check for EOF?
     if (read(fd, &c, 1) != 1) {
-      throw new InvalidPacketException();
+      throw InvalidPacketException();
     }
     result += c;
   }
