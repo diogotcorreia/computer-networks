@@ -134,7 +134,10 @@ std::stringstream GuessLetterClientbound::serialize() {
   buffer << GuessLetterClientbound::ID << " ";
   if (status == OK) {
     buffer << "OK"
-           << " " << trial << " " << n << " " << pos;
+           << " " << trial << " " << n;
+    for (auto it = pos.begin(); it != pos.end(); ++it) {
+      buffer << " " << *it;
+    }
   } else if (status == WIN) {
     buffer << "NOK";
   } else if (status == DUP) {
@@ -162,6 +165,7 @@ void GuessLetterClientbound::deserialize(std::stringstream &buffer) {
 
   if (strcmp(success.get(), "ERR") == 0) {
     status = ERR;
+    readPacketDelimiter(buffer);
     return;
   }
 
@@ -172,12 +176,11 @@ void GuessLetterClientbound::deserialize(std::stringstream &buffer) {
     status = OK;
     readSpace(buffer);
     n = readInt(buffer);
-    int *pos_ = new int[n];
+    pos.clear();
     for (int i = 0; i < n; ++i) {
       readSpace(buffer);
-      pos_[i] = readInt(buffer);
+      pos.push_back(readInt(buffer));
     }
-    pos = pos_;
   } else if (strcmp(success.get(), "WIN") == 0) {
     status = WIN;
   } else if (strcmp(success.get(), "DUP") == 0) {
@@ -212,6 +215,7 @@ void GuessWordServerbound::deserialize(std::stringstream &buffer) {
   readSpace(buffer);
   player_id = readInt(buffer);
   readSpace(buffer);
+  // TODO improve the read string method
   guess = readString(buffer, wordLen).get();
   readSpace(buffer);
   trial = readInt(buffer);

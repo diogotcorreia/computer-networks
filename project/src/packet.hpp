@@ -7,6 +7,7 @@
 #include <memory>
 #include <sstream>
 #include <stdexcept>
+#include <vector>
 
 #include "constants.hpp"
 
@@ -116,7 +117,7 @@ class GuessLetterClientbound : public Packet {
   status status;
   int trial;
   int n;
-  int *pos;
+  std::vector<int> pos;
 
   std::stringstream serialize();
   void deserialize(std::stringstream &buffer);
@@ -126,7 +127,7 @@ class GuessWordServerbound : public Packet {
  public:
   static constexpr const char *ID = "PWG";
   int player_id;
-  char *guess;
+  char *guess = NULL;
   int trial;
   int wordLen;
 
