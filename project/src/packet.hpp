@@ -127,13 +127,12 @@ class GuessWordServerbound : public Packet {
  public:
   static constexpr const char *ID = "PWG";
   int player_id;
-  char *guess = NULL;
+  std::string guess;
   int trial;
   int wordLen;
 
   std::stringstream serialize();
   void deserialize(std::stringstream &buffer);
-  ~GuessWordServerbound();
 };
 
 class GuessWordClientbound : public Packet {

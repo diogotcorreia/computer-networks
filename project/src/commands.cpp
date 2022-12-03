@@ -210,7 +210,7 @@ void GuessWordCommand::handle(std::string args, PlayerState& state) {
   packet_out.player_id = state.game->getPlayerId();
   packet_out.trial = state.game->getCurrentTrial();
   packet_out.wordLen = state.game->getWordLen();
-  packet_out.guess = strdup(args.c_str());
+  packet_out.guess = args;
   state.sendPacket(packet_out);
   // Wait for reply
   GuessWordClientbound rwg;

@@ -197,10 +197,6 @@ void GuessLetterClientbound::deserialize(std::stringstream &buffer) {
   readPacketDelimiter(buffer);
 };
 
-GuessWordServerbound::~GuessWordServerbound() {
-  delete[] guess;
-}
-
 std::stringstream GuessWordServerbound::serialize() {
   std::stringstream buffer;
   buffer << GuessWordServerbound::ID << " ";
@@ -216,7 +212,7 @@ void GuessWordServerbound::deserialize(std::stringstream &buffer) {
   player_id = readInt(buffer);
   readSpace(buffer);
   // TODO improve the read string method
-  guess = readString(buffer, wordLen).get();
+  guess.assign(readString(buffer, wordLen).get());
   readSpace(buffer);
   trial = readInt(buffer);
   readPacketDelimiter(buffer);
