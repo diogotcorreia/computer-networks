@@ -18,7 +18,7 @@ PlayerState::~PlayerState() {
 }
 
 bool PlayerState::hasActiveGame() {
-  return this->game != NULL;
+  return this->game != NULL && this->game->getIsActive();
 }
 
 void PlayerState::startGame(ClientGame *game) {
@@ -78,7 +78,7 @@ void PlayerState::sendPacket(Packet &packet) {
 void PlayerState::sendPacket(TcpPacket &packet) {
   if (connect(tcp_socket_fd, server_tcp_addr->ai_addr,
               server_tcp_addr->ai_addrlen) != 0) {
-    throw new ConnectionTimeoutException();
+    throw ConnectionTimeoutException();
   }
   packet.send(tcp_socket_fd);
   // TODO does this need closing?

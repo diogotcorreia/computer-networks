@@ -119,7 +119,7 @@ std::stringstream GuessLetterServerbound::serialize() {
 
 void GuessLetterServerbound::deserialize(std::stringstream &buffer) {
   buffer >> std::noskipws;
-  readPacketId(buffer, GuessLetterServerbound::ID);
+  // Serverbound packets don't read their ID
   readSpace(buffer);
   player_id = readInt(buffer);
   readSpace(buffer);
@@ -131,8 +131,29 @@ void GuessLetterServerbound::deserialize(std::stringstream &buffer) {
 
 std::stringstream GuessLetterClientbound::serialize() {
   std::stringstream buffer;
-  buffer << GuessLetterClientbound::ID << " " << status << " " << trial << " "
-         << n << " " << pos << std::endl;
+  buffer << GuessLetterClientbound::ID << " ";
+  if (status == OK) {
+    buffer << "OK"
+           << " " << trial << " " << n;
+    for (auto it = pos.begin(); it != pos.end(); ++it) {
+      buffer << " " << *it;
+    }
+  } else if (status == WIN) {
+    buffer << "NOK";
+  } else if (status == DUP) {
+    buffer << "DUP";
+  } else if (status == NOK) {
+    buffer << "NOK";
+  } else if (status == OVR) {
+    buffer << "OVR";
+  } else if (status == INV) {
+    buffer << "INV";
+  } else if (status == ERR) {
+    buffer << "ERR";
+  } else {
+    throw PacketSerializationException();
+  }
+  buffer << std::endl;
   return buffer;
 };
 
@@ -141,6 +162,13 @@ void GuessLetterClientbound::deserialize(std::stringstream &buffer) {
   readPacketId(buffer, GuessLetterClientbound::ID);
   readSpace(buffer);
   auto success = readString(buffer, 3);
+
+  if (strcmp(success.get(), "ERR") == 0) {
+    status = ERR;
+    readPacketDelimiter(buffer);
+    return;
+  }
+
   readSpace(buffer);
   trial = readInt(buffer);
 
@@ -148,12 +176,11 @@ void GuessLetterClientbound::deserialize(std::stringstream &buffer) {
     status = OK;
     readSpace(buffer);
     n = readInt(buffer);
-    int pos_[n];
+    pos.clear();
     for (int i = 0; i < n; ++i) {
       readSpace(buffer);
-      pos_[i] = readInt(buffer);
+      pos.push_back(readInt(buffer));
     }
-    pos = pos_;
   } else if (strcmp(success.get(), "WIN") == 0) {
     status = WIN;
   } else if (strcmp(success.get(), "DUP") == 0) {
@@ -164,28 +191,28 @@ void GuessLetterClientbound::deserialize(std::stringstream &buffer) {
     status = OVR;
   } else if (strcmp(success.get(), "INV") == 0) {
     status = INV;
-  } else if (strcmp(success.get(), "ERR") == 0) {
-    status = ERR;
   } else {
     throw InvalidPacketException();
   }
+  readPacketDelimiter(buffer);
 };
 
 std::stringstream GuessWordServerbound::serialize() {
   std::stringstream buffer;
   buffer << GuessWordServerbound::ID << " ";
   write_player_id(buffer, player_id);
-  buffer << " " << guess << std::endl;
+  buffer << " " << guess << " " << trial << std::endl;
   return buffer;
 };
 
-void GuessWordServerbound::deserialize(std::stringstream &buffer, int wordLen) {
+void GuessWordServerbound::deserialize(std::stringstream &buffer) {
   buffer >> std::noskipws;
-  readPacketId(buffer, GuessWordServerbound::ID);
+  // Serverbound packets don't read their ID
   readSpace(buffer);
   player_id = readInt(buffer);
   readSpace(buffer);
-  guess = readString(buffer, wordLen).get();
+  // TODO improve the read string method
+  guess.assign(readString(buffer, wordLen).get());
   readSpace(buffer);
   trial = readInt(buffer);
   readPacketDelimiter(buffer);
@@ -193,56 +220,109 @@ void GuessWordServerbound::deserialize(std::stringstream &buffer, int wordLen) {
 
 std::stringstream GuessWordClientbound::serialize() {
   std::stringstream buffer;
-  buffer << GuessWordClientbound::ID << " " << status << " " << std::endl;
+  buffer << GuessWordClientbound::ID << " ";
+  if (status == WIN) {
+    buffer << "WIN";
+  } else if (status == NOK) {
+    buffer << "NOK";
+  } else if (status == OVR) {
+    buffer << "OVR";
+  } else if (status == INV) {
+    buffer << "INV";
+  } else if (status == ERR) {
+    buffer << "ERR";
+  } else {
+    throw InvalidPacketException();
+  }
+  buffer << std::endl;
   return buffer;
 };
 
 void GuessWordClientbound::deserialize(std::stringstream &buffer) {
   buffer >> std::noskipws;
+
   readPacketId(buffer, GuessWordClientbound::ID);
   readSpace(buffer);
-  auto success = readString(buffer, 3);
+  auto statusString = readString(buffer, 3);
+
+  if (strcmp(statusString.get(), "ERR") == 0) {
+    status = ERR;
+    return;
+  }
+
   readSpace(buffer);
   trial = readInt(buffer);
 
-  if (strcmp(success.get(), "WIN") == 0) {
+  if (strcmp(statusString.get(), "WIN") == 0) {
     status = WIN;
-  } else if (strcmp(success.get(), "NOK") == 0) {
+  } else if (strcmp(statusString.get(), "NOK") == 0) {
     status = NOK;
-  } else if (strcmp(success.get(), "OVR") == 0) {
+  } else if (strcmp(statusString.get(), "OVR") == 0) {
     status = OVR;
-  } else if (strcmp(success.get(), "INV") == 0) {
+  } else if (strcmp(statusString.get(), "INV") == 0) {
     status = INV;
-  } else if (strcmp(success.get(), "ERR") == 0) {
+  } else if (strcmp(statusString.get(), "ERR") == 0) {
     status = ERR;
   } else {
     throw InvalidPacketException();
   }
+  readPacketDelimiter(buffer);
 };
 
 std::stringstream QuitGameServerbound::serialize() {
   std::stringstream buffer;
-  buffer << QuitGameClientbound::ID << " " << player_id << std::endl;
+  buffer << QuitGameServerbound::ID << " ";
+  write_player_id(buffer, player_id);
+  buffer << std::endl;
   return buffer;
 };
 
 void QuitGameServerbound::deserialize(std::stringstream &buffer) {
   buffer >> std::noskipws;
-  readPacketId(buffer, QuitGameClientbound::ID);
+  // Serverbound packets don't read their ID
   readSpace(buffer);
   player_id = readInt(buffer);
   readPacketDelimiter(buffer);
 };
 
+std::stringstream QuitGameClientbound::serialize() {
+  std::stringstream buffer;
+  buffer << QuitGameClientbound::ID << " ";
+  if (success) {
+    buffer << "OK";
+  } else {
+    buffer << "ERR";
+  }
+  buffer << std::endl;
+  return buffer;
+};
+
+void QuitGameClientbound::deserialize(std::stringstream &buffer) {
+  buffer >> std::noskipws;
+  readPacketId(buffer, QuitGameClientbound::ID);
+  readSpace(buffer);
+  auto successString = readString(buffer, 2);
+  if (strcmp(successString.get(), "OK") == 0) {
+    success = true;
+  } else if (strcmp(successString.get(), "ERR") == 0) {
+    success = false;
+  } else {
+    throw InvalidPacketException();
+  }
+  readPacketDelimiter(buffer);
+};
+
 std::stringstream RevealWordServerbound::serialize() {
   std::stringstream buffer;
-  buffer << RevealWordServerbound::ID << " " << player_id << std::endl;
+  buffer << RevealWordServerbound::ID << " ";
+  write_player_id(buffer, player_id);
+  buffer << std::endl;
   return buffer;
 };
 
 void RevealWordServerbound::deserialize(std::stringstream &buffer) {
   buffer >> std::noskipws;
-  readPacketId(buffer, RevealWordServerbound::ID);
+  // Serverbound packets don't read their ID
   readSpace(buffer);
   player_id = readInt(buffer);
   readPacketDelimiter(buffer);
@@ -251,17 +331,16 @@ void RevealWordServerbound::deserialize(std::stringstream &buffer) {
 std::stringstream RevealWordClientbound::serialize() {
   std::stringstream buffer;
   // TODO: check status formatting in buffer
-  buffer << RevealWordClientbound::ID << " " << word << std::endl;
+  buffer << RevealWordClientbound::ID << " " << word.get() << std::endl;
   return buffer;
 };
 
-void RevealWordClientbound::deserialize(std::stringstream &buffer,
-                                        int wordLen) {
+void RevealWordClientbound::deserialize(std::stringstream &buffer) {
   buffer >> std::noskipws;
   readPacketId(buffer, RevealWordClientbound::ID);
   readSpace(buffer);
-  word = readString(buffer, wordLen).get();
-  readPacketDelimiter(buffer);
+  auto readWord = readString(buffer, wordLen);
+  word = std::unique_ptr(std::move(readWord));
 };
 
 void TcpPacket::writeString(int fd, const std::string &str) {
@@ -308,7 +387,7 @@ std::string TcpPacket::readString(const int fd) {
 
   while (c != ' ') {  // TODO do we need to check for EOF?
     if (read(fd, &c, 1) != 1) {
-      throw new InvalidPacketException();
+      throw InvalidPacketException();
     }
     result += c;
   }
