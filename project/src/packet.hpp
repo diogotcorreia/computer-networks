@@ -215,9 +215,8 @@ class ScoreboardServerbound : public TcpPacket {
 };
 
 class ScoreboardClientbound : public TcpPacket {
-  enum status { OK, EMPTY };
-
  public:
+  enum status { OK, EMPTY };
   static constexpr const char *ID = "RSB";
   status status;
   std::string file_name;
@@ -236,9 +235,8 @@ class HintServerbound : public TcpPacket {
 };
 
 class HintClientbound : public TcpPacket {
-  enum status { OK, NOK };
-
  public:
+  enum status { OK, NOK };
   static constexpr const char *ID = "RHL";
   status status;
   std::string file_name;
