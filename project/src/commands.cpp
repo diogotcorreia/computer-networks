@@ -1,28 +1,32 @@
 #include "commands.hpp"
 
 #include <cstring>
+#include <iomanip>
 #include <iostream>
 
 #include "game.hpp"
 #include "packet.hpp"
 
 void CommandManager::printHelp() {
-  std::cout << std::endl << "Available commands:" << std::endl;
+  std::cout << std::endl << "Available commands:" << std::endl << std::left;
 
   for (auto it = this->handlerList.begin(); it != this->handlerList.end();
        ++it) {
     auto handler = *it;
-    std::cout << handler->name;
+    std::ostringstream ss;
+    ss << handler->name;
     if (handler->usage) {
-      std::cout << " " << *handler->usage;
+      ss << " " << *handler->usage;
     }
-    std::cout << "\t" << handler->description;
+    std::cout << std::setw(HELP_MENU_COMMAND_COLUMN_WIDTH) << ss.str();
+    std::cout << std::setw(HELP_MENU_DESCRIPTION_COLUMN_WIDTH)
+              << handler->description;
     if (handler->alias) {
-      std::cout << "\t (Alias: " << *handler->alias << ")";
+      std::cout << "(Alias: " << *handler->alias << ")";
     }
     std::cout << std::endl;
   }
-  std::cout << std::endl;
+  std::cout << std::endl << std::resetiosflags(std::ios_base::basefield);
 }
 
 void CommandManager::registerCommand(std::shared_ptr<CommandHandler> handler) {
