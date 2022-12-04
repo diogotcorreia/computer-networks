@@ -87,10 +87,9 @@ void StartCommand::handle(std::string args, PlayerState& state) {
   // Populate and send packet
   StartGameServerbound packet_out;
   packet_out.player_id = player_id;
-  state.sendPacket(packet_out);
-  // Wait for reply
+
   ReplyStartGameClientbound rsg;
-  state.waitForPacket(rsg);
+  state.sendUdpPacketAndWaitForReply(packet_out, rsg);
 
   // Check status
   if (rsg.success) {
@@ -124,10 +123,9 @@ void GuessLetterCommand::handle(std::string args, PlayerState& state) {
   packet_out.player_id = state.game->getPlayerId();
   packet_out.guess = guess;
   packet_out.trial = state.game->getCurrentTrial();
-  state.sendPacket(packet_out);
-  // Wait for reply
+
   GuessLetterClientbound rlg;
-  state.waitForPacket(rlg);
+  state.sendUdpPacketAndWaitForReply(packet_out, rlg);
 
   // Check packet status
   if (rlg.status == GuessLetterClientbound::status::ERR) {
@@ -211,10 +209,9 @@ void GuessWordCommand::handle(std::string args, PlayerState& state) {
   packet_out.trial = state.game->getCurrentTrial();
   packet_out.wordLen = state.game->getWordLen();
   packet_out.guess = args;
-  state.sendPacket(packet_out);
-  // Wait for reply
+
   GuessWordClientbound rwg;
-  state.waitForPacket(rwg);
+  state.sendUdpPacketAndWaitForReply(packet_out, rwg);
 
   // Check packet status
   if (rwg.status == GuessWordClientbound::status::ERR) {
@@ -270,10 +267,9 @@ void QuitCommand::handle(std::string args, PlayerState& state) {
   // Populate and send packet
   QuitGameServerbound packet_out;
   packet_out.player_id = state.game->getPlayerId();
-  state.sendPacket(packet_out);
-  // Wait for reply
+
   QuitGameClientbound rq;
-  state.waitForPacket(rq);
+  state.sendUdpPacketAndWaitForReply(packet_out, rq);
 
   // Check packet status
   if (rq.success) {
@@ -289,10 +285,10 @@ void ExitCommand::handle(std::string args, PlayerState& state) {
     // Populate and send packet
     QuitGameServerbound packet_out;
     packet_out.player_id = state.game->getPlayerId();
-    state.sendPacket(packet_out);
-    // Wait for reply
+
     QuitGameClientbound rq;
-    state.waitForPacket(rq);
+    state.sendUdpPacketAndWaitForReply(packet_out, rq);
+
     // Check packet status
     if (rq.success) {
       std::cout << "Game quit successfully." << std::endl;
@@ -313,11 +309,12 @@ void RevealCommand::handle(std::string args, PlayerState& state) {
   // Populate and send packet
   RevealWordServerbound packet_out;
   packet_out.player_id = state.game->getPlayerId();
-  state.sendPacket(packet_out);
-  // Wait for reply
+
   RevealWordClientbound rrv;
-  rrv.wordLen = state.game->getWordLen();
-  state.waitForPacket(rrv);
+  rrv.wordLen =
+      state.game->getWordLen();  // TODO length should be infered from request
+  state.sendUdpPacketAndWaitForReply(packet_out, rrv);
+
   std::cout << "Word: " << rrv.word.get() << std::endl;
 }
 

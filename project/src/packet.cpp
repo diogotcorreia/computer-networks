@@ -555,13 +555,29 @@ void send_packet(Packet &packet, int socket, struct sockaddr *address,
 }
 
 void wait_for_packet(Packet &packet, int socket) {
+  fd_set file_descriptors;
+  FD_ZERO(&file_descriptors);
+  FD_SET(socket, &file_descriptors);
+
+  struct timeval timeout;
+  timeout.tv_sec = UDP_TIMEOUT_SECONDS;  // wait for a response before throwing
+  timeout.tv_usec = 0;
+
+  int ready_fd = select(socket + 1, &file_descriptors, NULL, NULL, &timeout);
+  if (ready_fd == -1) {
+    // TODO consider throwing exception instead
+    perror("select");
+    exit(EXIT_FAILURE);
+  } else if (ready_fd == 0) {
+    throw ConnectionTimeoutException();
+  }
+
   std::stringstream data;
   char buffer[SOCKET_BUFFER_LEN];
 
   int n = recvfrom(socket, buffer, SOCKET_BUFFER_LEN, 0, NULL, NULL);
-  // TODO throw exception instead
-  // TODO handle case where UDP response never arrives
   if (n == -1) {
+    // TODO consider throwing exception instead
     perror("recvfrom");
     exit(EXIT_FAILURE);
   }

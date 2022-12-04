@@ -70,7 +70,24 @@ void PlayerState::resolveServerAddress(std::string hostname, std::string port) {
   }
 }
 
-void PlayerState::sendPacket(Packet &packet) {
+void PlayerState::sendUdpPacketAndWaitForReply(Packet &out_packet,
+                                               Packet &in_packet) {
+  int triesLeft = UDP_RESEND_TRIES;
+  while (triesLeft > 0) {
+    --triesLeft;
+    try {
+      this->sendUdpPacket(out_packet);
+      this->waitForUdpPacket(in_packet);
+      return;
+    } catch (ConnectionTimeoutException &e) {
+      if (triesLeft == 0) {
+        throw;
+      }
+    }
+  }
+}
+
+void PlayerState::sendUdpPacket(Packet &packet) {
   send_packet(packet, udp_socket_fd, server_udp_addr->ai_addr,
               server_udp_addr->ai_addrlen);
 }
@@ -84,7 +101,7 @@ void PlayerState::sendPacket(TcpPacket &packet) {
   // TODO does this need closing?
 }
 
-void PlayerState::waitForPacket(Packet &packet) {
+void PlayerState::waitForUdpPacket(Packet &packet) {
   wait_for_packet(packet, udp_socket_fd);
 }
 
