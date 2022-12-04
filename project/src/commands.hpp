@@ -15,9 +15,9 @@ class CommandHandler;
 class CommandManager {
   std::vector<std::shared_ptr<CommandHandler>> handlerList;
   std::unordered_map<std::string, std::shared_ptr<CommandHandler>> handlers;
-  void printHelp();
 
  public:
+  void printHelp();
   void registerCommand(std::shared_ptr<CommandHandler> handler);
   void waitForCommand(PlayerState& state);
 };
@@ -44,6 +44,21 @@ class StartCommand : public CommandHandler {
   StartCommand() : CommandHandler("start", "sg", "PLID", "Start a new game") {}
 };
 
+class GuessLetterCommand : public CommandHandler {
+  void handle(std::string args, PlayerState& state);
+
+ public:
+  GuessLetterCommand()
+      : CommandHandler("play", "pl", "letter", "Guess a letter") {}
+};
+
+class GuessWordCommand : public CommandHandler {
+  void handle(std::string args, PlayerState& state);
+
+ public:
+  GuessWordCommand() : CommandHandler("guess", "gw", "word", "Guess a word") {}
+};
+
 class ScoreboardCommand : public CommandHandler {
   void handle(std::string args, PlayerState& state);
 
@@ -62,6 +77,42 @@ class HintCommand : public CommandHandler {
                        "Get a hint for the current word") {}
 };
 
+class StateCommand : public CommandHandler {
+  void handle(std::string args, PlayerState& state);
+
+ public:
+  StateCommand() : CommandHandler("state", "st", std::nullopt, "Show state") {}
+};
+
+class QuitCommand : public CommandHandler {
+  void handle(std::string args, PlayerState& state);
+
+ public:
+  QuitCommand()
+      : CommandHandler("quit", std::nullopt, std::nullopt, "Quit game") {}
+};
+
+class ExitCommand : public CommandHandler {
+  void handle(std::string args, PlayerState& state);
+
+ public:
+  ExitCommand()
+      : CommandHandler("exit", std::nullopt, std::nullopt, "Exit application") {
+  }
+};
+
+class RevealCommand : public CommandHandler {
+  void handle(std::string args, PlayerState& state);
+
+ public:
+  RevealCommand()
+      : CommandHandler("reveal", "rv", std::nullopt, "Reveal word") {}
+};
+
 void write_word(std::ostream& stream, char* word, int word_len);
+
+bool is_game_active(PlayerState& state);
+
+void print_game_progress(PlayerState& state);
 
 #endif

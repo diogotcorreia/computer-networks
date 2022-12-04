@@ -7,6 +7,7 @@
 #include <memory>
 #include <sstream>
 #include <stdexcept>
+#include <vector>
 
 #include "constants.hpp"
 
@@ -110,14 +111,13 @@ class GuessLetterServerbound : public Packet {
 };
 
 class GuessLetterClientbound : public Packet {
-  enum status { OK, WIN, DUP, NOK, OVR, INV, ERR };
-
  public:
+  enum status { OK, WIN, DUP, NOK, OVR, INV, ERR };
   static constexpr const char *ID = "RLG";
   status status;
   int trial;
   int n;
-  int *pos;
+  std::vector<int> pos;
 
   std::stringstream serialize();
   void deserialize(std::stringstream &buffer);
@@ -127,17 +127,17 @@ class GuessWordServerbound : public Packet {
  public:
   static constexpr const char *ID = "PWG";
   int player_id;
-  char *guess;
+  std::string guess;
   int trial;
+  int wordLen;
 
   std::stringstream serialize();
-  void deserialize(std::stringstream &buffer, int wordLen);
+  void deserialize(std::stringstream &buffer);
 };
 
 class GuessWordClientbound : public Packet {
-  enum status { WIN, NOK, OVR, INV, ERR };
-
  public:
+  enum status { WIN, NOK, OVR, INV, ERR };
   static constexpr const char *ID = "RWG";
   status status;
   int trial;
@@ -176,11 +176,11 @@ class RevealWordServerbound : public Packet {
 class RevealWordClientbound : public Packet {
  public:
   static constexpr const char *ID = "RRV";
-  char *word;
-  bool success;
+  size_t wordLen;
+  std::unique_ptr<char[]> word;
 
   std::stringstream serialize();
-  void deserialize(std::stringstream &buffer, int wordLen);
+  void deserialize(std::stringstream &buffer);
 };
 
 class TcpPacket {
@@ -215,9 +215,8 @@ class ScoreboardServerbound : public TcpPacket {
 };
 
 class ScoreboardClientbound : public TcpPacket {
-  enum status { OK, EMPTY };
-
  public:
+  enum status { OK, EMPTY };
   static constexpr const char *ID = "RSB";
   status status;
   std::string file_name;
@@ -236,9 +235,8 @@ class HintServerbound : public TcpPacket {
 };
 
 class HintClientbound : public TcpPacket {
-  enum status { OK, NOK };
-
  public:
+  enum status { OK, NOK };
   static constexpr const char *ID = "RHL";
   status status;
   std::string file_name;
