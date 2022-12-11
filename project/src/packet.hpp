@@ -234,6 +234,26 @@ class HintServerbound : public TcpPacket {
   void receive(int fd);
 };
 
+class StateServerbound : public TcpPacket {
+ public:
+  static constexpr const char *ID = "STA";
+  int player_id;
+
+  void send(int fd);
+  void receive(int fd);
+};
+
+class StateClientbound : public TcpPacket {
+ public:
+  enum status { ACT, FIN, NOK };
+  static constexpr const char *ID = "RST";
+  status status;
+  std::string file_name;
+
+  void send(int fd);
+  void receive(int fd);
+};
+
 class HintClientbound : public TcpPacket {
  public:
   enum status { OK, NOK };

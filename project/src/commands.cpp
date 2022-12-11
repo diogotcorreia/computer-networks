@@ -369,6 +369,29 @@ void HintCommand::handle(std::string args, PlayerState& state) {
   }
 }
 
+void StateCommand::handle(std::string args, PlayerState& state) {
+  StateServerbound packet_out;
+
+  state.sendPacket(packet_out);
+
+  StateClientbound packet_reply;
+  state.waitForPacket(packet_reply);
+
+  switch (packet_reply.status) {
+    case StateClientbound::status::ACT:
+      std::cout << "There is an active game." << std::endl;
+      std::cout << "Path to file" << packet_reply.file_name << std::endl;
+      break;
+    case StateClientbound::status::FIN:
+      std::cout << "There is a finished game." << std::endl;
+      std::cout << "Path to file" << packet_reply.file_name << std::endl;
+      break;
+    case StateClientbound::status::NOK:
+      std::cout << "Empty scoreboard" << std::endl;
+      break;
+  }
+}
+
 void write_word(std::ostream& stream, char* word, int word_len) {
   for (int i = 0; i < word_len; ++i) {
     if (i != 0) {

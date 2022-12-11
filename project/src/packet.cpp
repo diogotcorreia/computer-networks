@@ -488,6 +488,66 @@ void ScoreboardClientbound::receive(int fd) {
   readPacketDelimiter(fd);
 }
 
+void StateServerbound::send(int fd) {
+  std::stringstream stream;
+  stream << StateServerbound::ID << " ";
+  write_player_id(stream, player_id);
+  stream << std::endl;
+  writeString(fd, stream.str());
+}
+
+void StateServerbound::receive(int fd) {
+  // Serverbound packets don't read their ID
+  readSpace(fd);
+  player_id = readInt(fd);
+  if (player_id < 0 || player_id > PLAYER_ID_MAX) {
+    throw InvalidPacketException();  // TODO maybe need to verify that string is
+                                     // 6 digits
+  }
+  readPacketDelimiter(fd);
+}
+
+void StateClientbound::send(int fd) {
+  std::stringstream stream;
+  stream << StateClientbound::ID << " ";
+  if (status == ACT) {
+    stream << "ACT ";
+    stream << "state.txt 4 "
+           << "test";
+  } else if (status == FIN) {
+    stream << "FIN";
+    stream << "state.txt 4 "
+           << "test";
+  } else if (status == NOK) {
+    stream << "NOK";
+  } else {
+    throw PacketSerializationException();
+  }
+  stream << std::endl;
+  writeString(fd, stream.str());
+}
+
+void StateClientbound::receive(int fd) {
+  readPacketId(fd, StateClientbound::ID);
+  readSpace(fd);
+  auto status = readString(fd);
+  if (status == "ACT") {
+    this->status = ACT;
+  } else if (status == "FIN") {
+    this->status = FIN;
+  } else if (status == "NOK") {
+    this->status = NOK;
+    readPacketDelimiter(fd);
+    return;
+  } else {
+    throw InvalidPacketException();
+  }
+  file_name = readString(fd);
+  int file_size = readInt(fd);  // TODO change to long?
+  readAndSaveToFile(fd, file_name, file_size);
+  readPacketDelimiter(fd);
+}
+
 void HintServerbound::send(int fd) {
   std::stringstream stream;
   stream << HintServerbound::ID << " ";
@@ -501,8 +561,8 @@ void HintServerbound::receive(int fd) {
   readSpace(fd);
   player_id = readInt(fd);
   if (player_id < 0 || player_id > PLAYER_ID_MAX) {
-    throw InvalidPacketException();  // TODO maybe need to verify that string is
-                                     // 6 digits
+    throw InvalidPacketException();  // TODO maybe need to verify that string
+                                     // is 6 digits
   }
   readPacketDelimiter(fd);
 }
