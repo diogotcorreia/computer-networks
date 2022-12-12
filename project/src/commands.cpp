@@ -55,6 +55,10 @@ void CommandManager::waitForCommand(PlayerState& state) {
     line.erase(0, splitIndex + 1);
   }
 
+  if (commandName.length() == 0) {
+    return;
+  }
+
   auto handler = this->handlers.find(commandName);
   if (handler == this->handlers.end()) {
     std::cout << "Unknown command" << std::endl;
