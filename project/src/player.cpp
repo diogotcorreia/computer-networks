@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
 
   commandManager.printHelp();
 
-  while (true) {
+  while (!std::cin.eof()) {
     commandManager.waitForCommand(state);
   }
   return 0;
