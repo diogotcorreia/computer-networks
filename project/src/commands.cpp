@@ -369,6 +369,10 @@ void HintCommand::handle(std::string args, PlayerState& state) {
   }
 }
 
+void HelpCommand::handle(std::string args, PlayerState& state) {
+  manager.printHelp();
+}
+
 void write_word(std::ostream& stream, char* word, int word_len) {
   for (int i = 0; i < word_len; ++i) {
     if (i != 0) {
