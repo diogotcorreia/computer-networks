@@ -369,6 +369,36 @@ void HintCommand::handle(std::string args, PlayerState& state) {
   }
 }
 
+void KillCommand::handle(std::string args, PlayerState& state) {
+  long player_id;
+  // Argument parsing
+  try {
+    size_t converted = 0;
+    player_id = std::stol(args, &converted, 10);
+    if (converted != args.length() || player_id <= 0 ||
+        player_id > PLAYER_ID_MAX) {
+      throw std::runtime_error("invalid player id");
+    }
+  } catch (...) {
+    std::cout << "Invalid player ID. It must be a positive number up to "
+              << PLAYER_ID_MAX_LEN << " digits" << std::endl;
+    return;
+  }
+
+  // Populate and send packet
+  QuitGameServerbound packet_out;
+  packet_out.player_id = player_id;
+
+  QuitGameClientbound rq;
+  state.sendUdpPacketAndWaitForReply(packet_out, rq);
+  // Check packet status
+  if (rq.success) {
+    std::cout << "Killed game successfully." << std::endl;
+  } else {
+    std::cout << "Failed to kill game." << std::endl;
+  }
+}
+
 void write_word(std::ostream& stream, char* word, int word_len) {
   for (int i = 0; i < word_len; ++i) {
     if (i != 0) {

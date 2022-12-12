@@ -39,6 +39,7 @@ void registerCommands(CommandManager &manager) {
   manager.registerCommand(std::make_shared<QuitCommand>());
   manager.registerCommand(std::make_shared<ExitCommand>());
   manager.registerCommand(std::make_shared<RevealCommand>());
+  manager.registerCommand(std::make_shared<KillCommand>());
 }
 
 ClientConfig::ClientConfig(int argc, char *argv[]) {

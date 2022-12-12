@@ -109,6 +109,13 @@ class RevealCommand : public CommandHandler {
       : CommandHandler("reveal", "rv", std::nullopt, "Reveal word") {}
 };
 
+class KillCommand : public CommandHandler {
+  void handle(std::string args, PlayerState& state);
+
+ public:
+  KillCommand() : CommandHandler("kill", "kl", "PLID", "Kill server") {}
+};
+
 void write_word(std::ostream& stream, char* word, int word_len);
 
 bool is_game_active(PlayerState& state);
