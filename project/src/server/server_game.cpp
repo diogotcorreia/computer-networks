@@ -1,22 +1,24 @@
 #include "server_game.hpp"
 
 #include <cstring>
+#include <stdexcept>
 
-ServerGame::ServerGame(int playerId) {
-  this->playerId = playerId;
+ServerGame::ServerGame(uint32_t __playerId) {
+  this->playerId = __playerId;
   // TODO: Get word from file
   word = "test";
-  this->wordLen = strlen(word);
+  size_t word_len = strlen(word);
   // TODO: Get max errors from one liner
-  if (wordLen <= 6) {
+  if (word_len <= 6) {
     this->maxErrors = 7;
-  } else if (wordLen <= 10) {
+  } else if (word_len <= 10) {
     this->maxErrors = 8;
-  } else if (wordLen <= 30) {
+  } else if (word_len <= 30) {
     this->maxErrors = 9;
   } else {
-    // TODO handle exception
+    throw std::runtime_error("word is more than 30 characters");
   }
+  this->wordLen = (uint32_t)word_len;
   this->wordProgress = new char[wordLen];
   memset(this->wordProgress, '_', wordLen);
 }
@@ -27,7 +29,7 @@ ServerGame::~ServerGame() {
 
 bool ServerGame::play(char letter) {
   bool found = false;
-  for (int i = 0; i < wordLen; i++) {
+  for (uint32_t i = 0; i < wordLen; i++) {
     if (word[i] == letter) {
       wordProgress[i] = letter;
       found = true;
@@ -40,8 +42,8 @@ bool ServerGame::play(char letter) {
   return found;
 }
 
-bool ServerGame::guess(char* word) {
-  if (strcmp(this->word, word) == 0) {
+bool ServerGame::guess(char* word_guess) {
+  if (strcmp(this->word, word_guess) == 0) {
     return true;
   }
   this->numErrors++;
@@ -53,7 +55,7 @@ bool ServerGame::isOver() {
   if (numErrors >= maxErrors) {
     return true;
   }
-  for (int i = 0; i < wordLen; i++) {
+  for (uint32_t i = 0; i < wordLen; i++) {
     if (wordProgress[i] == '_') {
       return false;
     }

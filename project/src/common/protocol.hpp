@@ -67,8 +67,9 @@ class Packet {
   void readSpace(std::stringstream &buffer);
   char readChar(std::stringstream &buffer);
   void readPacketDelimiter(std::stringstream &buffer);
-  std::unique_ptr<char[]> readString(std::stringstream &buffer, size_t max_len);
-  int32_t readInt(std::stringstream &buffer);
+  std::unique_ptr<char[]> readString(std::stringstream &buffer,
+                                     uint32_t max_len);
+  uint32_t readInt(std::stringstream &buffer);
 
  public:
   virtual std::stringstream serialize() = 0;
@@ -81,7 +82,7 @@ class Packet {
 class StartGameServerbound : public Packet {
  public:
   static constexpr const char *ID = "SNG";
-  int32_t player_id;
+  uint32_t player_id;
 
   std::stringstream serialize();
   void deserialize(std::stringstream &buffer);
@@ -92,8 +93,8 @@ class ReplyStartGameClientbound : public Packet {
  public:
   static constexpr const char *ID = "RSG";
   bool success;
-  int32_t n_letters;
-  int32_t max_errors;
+  uint32_t n_letters;
+  uint32_t max_errors;
 
   std::stringstream serialize();
   void deserialize(std::stringstream &buffer);
@@ -102,9 +103,9 @@ class ReplyStartGameClientbound : public Packet {
 class GuessLetterServerbound : public Packet {
  public:
   static constexpr const char *ID = "PLG";
-  int player_id;
+  uint32_t player_id;
   char guess;
-  int trial;
+  uint32_t trial;
 
   std::stringstream serialize();
   void deserialize(std::stringstream &buffer);
@@ -115,9 +116,9 @@ class GuessLetterClientbound : public Packet {
   enum status { OK, WIN, DUP, NOK, OVR, INV, ERR };
   static constexpr const char *ID = "RLG";
   status status;
-  int trial;
-  int n;
-  std::vector<int> pos;
+  uint32_t trial;
+  uint32_t n;
+  std::vector<uint32_t> pos;
 
   std::stringstream serialize();
   void deserialize(std::stringstream &buffer);
@@ -126,10 +127,10 @@ class GuessLetterClientbound : public Packet {
 class GuessWordServerbound : public Packet {
  public:
   static constexpr const char *ID = "PWG";
-  int player_id;
+  uint32_t player_id;
   std::string guess;
-  int trial;
-  int wordLen;
+  uint32_t trial;
+  uint32_t wordLen;
 
   std::stringstream serialize();
   void deserialize(std::stringstream &buffer);
@@ -140,7 +141,7 @@ class GuessWordClientbound : public Packet {
   enum status { WIN, NOK, OVR, INV, ERR };
   static constexpr const char *ID = "RWG";
   status status;
-  int trial;
+  uint32_t trial;
 
   std::stringstream serialize();
   void deserialize(std::stringstream &buffer);
@@ -149,7 +150,7 @@ class GuessWordClientbound : public Packet {
 class QuitGameServerbound : public Packet {
  public:
   static constexpr const char *ID = "QUT";
-  int player_id;
+  uint32_t player_id;
 
   std::stringstream serialize();
   void deserialize(std::stringstream &buffer);
@@ -167,7 +168,7 @@ class QuitGameClientbound : public Packet {
 class RevealWordServerbound : public Packet {
  public:
   static constexpr const char *ID = "REV";
-  int player_id;
+  uint32_t player_id;
 
   std::stringstream serialize();
   void deserialize(std::stringstream &buffer);
@@ -176,7 +177,7 @@ class RevealWordServerbound : public Packet {
 class RevealWordClientbound : public Packet {
  public:
   static constexpr const char *ID = "RRV";
-  size_t wordLen;
+  uint32_t wordLen;
   std::unique_ptr<char[]> word;
 
   std::stringstream serialize();
@@ -189,13 +190,13 @@ class TcpPacket {
 
  protected:
   void writeString(int fd, const std::string &str);
-  void writePlayerId(int fd, const int player_id);
+  void writePlayerId(int fd, const uint32_t player_id);
   void readPacketId(int fd, const char *id);
   void readSpace(int fd);
   char readChar(int fd);
   void readPacketDelimiter(int fd);
   std::string readString(const int fd);
-  int32_t readInt(const int fd);
+  uint32_t readInt(const int fd);
   void readAndSaveToFile(const int fd, const std::string &file_name,
                          const size_t file_size);
 
@@ -228,7 +229,7 @@ class ScoreboardClientbound : public TcpPacket {
 class HintServerbound : public TcpPacket {
  public:
   static constexpr const char *ID = "GHL";
-  int player_id;
+  uint32_t player_id;
 
   void send(int fd);
   void receive(int fd);
@@ -237,7 +238,7 @@ class HintServerbound : public TcpPacket {
 class StateServerbound : public TcpPacket {
  public:
   static constexpr const char *ID = "STA";
-  int player_id;
+  uint32_t player_id;
 
   void send(int fd);
   void receive(int fd);
@@ -270,6 +271,6 @@ void send_packet(Packet &packet, int socket, struct sockaddr *address,
 
 void wait_for_packet(Packet &packet, int socket);
 
-void write_player_id(std::stringstream &buffer, const int player_id);
+void write_player_id(std::stringstream &buffer, const uint32_t player_id);
 
 #endif

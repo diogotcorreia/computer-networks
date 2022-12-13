@@ -25,11 +25,11 @@ bool PlayerState::hasGame() {
   return this->game != NULL;
 }
 
-void PlayerState::startGame(ClientGame *game) {
-  if (this->game != game) {
+void PlayerState::startGame(ClientGame *__game) {
+  if (this->game != __game) {
     delete this->game;
   }
-  this->game = game;
+  this->game = __game;
 }
 
 void PlayerState::setupSockets() {

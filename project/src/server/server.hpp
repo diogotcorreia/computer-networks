@@ -16,7 +16,7 @@ typedef void (*PacketHandler)(std::stringstream&, Address&, GameServerState&);
 
 class GameServerState {
   std::unordered_map<std::string, PacketHandler> packet_handlers;
-  std::unordered_map<int, ServerGame> games;
+  std::unordered_map<uint32_t, ServerGame> games;
 
   void setup_sockets();
 
@@ -32,8 +32,8 @@ class GameServerState {
   void registerPacketHandlers();
   void callPacketHandler(std::string packet_id, std::stringstream& stream,
                          Address& addr_from);
-  ServerGame& getGame(int player_id);
-  ServerGame& createGame(int player_id);
+  ServerGame& getGame(uint32_t player_id);
+  ServerGame& createGame(uint32_t player_id);
 };
 
 class Address {

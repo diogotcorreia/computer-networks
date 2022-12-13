@@ -44,10 +44,10 @@ void CommandManager::waitForCommand(PlayerState& state) {
   std::string line;
   std::getline(std::cin, line);
 
-  int splitIndex = line.find(' ');
+  auto splitIndex = line.find(' ');
 
   std::string commandName;
-  if (splitIndex == -1) {
+  if (splitIndex == std::string::npos) {
     commandName = line;
     line = "";
   } else {
@@ -77,15 +77,10 @@ void CommandManager::waitForCommand(PlayerState& state) {
 /* Command handlers */
 
 void StartCommand::handle(std::string args, PlayerState& state) {
-  long player_id;
+  uint32_t player_id;
   // Argument parsing
   try {
-    size_t converted = 0;
-    player_id = std::stol(args, &converted, 10);
-    if (converted != args.length() || player_id <= 0 ||
-        player_id > PLAYER_ID_MAX) {
-      throw std::runtime_error("invalid player id");
-    }
+    player_id = parse_player_id(args);
   } catch (...) {
     std::cout << "Invalid player ID. It must be a positive number up to "
               << PLAYER_ID_MAX_LEN << " digits" << std::endl;
@@ -147,7 +142,7 @@ void GuessLetterCommand::handle(std::string args, PlayerState& state) {
   switch (rlg.status) {
     case GuessLetterClientbound::status::OK:
       // Update game state
-      for (int i = 0; i < rlg.n; i++) {
+      for (uint32_t i = 0; i < rlg.n; i++) {
         state.game->updateWordChar(rlg.pos[i] - 1, guess);
       }
       std::cout << "Letter '" << guess << "' is part of the word!" << std::endl;
@@ -155,7 +150,7 @@ void GuessLetterCommand::handle(std::string args, PlayerState& state) {
 
     case GuessLetterClientbound::status::WIN:
       // Update game state
-      for (size_t i = 0; i < state.game->getWordLen(); i++) {
+      for (uint32_t i = 0; i < state.game->getWordLen(); i++) {
         if (state.game->getWordProgress()[i] == '_') {
           state.game->updateWordChar(i, guess);
         }
@@ -193,6 +188,7 @@ void GuessLetterCommand::handle(std::string args, PlayerState& state) {
                 << std::endl;
       break;
 
+    case GuessLetterClientbound::status::ERR:
     default:
       break;
   }
@@ -232,7 +228,7 @@ void GuessWordCommand::handle(std::string args, PlayerState& state) {
   switch (rwg.status) {
     case GuessWordClientbound::status::WIN:
       // Update game state
-      for (size_t i = 0; i < state.game->getWordLen(); i++) {
+      for (uint32_t i = 0; i < state.game->getWordLen(); i++) {
         state.game->updateWordChar(i, args[i]);
       }
       // Output game info
@@ -261,12 +257,14 @@ void GuessWordCommand::handle(std::string args, PlayerState& state) {
       std::cout << "Communicated wrong trial number" << std::endl;
       break;
 
+    case GuessWordClientbound::status::ERR:
     default:
       break;
   }
 }
 
 void QuitCommand::handle(std::string args, PlayerState& state) {
+  (void)args;  // unused - no args
   // Check if there is a game running
   if (!is_game_active(state)) {
     return;
@@ -289,6 +287,7 @@ void QuitCommand::handle(std::string args, PlayerState& state) {
 }
 
 void ExitCommand::handle(std::string args, PlayerState& state) {
+  (void)args;  // unused - no args
   if (state.hasActiveGame()) {
     // Populate and send packet
     QuitGameServerbound packet_out;
@@ -310,6 +309,7 @@ void ExitCommand::handle(std::string args, PlayerState& state) {
 }
 
 void RevealCommand::handle(std::string args, PlayerState& state) {
+  (void)args;  // unused - no args
   // Check if there is a game running
   if (!is_game_active(state)) {
     return;
@@ -327,6 +327,7 @@ void RevealCommand::handle(std::string args, PlayerState& state) {
 }
 
 void ScoreboardCommand::handle(std::string args, PlayerState& state) {
+  (void)args;  // unused - no args
   ScoreboardServerbound scoreboard_packet;
 
   state.sendPacket(scoreboard_packet);
@@ -344,10 +345,14 @@ void ScoreboardCommand::handle(std::string args, PlayerState& state) {
     case ScoreboardClientbound::status::EMPTY:
       std::cout << "Empty scoreboard" << std::endl;
       break;
+
+    default:
+      break;
   }
 }
 
 void HintCommand::handle(std::string args, PlayerState& state) {
+  (void)args;  // unused - no args
   // Check if there is a game running
   if (!is_game_active(state)) {
     return;
@@ -370,10 +375,14 @@ void HintCommand::handle(std::string args, PlayerState& state) {
     case HintClientbound::status::NOK:
       std::cout << "No hint available :(" << std::endl;
       break;
+
+    default:
+      break;
   }
 }
 
 void StateCommand::handle(std::string args, PlayerState& state) {
+  (void)args;  // unused - no args
   if (!state.hasGame()) {
     std::cout << "You need to start a game to use this command." << std::endl;
     return;
@@ -399,23 +408,23 @@ void StateCommand::handle(std::string args, PlayerState& state) {
       std::cout << "There is no game history available for this player."
                 << std::endl;
       break;
+
+    default:
+      break;
   }
 }
 
 void HelpCommand::handle(std::string args, PlayerState& state) {
+  (void)args;   // unused - no args
+  (void)state;  // unused
   manager.printHelp();
 }
 
 void KillCommand::handle(std::string args, PlayerState& state) {
-  long player_id;
+  uint32_t player_id;
   // Argument parsing
   try {
-    size_t converted = 0;
-    player_id = std::stol(args, &converted, 10);
-    if (converted != args.length() || player_id <= 0 ||
-        player_id > PLAYER_ID_MAX) {
-      throw std::runtime_error("invalid player id");
-    }
+    player_id = parse_player_id(args);
   } catch (...) {
     std::cout << "Invalid player ID. It must be a positive number up to "
               << PLAYER_ID_MAX_LEN << " digits" << std::endl;
@@ -436,8 +445,8 @@ void KillCommand::handle(std::string args, PlayerState& state) {
   }
 }
 
-void write_word(std::ostream& stream, char* word, int word_len) {
-  for (int i = 0; i < word_len; ++i) {
+void write_word(std::ostream& stream, char* word, uint32_t word_len) {
+  for (uint32_t i = 0; i < word_len; ++i) {
     if (i != 0) {
       stream << ' ';
     }
@@ -466,4 +475,15 @@ void print_game_progress(PlayerState& state) {
   std::cout << "Number of errors: " << state.game->getNumErrors() << "/"
             << state.game->getMaxErrors() << std::endl
             << std::endl;
+}
+
+uint32_t parse_player_id(std::string& args) {
+  size_t converted = 0;
+  long player_id = std::stol(args, &converted, 10);
+  if (converted != args.length() || player_id <= 0 ||
+      player_id > PLAYER_ID_MAX) {
+    throw std::runtime_error("invalid player id");
+  }
+
+  return (uint32_t)player_id;
 }
