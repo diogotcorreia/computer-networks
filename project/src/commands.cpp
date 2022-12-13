@@ -374,8 +374,13 @@ void HintCommand::handle(std::string args, PlayerState& state) {
 }
 
 void StateCommand::handle(std::string args, PlayerState& state) {
-  StateServerbound packet_out;
+  if (!state.hasGame()) {
+    std::cout << "You need to start a game to use this command." << std::endl;
+    return;
+  }
 
+  StateServerbound packet_out;
+  packet_out.player_id = state.game->getPlayerId();
   state.sendPacket(packet_out);
 
   StateClientbound packet_reply;

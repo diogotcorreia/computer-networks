@@ -18,9 +18,10 @@ class PlayerState {
   struct addrinfo* server_udp_addr;
   struct addrinfo* server_tcp_addr;
 
-  bool hasActiveGame();
   PlayerState();
   ~PlayerState();
+  bool hasActiveGame();
+  bool hasGame();
   void startGame(ClientGame* game);
   void resolveServerAddress(std::string hostname, std::string port);
   void sendUdpPacketAndWaitForReply(Packet& out_packet, Packet& in_packet);
