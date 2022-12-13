@@ -125,3 +125,7 @@ bool ServerGame::isOver() {
 void ServerGame::setActive(bool active) {
   this->isActive = active;
 }
+
+bool ServerGame::hasStarted() {
+  return this->getCurrentTrial() > 1;
+}
