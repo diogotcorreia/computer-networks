@@ -389,11 +389,11 @@ void StateCommand::handle(std::string args, PlayerState& state) {
   switch (packet_reply.status) {
     case StateClientbound::status::ACT:
       std::cout << "There is an active game." << std::endl;
-      std::cout << "Path to file" << packet_reply.file_name << std::endl;
+      std::cout << "Path to file: " << packet_reply.file_name << std::endl;
       break;
     case StateClientbound::status::FIN:
       std::cout << "There is a finished game." << std::endl;
-      std::cout << "Path to file" << packet_reply.file_name << std::endl;
+      std::cout << "Path to file: " << packet_reply.file_name << std::endl;
       break;
     case StateClientbound::status::NOK:
       std::cout << "There is no game history available for this player."
