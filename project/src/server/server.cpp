@@ -1,4 +1,4 @@
-#include "GS.hpp"
+#include "server.hpp"
 
 #include <arpa/inet.h>
 #include <netdb.h>

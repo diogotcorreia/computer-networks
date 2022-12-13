@@ -4,8 +4,8 @@
 #include <iomanip>
 #include <iostream>
 
-#include "game.hpp"
-#include "packet.hpp"
+#include "client_game.hpp"
+#include "common/packet.hpp"
 
 void CommandManager::printHelp() {
   std::cout << std::endl << "Available commands:" << std::endl << std::left;

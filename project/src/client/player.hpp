@@ -2,9 +2,9 @@
 #define PLAYER_H
 
 #include "commands.hpp"
-#include "constants.hpp"
-#include "game.hpp"
-#include "packet.hpp"
+#include "common/constants.hpp"
+#include "common/game.hpp"
+#include "common/packet.hpp"
 #include "player_state.hpp"
 
 class ClientConfig {
