@@ -1,5 +1,7 @@
-src/GS
-src/player
+src/server/server
+src/client/player
+GS
+player
 
 *.o
 *.zip

@@ -1,30 +1,58 @@
-CC ?= g++
-LD ?= g++
+CC = g++
+CXX = g++
+LD = g++
 
-TARGETS = src/player src/GS
-SOURCES := $(wildcard */*.cpp)
-HEADERS := $(wildcard */*.hpp)
-OBJECTS := $(SOURCES:.cpp=.o)
+INCLUDE_DIRS := src/client src/server src/
+INCLUDES = $(addprefix -I, $(INCLUDE_DIRS))
 
-CPPFLAGS = -std=c++17 -Wall
+TARGETS = src/client/player src/server/server
+TARGET_EXECS = player GS
+
+CLIENT_SOURCES := $(wildcard src/client/*.cpp)
+COMMON_SOURCES := $(wildcard src/common/*.cpp)
+SERVER_SOURCES := $(wildcard src/server/*.cpp)
+SOURCES := $(CLIENT_SOURCES) $(COMMON_SOURCES) $(SERVER_SOURCES)
+
+CLIENT_HEADERS := $(wildcard src/client/*.hpp)
+COMMON_HEADERS := $(wildcard src/common/*.hpp)
+SERVER_HEADERS := $(wildcard src/server/*.hpp)
+HEADERS := $(CLIENT_HEADERS) $(COMMON_HEADERS) $(SERVER_HEADERS)
+
+CLIENT_OBJECTS := $(CLIENT_SOURCES:.cpp=.o)
+COMMON_OBJECTS := $(COMMON_SOURCES:.cpp=.o)
+SERVER_OBJECTS := $(SERVER_SOURCES:.cpp=.o)
+OBJECTS := $(CLIENT_OBJECTS) $(COMMON_OBJECTS) $(SERVER_OBJECTS)
+
+CXXFLAGS = -std=c++17 -Wall
+
+CXXFLAGS += $(INCLUDES)
+LDFLAGS += $(INCLUDES)
+
+vpath # clears VPATH
+vpath %.hpp $(INCLUDE_DIRS)
 
 # Run `make OPTIM=no` to disable -O3
 ifeq ($(strip $(OPTIM)), no)
-	CPPFLAGS += -O0
+	CXXFLAGS += -O0
 else
-	CPPFLAGS += -O3
+	CXXFLAGS += -O3
 endif
 
 # Run `make DEBUG=true` to run with debug symbols
 ifeq ($(strip $(DEBUG)), yes)
-	CPPFLAGS += -g
+	CXXFLAGS += -g
 endif
 
 #LDFLAGS = -fsanitize=address -lasan
 
-.PHONY: all clean fmt
+#CXXFLAGS += -fdiagnostics-color=always -Wall -Werror -Wextra -Wcast-align
+#CXXFLAGS += -Wconversion -Wfloat-equal -Wformat=2 -Wnull-dereference -Wshadow
+#CXXFLAGS += -Wsign-conversion -Wswitch-default -Wswitch-enum -Wundef
+#CXXFLAGS += -Wunreachable-code -Wunused
 
-all: $(TARGETS)
+.PHONY: all clean fmt fmt-check package
+
+all: $(TARGET_EXECS)
 
 fmt: $(SOURCES) $(HEADERS)
 	clang-format -i $^
@@ -32,11 +60,16 @@ fmt: $(SOURCES) $(HEADERS)
 fmt-check: $(SOURCES) $(HEADERS)
 	clang-format -n --Werror $^
 
-src/GS: src/game.o src/packet.o
-src/player: src/commands.o src/game.o src/packet.o src/player_state.o
+src/server/server: $(SERVER_OBJECTS) $(SERVER_HEADERS) $(COMMON_OBJECTS) $(COMMON_HEADERS)
+src/client/player: $(CLIENT_OBJECTS) $(CLIENT_HEADERS) $(COMMON_OBJECTS) $(COMMON_HEADERS)
+
+GS: src/server/server
+	cp src/server/server GS
+player: src/client/player
+	cp src/client/player player
 
 clean:
-	rm -f $(OBJECTS) $(TARGETS) project.zip
+	rm -f $(OBJECTS) $(TARGETS) $(TARGET_EXECS) project.zip
 
 package:
 	zip project.zip $(SOURCES) $(HEADERS) Makefile .clang-format
