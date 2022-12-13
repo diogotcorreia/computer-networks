@@ -6,14 +6,17 @@
 #include <sstream>
 #include <unordered_map>
 
+#include "game.hpp"
 #include "packet.hpp"
 
 class Address;
+class GameServerState;
 
-typedef void (*PacketHandler)(std::stringstream&, Address&);
+typedef void (*PacketHandler)(std::stringstream&, Address&, GameServerState&);
 
 class GameServerState {
   std::unordered_map<std::string, PacketHandler> packet_handlers;
+  std::unordered_map<int, ServerGame> games;
 
   void setup_sockets();
 
@@ -29,6 +32,8 @@ class GameServerState {
   void registerPacketHandlers();
   void callPacketHandler(std::string packet_id, std::stringstream& stream,
                          Address& addr_from);
+  ServerGame& getGame(int player_id);
+  ServerGame& createGame(int player_id);
 };
 
 class Address {
@@ -44,5 +49,15 @@ void wait_for_udp_packet(GameServerState& server_state);
 
 void handle_packet(std::stringstream& buffer, Address& addr_from,
                    GameServerState& server_state);
+
+/** Exceptions **/
+
+// There is an on-going game with a player ID
+class GameAlreadyStartedException : public std::runtime_error {
+ public:
+  GameAlreadyStartedException()
+      : std::runtime_error(
+            "There is already an on-going game with this player ID.") {}
+};
 
 #endif

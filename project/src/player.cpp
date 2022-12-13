@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
 
   commandManager.printHelp();
 
-  while (true) {
+  while (!std::cin.eof()) {
     commandManager.waitForCommand(state);
   }
   return 0;
@@ -40,6 +40,8 @@ void registerCommands(CommandManager &manager) {
   manager.registerCommand(std::make_shared<ExitCommand>());
   manager.registerCommand(std::make_shared<RevealCommand>());
   manager.registerCommand(std::make_shared<StateCommand>());
+  manager.registerCommand(std::make_shared<KillCommand>());
+  manager.registerCommand(std::make_shared<HelpCommand>(manager));
 }
 
 ClientConfig::ClientConfig(int argc, char *argv[]) {

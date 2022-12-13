@@ -37,6 +37,7 @@ class ServerGame : public Game {
   bool guess(char *word);
   bool isOver();
   void setActive(bool active);
+  bool hasStarted();
 };
 
 class ClientGame : public Game {

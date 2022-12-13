@@ -12,32 +12,35 @@
 
 #include <iostream>
 
-#define PORT "8080"
-
 int main() {
   GameServerState state;
   state.registerPacketHandlers();
-  state.resolveServerAddress(PORT);
+  state.resolveServerAddress(DEFAULT_PORT);
 
-  // listen for connections
-
-  std::cout << "Listening for connections" << std::endl;
-
-  // TODO put inside loop
-  // TESTING: receiving and sending a packet
-  wait_for_udp_packet(state);
+  // TODO handle TCP
+  while (true) {
+    // TESTING: receiving and sending a packet
+    wait_for_udp_packet(state);
+  }
 }
 
-void handleStartGame(std::stringstream &buffer, Address &addr_from) {
+void handleStartGame(std::stringstream &buffer, Address &addr_from,
+                     GameServerState &state) {
   StartGameServerbound packet;
   packet.deserialize(buffer);
   // TODO
   printf("Received SNG packet with player_id: %d\n", packet.player_id);
 
   ReplyStartGameClientbound response;
-  response.success = true;
-  response.n_letters = 5;
-  response.max_errors = 5;
+  try {
+    auto game = state.createGame(packet.player_id);
+    response.success = true;
+    response.n_letters = game.getWordLen();
+    response.max_errors = game.getMaxErrors();
+  } catch (GameAlreadyStartedException &e) {
+    response.success = false;
+  }
+
   send_packet(response, addr_from.socket, (struct sockaddr *)&addr_from.addr,
               addr_from.size);
 }
@@ -49,10 +52,8 @@ void GameServerState::registerPacketHandlers() {
 void wait_for_udp_packet(GameServerState &server_state) {
   Address addr_from;
   std::stringstream stream;
-  // TODO: change this to a dynamic buffer
   char buffer[SOCKET_BUFFER_LEN];
 
-  // TODO: change hardcoded len to dynamic buffer size
   addr_from.size = sizeof(addr_from.addr);
   int n = recvfrom(server_state.udp_socket_fd, buffer, SOCKET_BUFFER_LEN, 0,
                    (struct sockaddr *)&addr_from.addr, &addr_from.size);
@@ -146,6 +147,8 @@ void GameServerState::resolveServerAddress(std::string port) {
     perror("Failed to bind TCP address");
     exit(EXIT_FAILURE);
   }
+
+  std::cout << "Listening for connections on port " << port << std::endl;
 }
 
 void GameServerState::callPacketHandler(std::string packet_id,
@@ -157,5 +160,20 @@ void GameServerState::callPacketHandler(std::string packet_id,
     return;
   }
 
-  handler->second(stream, addr_from);
+  handler->second(stream, addr_from, *this);
+}
+
+ServerGame &GameServerState::createGame(int player_id) {
+  auto game = games.find(player_id);
+  if (game != games.end()) {
+    if (game->second.hasStarted()) {
+      throw GameAlreadyStartedException();
+    }
+    return game->second;
+  }
+
+  auto new_game = ServerGame(player_id);
+  games.insert(std::pair(player_id, new_game));
+
+  return games.at(player_id);
 }
