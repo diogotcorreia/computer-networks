@@ -5,7 +5,7 @@
 
 class ClientGame : public Game {
  public:
-  ClientGame(int playerId, int wordLen, int maxErrors);
+  ClientGame(uint32_t playerId, uint32_t wordLen, uint32_t maxErrors);
   ~ClientGame();
   void finishGame();
 };

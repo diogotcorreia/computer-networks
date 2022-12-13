@@ -39,6 +39,10 @@ void handleStartGame(std::stringstream &buffer, Address &addr_from,
     response.max_errors = game.getMaxErrors();
   } catch (GameAlreadyStartedException &e) {
     response.success = false;
+  } catch (std::exception &e) {
+    std::cerr << "There was an unhandled exception that prevented the server "
+                 "from starting a new game:"
+              << e.what() << std::endl;
   }
 
   send_packet(response, addr_from.socket, (struct sockaddr *)&addr_from.addr,
@@ -55,8 +59,8 @@ void wait_for_udp_packet(GameServerState &server_state) {
   char buffer[SOCKET_BUFFER_LEN];
 
   addr_from.size = sizeof(addr_from.addr);
-  int n = recvfrom(server_state.udp_socket_fd, buffer, SOCKET_BUFFER_LEN, 0,
-                   (struct sockaddr *)&addr_from.addr, &addr_from.size);
+  ssize_t n = recvfrom(server_state.udp_socket_fd, buffer, SOCKET_BUFFER_LEN, 0,
+                       (struct sockaddr *)&addr_from.addr, &addr_from.size);
   addr_from.socket = server_state.udp_socket_fd;
   if (n == -1) {
     perror("recvfrom");
@@ -163,7 +167,7 @@ void GameServerState::callPacketHandler(std::string packet_id,
   handler->second(stream, addr_from, *this);
 }
 
-ServerGame &GameServerState::createGame(int player_id) {
+ServerGame &GameServerState::createGame(uint32_t player_id) {
   auto game = games.find(player_id);
   if (game != games.end()) {
     if (game->second.hasStarted()) {

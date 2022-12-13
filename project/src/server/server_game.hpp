@@ -8,7 +8,7 @@ class ServerGame : public Game {
   const char *word;
 
  public:
-  ServerGame(int playerId);
+  ServerGame(uint32_t playerId);
   ~ServerGame();
   bool play(char letter);
   bool guess(char *word);

@@ -4,18 +4,19 @@
 
 #include "protocol.hpp"
 
-size_t Game::getWordLen() {
+uint32_t Game::getWordLen() {
   return wordLen;
 }
-int Game::getMaxErrors() {
+
+uint32_t Game::getMaxErrors() {
   return maxErrors;
 }
 
-int Game::getPlayerId() {
+uint32_t Game::getPlayerId() {
   return playerId;
 }
 
-int Game::getCurrentTrial() {
+uint32_t Game::getCurrentTrial() {
   return currentTrial;
 }
 
@@ -23,7 +24,7 @@ char* Game::getWordProgress() {
   return wordProgress;
 }
 
-int Game::getNumErrors() {
+uint32_t Game::getNumErrors() {
   return numErrors;
 }
 
@@ -31,14 +32,14 @@ bool Game::getIsActive() {
   return isActive;
 }
 
-void Game::updateWordChar(int index, char letter) {
-  if (index >= wordLen || index < 0) {
+void Game::updateWordChar(uint32_t index, char letter) {
+  if (index >= wordLen) {
     return;
   }
   wordProgress[index] = letter;
 }
 
-void Game::updateCurrentTrial(int num) {
+void Game::updateCurrentTrial(uint32_t num) {
   this->currentTrial = num;
 }
 

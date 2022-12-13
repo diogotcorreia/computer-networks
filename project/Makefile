@@ -45,10 +45,22 @@ endif
 
 #LDFLAGS = -fsanitize=address -lasan
 
-#CXXFLAGS += -fdiagnostics-color=always -Wall -Werror -Wextra -Wcast-align
-#CXXFLAGS += -Wconversion -Wfloat-equal -Wformat=2 -Wnull-dereference -Wshadow
-#CXXFLAGS += -Wsign-conversion -Wswitch-default -Wswitch-enum -Wundef
-#CXXFLAGS += -Wunreachable-code -Wunused
+CXXFLAGS += -fdiagnostics-color=always
+CXXFLAGS += -Wall
+CXXFLAGS += -Werror
+CXXFLAGS += -Wextra
+CXXFLAGS += -Wcast-align
+CXXFLAGS += -Wconversion
+CXXFLAGS += -Wfloat-equal
+CXXFLAGS += -Wformat=2
+CXXFLAGS += -Wnull-dereference
+CXXFLAGS += -Wshadow
+CXXFLAGS += -Wsign-conversion
+CXXFLAGS += -Wswitch-default
+CXXFLAGS += -Wswitch-enum
+CXXFLAGS += -Wundef
+CXXFLAGS += -Wunreachable-code
+CXXFLAGS += -Wunused
 
 .PHONY: all clean fmt fmt-check package
 

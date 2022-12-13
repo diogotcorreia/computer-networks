@@ -12,7 +12,7 @@
 void Packet::readPacketId(std::stringstream &buffer, const char *packet_id) {
   char current_char;
   while (*packet_id != '\0') {
-    current_char = buffer.get();
+    buffer >> current_char;
     if (!buffer.good() || current_char != *packet_id) {
       throw UnexpectedPacketException();
     }
@@ -27,7 +27,8 @@ void Packet::readChar(std::stringstream &buffer, char chr) {
 }
 
 char Packet::readChar(std::stringstream &buffer) {
-  char c = buffer.get();
+  char c;
+  buffer >> c;
   if (!buffer.good()) {
     throw InvalidPacketException();
   }
@@ -43,7 +44,7 @@ void Packet::readPacketDelimiter(std::stringstream &buffer) {
 }
 
 std::unique_ptr<char[]> Packet::readString(std::stringstream &buffer,
-                                           size_t max_len) {
+                                           uint32_t max_len) {
   auto str = std::make_unique<char[]>(max_len + 1);
   buffer.get(str.get(), max_len + 1, ' ');
   if (!buffer.good()) {
@@ -52,13 +53,13 @@ std::unique_ptr<char[]> Packet::readString(std::stringstream &buffer,
   return str;
 }
 
-int32_t Packet::readInt(std::stringstream &buffer) {
-  int32_t i;
+uint32_t Packet::readInt(std::stringstream &buffer) {
+  int64_t i;
   buffer >> i;
-  if (!buffer.good()) {
+  if (!buffer.good() || i < 0 || i > INT32_MAX) {
     throw InvalidPacketException();
   }
-  return i;
+  return (uint32_t)i;
 }
 
 // Packet type seriliazation and deserialization methods
@@ -177,7 +178,7 @@ void GuessLetterClientbound::deserialize(std::stringstream &buffer) {
     readSpace(buffer);
     n = readInt(buffer);
     pos.clear();
-    for (int i = 0; i < n; ++i) {
+    for (uint32_t i = 0; i < n; ++i) {
       readSpace(buffer);
       pos.push_back(readInt(buffer));
     }
@@ -397,15 +398,16 @@ std::string TcpPacket::readString(const int fd) {
   return result;
 }
 
-int32_t TcpPacket::readInt(const int fd) {
+uint32_t TcpPacket::readInt(const int fd) {
   std::string int_str = readString(fd);
   try {
     size_t converted = 0;
-    int32_t result = std::stol(int_str, &converted, 10);
-    if (converted != int_str.length() || std::iswspace(int_str.at(0))) {
+    int64_t result = std::stoll(int_str, &converted, 10);
+    if (converted != int_str.length() || std::iswspace((wint_t)int_str.at(0)) ||
+        result < 0 || result > INT32_MAX) {
       throw InvalidPacketException();
     }
-    return result;
+    return (uint32_t)result;
   } catch (InvalidPacketException &ex) {
     throw ex;
   } catch (...) {
@@ -437,7 +439,7 @@ void TcpPacket::readAndSaveToFile(int fd, const std::string &file_name,
       file.close();
       throw IOException();
     }
-    remaining_size -= n;
+    remaining_size -= (size_t)n;
   }
 
   file.close();
@@ -474,13 +476,13 @@ void ScoreboardClientbound::send(int fd) {
 void ScoreboardClientbound::receive(int fd) {
   readPacketId(fd, ScoreboardClientbound::ID);
   readSpace(fd);
-  auto status = readString(fd);
-  if (status == "OK") {
+  auto status_str = readString(fd);
+  if (status_str == "OK") {
     this->status = OK;
     file_name = readString(fd);
-    int file_size = readInt(fd);  // TODO change to long?
+    uint32_t file_size = readInt(fd);
     readAndSaveToFile(fd, file_name, file_size);
-  } else if (status == "EMTPY") {
+  } else if (status_str == "EMTPY") {
     this->status = EMPTY;
   } else {
     throw InvalidPacketException();
@@ -500,7 +502,7 @@ void StateServerbound::receive(int fd) {
   // Serverbound packets don't read their ID
   readSpace(fd);
   player_id = readInt(fd);
-  if (player_id < 0 || player_id > PLAYER_ID_MAX) {
+  if (player_id > PLAYER_ID_MAX) {
     throw InvalidPacketException();  // TODO maybe need to verify that string is
                                      // 6 digits
   }
@@ -530,12 +532,12 @@ void StateClientbound::send(int fd) {
 void StateClientbound::receive(int fd) {
   readPacketId(fd, StateClientbound::ID);
   readSpace(fd);
-  auto status = readString(fd);
-  if (status == "ACT") {
+  auto status_str = readString(fd);
+  if (status_str == "ACT") {
     this->status = ACT;
-  } else if (status == "FIN") {
+  } else if (status_str == "FIN") {
     this->status = FIN;
-  } else if (status == "NOK") {
+  } else if (status_str == "NOK") {
     this->status = NOK;
     readPacketDelimiter(fd);
     return;
@@ -543,7 +545,7 @@ void StateClientbound::receive(int fd) {
     throw InvalidPacketException();
   }
   file_name = readString(fd);
-  int file_size = readInt(fd);  // TODO change to long?
+  uint32_t file_size = readInt(fd);
   readAndSaveToFile(fd, file_name, file_size);
   readPacketDelimiter(fd);
 }
@@ -560,7 +562,7 @@ void HintServerbound::receive(int fd) {
   // Serverbound packets don't read their ID
   readSpace(fd);
   player_id = readInt(fd);
-  if (player_id < 0 || player_id > PLAYER_ID_MAX) {
+  if (player_id > PLAYER_ID_MAX) {
     throw InvalidPacketException();  // TODO maybe need to verify that string
                                      // is 6 digits
   }
@@ -587,13 +589,13 @@ void HintClientbound::send(int fd) {
 void HintClientbound::receive(int fd) {
   readPacketId(fd, HintClientbound::ID);
   readSpace(fd);
-  auto status = readString(fd);
-  if (status == "OK") {
+  auto status_str = readString(fd);
+  if (status_str == "OK") {
     this->status = OK;
     file_name = readString(fd);
-    int file_size = readInt(fd);  // TODO change to long?
+    uint32_t file_size = readInt(fd);
     readAndSaveToFile(fd, file_name, file_size);
-  } else if (status == "NOK") {
+  } else if (status_str == "NOK") {
     this->status = NOK;
   } else {
     throw InvalidPacketException();
@@ -606,8 +608,8 @@ void send_packet(Packet &packet, int socket, struct sockaddr *address,
                  socklen_t addrlen) {
   const std::stringstream buffer = packet.serialize();
   // ERROR HERE: address type changes in client and server
-  int n = sendto(socket, buffer.str().c_str(), buffer.str().length(), 0,
-                 address, addrlen);
+  ssize_t n = sendto(socket, buffer.str().c_str(), buffer.str().length(), 0,
+                     address, addrlen);
   if (n == -1) {
     perror("sendto");
     exit(EXIT_FAILURE);
@@ -635,7 +637,7 @@ void wait_for_packet(Packet &packet, int socket) {
   std::stringstream data;
   char buffer[SOCKET_BUFFER_LEN];
 
-  int n = recvfrom(socket, buffer, SOCKET_BUFFER_LEN, 0, NULL, NULL);
+  ssize_t n = recvfrom(socket, buffer, SOCKET_BUFFER_LEN, 0, NULL, NULL);
   if (n == -1) {
     // TODO consider throwing exception instead
     perror("recvfrom");
@@ -647,7 +649,7 @@ void wait_for_packet(Packet &packet, int socket) {
   packet.deserialize(data);
 }
 
-void write_player_id(std::stringstream &buffer, const int player_id) {
+void write_player_id(std::stringstream &buffer, const uint32_t player_id) {
   buffer << std::setfill('0') << std::setw(PLAYER_ID_MAX_LEN) << player_id;
   buffer.copyfmt(std::ios(NULL));  // reset formatting
 }

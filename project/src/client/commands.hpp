@@ -24,10 +24,13 @@ class CommandManager {
 
 class CommandHandler {
  protected:
-  CommandHandler(const char* name, const std::optional<const char*> alias,
-                 const std::optional<const char*> usage,
-                 const char* description)
-      : name{name}, alias{alias}, usage{usage}, description{description} {}
+  CommandHandler(const char* __name, const std::optional<const char*> __alias,
+                 const std::optional<const char*> __usage,
+                 const char* __description)
+      : name{__name},
+        alias{__alias},
+        usage{__usage},
+        description{__description} {}
 
  public:
   const char* name;
@@ -114,9 +117,9 @@ class HelpCommand : public CommandHandler {
   CommandManager& manager;
 
  public:
-  HelpCommand(CommandManager& manager)
+  HelpCommand(CommandManager& __manager)
       : CommandHandler("help", "h", std::nullopt, "Show command list"),
-        manager(manager) {}
+        manager(__manager) {}
 };
 
 class KillCommand : public CommandHandler {
@@ -126,10 +129,12 @@ class KillCommand : public CommandHandler {
   KillCommand() : CommandHandler("kill", "kl", "PLID", "Kill game on server") {}
 };
 
-void write_word(std::ostream& stream, char* word, int word_len);
+void write_word(std::ostream& stream, char* word, uint32_t word_len);
 
 bool is_game_active(PlayerState& state);
 
 void print_game_progress(PlayerState& state);
+
+uint32_t parse_player_id(std::string& args);
 
 #endif
