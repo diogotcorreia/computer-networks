@@ -2,7 +2,7 @@
 
 #include <cstring>
 
-#include "packet.hpp"
+#include "protocol.hpp"
 
 size_t Game::getWordLen() {
   return wordLen;
