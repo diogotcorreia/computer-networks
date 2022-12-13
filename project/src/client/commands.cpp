@@ -373,6 +373,35 @@ void HintCommand::handle(std::string args, PlayerState& state) {
   }
 }
 
+void StateCommand::handle(std::string args, PlayerState& state) {
+  if (!state.hasGame()) {
+    std::cout << "You need to start a game to use this command." << std::endl;
+    return;
+  }
+
+  StateServerbound packet_out;
+  packet_out.player_id = state.game->getPlayerId();
+  state.sendPacket(packet_out);
+
+  StateClientbound packet_reply;
+  state.waitForPacket(packet_reply);
+
+  switch (packet_reply.status) {
+    case StateClientbound::status::ACT:
+      std::cout << "There is an active game." << std::endl;
+      std::cout << "Path to file: " << packet_reply.file_name << std::endl;
+      break;
+    case StateClientbound::status::FIN:
+      std::cout << "There is a finished game." << std::endl;
+      std::cout << "Path to file: " << packet_reply.file_name << std::endl;
+      break;
+    case StateClientbound::status::NOK:
+      std::cout << "There is no game history available for this player."
+                << std::endl;
+      break;
+  }
+}
+
 void HelpCommand::handle(std::string args, PlayerState& state) {
   manager.printHelp();
 }
