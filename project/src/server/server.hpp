@@ -6,7 +6,7 @@
 #include <sstream>
 #include <unordered_map>
 
-#include "common/packet.hpp"
+#include "common/protocol.hpp"
 #include "server_game.hpp"
 
 class Address;

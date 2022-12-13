@@ -4,7 +4,7 @@
 #include "commands.hpp"
 #include "common/constants.hpp"
 #include "common/game.hpp"
-#include "common/packet.hpp"
+#include "common/protocol.hpp"
 #include "player_state.hpp"
 
 class ClientConfig {

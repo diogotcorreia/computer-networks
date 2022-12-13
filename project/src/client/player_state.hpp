@@ -4,7 +4,7 @@
 #include <netdb.h>
 
 #include "client_game.hpp"
-#include "common/packet.hpp"
+#include "common/protocol.hpp"
 
 class PlayerState {
   void setupSockets();
