@@ -55,6 +55,10 @@ void CommandManager::waitForCommand(PlayerState& state) {
     line.erase(0, splitIndex + 1);
   }
 
+  if (commandName.length() == 0) {
+    return;
+  }
+
   auto handler = this->handlers.find(commandName);
   if (handler == this->handlers.end()) {
     std::cout << "Unknown command" << std::endl;
@@ -366,6 +370,40 @@ void HintCommand::handle(std::string args, PlayerState& state) {
     case HintClientbound::status::NOK:
       std::cout << "No hint available :(" << std::endl;
       break;
+  }
+}
+
+void HelpCommand::handle(std::string args, PlayerState& state) {
+  manager.printHelp();
+}
+
+void KillCommand::handle(std::string args, PlayerState& state) {
+  long player_id;
+  // Argument parsing
+  try {
+    size_t converted = 0;
+    player_id = std::stol(args, &converted, 10);
+    if (converted != args.length() || player_id <= 0 ||
+        player_id > PLAYER_ID_MAX) {
+      throw std::runtime_error("invalid player id");
+    }
+  } catch (...) {
+    std::cout << "Invalid player ID. It must be a positive number up to "
+              << PLAYER_ID_MAX_LEN << " digits" << std::endl;
+    return;
+  }
+
+  // Populate and send packet
+  QuitGameServerbound packet_out;
+  packet_out.player_id = player_id;
+
+  QuitGameClientbound rq;
+  state.sendUdpPacketAndWaitForReply(packet_out, rq);
+  // Check packet status
+  if (rq.success) {
+    std::cout << "Killed game successfully." << std::endl;
+  } else {
+    std::cout << "There is no on-going game or this player." << std::endl;
   }
 }
 
