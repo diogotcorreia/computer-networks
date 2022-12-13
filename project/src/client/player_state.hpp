@@ -3,8 +3,8 @@
 
 #include <netdb.h>
 
-#include "game.hpp"
-#include "packet.hpp"
+#include "client_game.hpp"
+#include "common/protocol.hpp"
 
 class PlayerState {
   void setupSockets();

@@ -1,5 +1,5 @@
-#ifndef PACKET_H
-#define PACKET_H
+#ifndef PROTOCOL_H
+#define PROTOCOL_H
 
 #include <sys/socket.h>
 

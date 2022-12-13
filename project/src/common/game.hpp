@@ -26,25 +26,4 @@ class Game {
   bool getIsActive();
 };
 
-class ServerGame : public Game {
- private:
-  const char *word;
-
- public:
-  ServerGame(int playerId);
-  ~ServerGame();
-  bool play(char letter);
-  bool guess(char *word);
-  bool isOver();
-  void setActive(bool active);
-  bool hasStarted();
-};
-
-class ClientGame : public Game {
- public:
-  ClientGame(int playerId, int wordLen, int maxErrors);
-  ~ClientGame();
-  void finishGame();
-};
-
 #endif

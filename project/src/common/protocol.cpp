@@ -1,4 +1,4 @@
-#include "packet.hpp"
+#include "protocol.hpp"
 
 #include <sys/types.h>
 #include <unistd.h>

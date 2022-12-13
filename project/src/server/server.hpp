@@ -1,13 +1,13 @@
-#ifndef GS_H
-#define GS_H
+#ifndef SERVER_H
+#define SERVER_H
 
 #include <netdb.h>
 
 #include <sstream>
 #include <unordered_map>
 
-#include "game.hpp"
-#include "packet.hpp"
+#include "common/protocol.hpp"
+#include "server_game.hpp"
 
 class Address;
 class GameServerState;
