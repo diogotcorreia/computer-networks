@@ -165,8 +165,11 @@ void GameServerState::callPacketHandler(std::string packet_id,
 
 ServerGame &GameServerState::createGame(int player_id) {
   auto game = games.find(player_id);
-  if (game != games.end() && game->second.hasStarted()) {
-    throw GameAlreadyStartedException();
+  if (game != games.end()) {
+    if (game->second.hasStarted()) {
+      throw GameAlreadyStartedException();
+    }
+    return game->second;
   }
 
   auto new_game = ServerGame(player_id);
