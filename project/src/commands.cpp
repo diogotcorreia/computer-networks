@@ -55,6 +55,10 @@ void CommandManager::waitForCommand(PlayerState& state) {
     line.erase(0, splitIndex + 1);
   }
 
+  if (commandName.length() == 0) {
+    return;
+  }
+
   auto handler = this->handlers.find(commandName);
   if (handler == this->handlers.end()) {
     std::cout << "Unknown command" << std::endl;
@@ -369,6 +373,10 @@ void HintCommand::handle(std::string args, PlayerState& state) {
   }
 }
 
+void HelpCommand::handle(std::string args, PlayerState& state) {
+  manager.printHelp();
+}
+
 void KillCommand::handle(std::string args, PlayerState& state) {
   long player_id;
   // Argument parsing
@@ -395,7 +403,7 @@ void KillCommand::handle(std::string args, PlayerState& state) {
   if (rq.success) {
     std::cout << "Killed game successfully." << std::endl;
   } else {
-    std::cout << "Failed to kill game." << std::endl;
+    std::cout << "There is no on-going game or this player." << std::endl;
   }
 }
 
