@@ -465,7 +465,7 @@ void ScoreboardClientbound::send(int fd) {
     stream << "scoreboard.txt 4 "
            << "test";
   } else if (status == EMPTY) {
-    stream << "EMPTY ";
+    stream << "EMPTY";
   } else {
     throw PacketSerializationException();
   }
@@ -578,7 +578,7 @@ void HintClientbound::send(int fd) {
     stream << "hint.txt 4 "
            << "test";
   } else if (status == NOK) {
-    stream << "NOK ";
+    stream << "NOK";
   } else {
     throw PacketSerializationException();
   }
