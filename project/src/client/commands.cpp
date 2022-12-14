@@ -138,13 +138,13 @@ void GuessLetterCommand::handle(std::string args, PlayerState& state) {
     return;
   }
 
-  state.game->updateCurrentTrial(rlg.trial + 1);
   switch (rlg.status) {
     case GuessLetterClientbound::status::OK:
       // Update game state
-      for (uint32_t i = 0; i < rlg.n; i++) {
-        state.game->updateWordChar(rlg.pos[i] - 1, guess);
+      for (auto it = rlg.pos.begin(); it != rlg.pos.end(); ++it) {
+        state.game->updateWordChar(*it - 1, guess);
       }
+      state.game->increaseTrial();
       std::cout << "Letter '" << guess << "' is part of the word!" << std::endl;
       break;
 
@@ -155,6 +155,7 @@ void GuessLetterCommand::handle(std::string args, PlayerState& state) {
           state.game->updateWordChar(i, guess);
         }
       }
+      state.game->increaseTrial();
       // Output game info
       print_game_progress(state);
       state.game->finishGame();
@@ -170,11 +171,13 @@ void GuessLetterCommand::handle(std::string args, PlayerState& state) {
     case GuessLetterClientbound::status::NOK:
       std::cout << "Letter '" << guess << "' is NOT part of the word."
                 << std::endl;
+      state.game->increaseTrial();
       state.game->updateNumErrors();
       break;
 
     case GuessLetterClientbound::status::OVR:
       state.game->updateNumErrors();
+      state.game->increaseTrial();
       print_game_progress(state);
       state.game->finishGame();
       std::cout << "Letter '" << guess << "' is NOT part of the word."
@@ -224,13 +227,13 @@ void GuessWordCommand::handle(std::string args, PlayerState& state) {
     return;
   }
 
-  state.game->updateCurrentTrial(rwg.trial + 1);
   switch (rwg.status) {
     case GuessWordClientbound::status::WIN:
       // Update game state
       for (uint32_t i = 0; i < state.game->getWordLen(); i++) {
         state.game->updateWordChar(i, args[i]);
       }
+      state.game->increaseTrial();
       // Output game info
       print_game_progress(state);
       state.game->finishGame();
@@ -240,12 +243,14 @@ void GuessWordCommand::handle(std::string args, PlayerState& state) {
 
     case GuessWordClientbound::status::NOK:
       state.game->updateNumErrors();
+      state.game->increaseTrial();
       std::cout << "Word '" << args << "' is NOT the correct word."
                 << std::endl;
       break;
 
     case GuessWordClientbound::status::OVR:
       state.game->updateNumErrors();
+      state.game->increaseTrial();
       std::cout << "Word '" << args << "' is NOT the correct word."
                 << std::endl;
       print_game_progress(state);
