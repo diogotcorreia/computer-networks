@@ -135,20 +135,20 @@ std::stringstream GuessLetterClientbound::serialize() {
   buffer << GuessLetterClientbound::ID << " ";
   if (status == OK) {
     buffer << "OK"
-           << " " << trial << " " << n;
+           << " " << trial << " " << pos.size();
     for (auto it = pos.begin(); it != pos.end(); ++it) {
       buffer << " " << *it;
     }
   } else if (status == WIN) {
-    buffer << "NOK";
+    buffer << "WIN " << trial;
   } else if (status == DUP) {
-    buffer << "DUP";
+    buffer << "DUP " << trial;
   } else if (status == NOK) {
-    buffer << "NOK";
+    buffer << "NOK " << trial;
   } else if (status == OVR) {
-    buffer << "OVR";
+    buffer << "OVR " << trial;
   } else if (status == INV) {
-    buffer << "INV";
+    buffer << "INV " << trial;
   } else if (status == ERR) {
     buffer << "ERR";
   } else {
@@ -176,7 +176,7 @@ void GuessLetterClientbound::deserialize(std::stringstream &buffer) {
   if (strcmp(success.get(), "OK") == 0) {
     status = OK;
     readSpace(buffer);
-    n = readInt(buffer);
+    uint32_t n = readInt(buffer);
     pos.clear();
     for (uint32_t i = 0; i < n; ++i) {
       readSpace(buffer);

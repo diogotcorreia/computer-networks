@@ -21,6 +21,7 @@ GameServerState::~GameServerState() {
 
 void GameServerState::registerPacketHandlers() {
   packet_handlers.insert({StartGameServerbound::ID, handle_start_game});
+  packet_handlers.insert({GuessLetterServerbound::ID, handle_guess_letter});
 }
 
 void GameServerState::setup_sockets() {
@@ -104,4 +105,13 @@ ServerGame &GameServerState::createGame(uint32_t player_id) {
   games.insert(std::pair(player_id, new_game));
 
   return games.at(player_id);
+}
+
+ServerGame &GameServerState::getGame(uint32_t player_id) {
+  auto game = games.find(player_id);
+  if (game == games.end()) {
+    throw NoGameFoundException();
+  }
+
+  return game->second;
 }

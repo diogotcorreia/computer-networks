@@ -8,8 +8,9 @@ void handle_start_game(std::stringstream &buffer, Address &addr_from,
                        GameServerState &state) {
   StartGameServerbound packet;
   packet.deserialize(buffer);
-  // TODO
-  printf("Received SNG packet with player_id: %d\n", packet.player_id);
+
+  state.cdebug << "Received request to start new game from player '"
+               << packet.player_id << "'" << std::endl;
 
   ReplyStartGameClientbound response;
   try {
@@ -23,6 +24,51 @@ void handle_start_game(std::stringstream &buffer, Address &addr_from,
     std::cerr << "There was an unhandled exception that prevented the server "
                  "from starting a new game:"
               << e.what() << std::endl;
+    return;
+  }
+
+  send_packet(response, addr_from.socket, (struct sockaddr *)&addr_from.addr,
+              addr_from.size);
+}
+
+void handle_guess_letter(std::stringstream &buffer, Address &addr_from,
+                         GameServerState &state) {
+  GuessLetterServerbound packet;
+  packet.deserialize(buffer);
+
+  state.cdebug << "Received request to guess letter '" << packet.guess
+               << "' from player '" << packet.player_id << "'" << std::endl;
+
+  GuessLetterClientbound response;
+  try {
+    ServerGame &game = state.getGame(packet.player_id);
+    response.trial = game.getCurrentTrial();
+    auto found = game.guessLetter(packet.guess, packet.trial);
+
+    if (game.hasLost()) {
+      response.status = GuessLetterClientbound::status::OVR;
+    } else if (found.size() == 0) {
+      response.status = GuessLetterClientbound::status::NOK;
+    } else if (game.hasWon()) {
+      response.status = GuessLetterClientbound::status::WIN;
+    } else {
+      response.status = GuessLetterClientbound::status::OK;
+    }
+    response.pos = found;
+  } catch (NoGameFoundException &e) {
+    response.status = GuessLetterClientbound::status::ERR;
+  } catch (DuplicateLetterGuessException &e) {
+    response.status = GuessLetterClientbound::status::DUP;
+    response.trial -= 1;
+  } catch (InvalidTrialException &e) {
+    response.status = GuessLetterClientbound::status::INV;
+  } catch (GameHasEndedException &e) {
+    response.status = GuessLetterClientbound::status::ERR;
+  } catch (std::exception &e) {
+    std::cerr << "There was an unhandled exception that prevented the server "
+                 "from starting a new game:"
+              << e.what() << std::endl;
+    return;
   }
 
   send_packet(response, addr_from.socket, (struct sockaddr *)&addr_from.addr,

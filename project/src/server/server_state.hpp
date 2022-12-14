@@ -3,6 +3,7 @@
 
 #include <netdb.h>
 
+#include <iostream>
 #include <sstream>
 #include <unordered_map>
 
@@ -13,6 +14,42 @@ class Address {
   int socket;
   struct sockaddr_in addr;
   socklen_t size;
+};
+
+class DebugStream {
+  bool active;
+
+ public:
+  DebugStream(bool __active) : active{__active} {};
+
+  template <class T>
+  DebugStream& operator<<(T val) {
+    if (active) {
+      std::cout << val;
+    }
+    return *this;
+  }
+
+  DebugStream& operator<<(std::ostream& (*f)(std::ostream&)) {
+    if (active) {
+      f(std::cout);
+    }
+    return *this;
+  }
+
+  DebugStream& operator<<(std::ostream& (*f)(std::ios&)) {
+    if (active) {
+      f(std::cout);
+    }
+    return *this;
+  }
+
+  DebugStream& operator<<(std::ostream& (*f)(std::ios_base&)) {
+    if (active) {
+      f(std::cout);
+    }
+    return *this;
+  }
 };
 
 class GameServerState;
@@ -30,6 +67,7 @@ class GameServerState {
   int tcp_socket_fd;
   struct addrinfo* server_udp_addr;
   struct addrinfo* server_tcp_addr;
+  DebugStream cdebug = DebugStream(true);
 
   GameServerState();
   ~GameServerState();
@@ -49,6 +87,13 @@ class GameAlreadyStartedException : public std::runtime_error {
   GameAlreadyStartedException()
       : std::runtime_error(
             "There is already an on-going game with this player ID.") {}
+};
+
+// There is no on-going game with a player ID
+class NoGameFoundException : public std::runtime_error {
+ public:
+  NoGameFoundException()
+      : std::runtime_error("There is no on-going game with this player ID.") {}
 };
 
 #endif

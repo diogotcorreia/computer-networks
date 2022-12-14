@@ -117,7 +117,6 @@ class GuessLetterClientbound : public Packet {
   static constexpr const char *ID = "RLG";
   status status;
   uint32_t trial;
-  uint32_t n;
   std::vector<uint32_t> pos;
 
   std::stringstream serialize();
