@@ -1,6 +1,7 @@
 #include "commands.hpp"
 
 #include <cstring>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 
@@ -337,9 +338,7 @@ void ScoreboardCommand::handle(std::string args, PlayerState& state) {
 
   switch (packet_reply.status) {
     case ScoreboardClientbound::status::OK:
-      std::cout << "Received scoreboard and saved to file." << std::endl;
-      std::cout << "Path: " << packet_reply.file_name << std::endl;
-      // TODO print scoreboard (?)
+      display_file(packet_reply.file_name);
       break;
 
     case ScoreboardClientbound::status::EMPTY:
@@ -397,12 +396,10 @@ void StateCommand::handle(std::string args, PlayerState& state) {
 
   switch (packet_reply.status) {
     case StateClientbound::status::ACT:
-      std::cout << "There is an active game." << std::endl;
-      std::cout << "Path to file: " << packet_reply.file_name << std::endl;
+      display_file(packet_reply.file_name);
       break;
     case StateClientbound::status::FIN:
-      std::cout << "There is a finished game." << std::endl;
-      std::cout << "Path to file: " << packet_reply.file_name << std::endl;
+      display_file(packet_reply.file_name);
       break;
     case StateClientbound::status::NOK:
       std::cout << "There is no game history available for this player."
@@ -486,4 +483,11 @@ uint32_t parse_player_id(std::string& args) {
   }
 
   return (uint32_t)player_id;
+}
+
+void display_file(std::string filename) {
+  std::ifstream f(filename);
+  if (f.is_open()) {
+    std::cout << f.rdbuf();
+  }
 }
