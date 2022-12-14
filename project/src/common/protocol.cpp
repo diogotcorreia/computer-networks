@@ -9,7 +9,7 @@
 #include <iostream>
 #include <string>
 
-void Packet::readPacketId(std::stringstream &buffer, const char *packet_id) {
+void UdpPacket::readPacketId(std::stringstream &buffer, const char *packet_id) {
   char current_char;
   while (*packet_id != '\0') {
     buffer >> current_char;
@@ -20,13 +20,13 @@ void Packet::readPacketId(std::stringstream &buffer, const char *packet_id) {
   }
 }
 
-void Packet::readChar(std::stringstream &buffer, char chr) {
+void UdpPacket::readChar(std::stringstream &buffer, char chr) {
   if (readChar(buffer) != chr) {
     throw InvalidPacketException();
   }
 }
 
-char Packet::readChar(std::stringstream &buffer) {
+char UdpPacket::readChar(std::stringstream &buffer) {
   char c;
   buffer >> c;
   if (!buffer.good()) {
@@ -35,16 +35,16 @@ char Packet::readChar(std::stringstream &buffer) {
   return c;
 }
 
-void Packet::readSpace(std::stringstream &buffer) {
+void UdpPacket::readSpace(std::stringstream &buffer) {
   readChar(buffer, ' ');
 }
 
-void Packet::readPacketDelimiter(std::stringstream &buffer) {
+void UdpPacket::readPacketDelimiter(std::stringstream &buffer) {
   readChar(buffer, '\n');
 }
 
-std::unique_ptr<char[]> Packet::readString(std::stringstream &buffer,
-                                           uint32_t max_len) {
+std::unique_ptr<char[]> UdpPacket::readString(std::stringstream &buffer,
+                                              uint32_t max_len) {
   auto str = std::make_unique<char[]>(max_len + 1);
   buffer.get(str.get(), max_len + 1, ' ');
   if (!buffer.good()) {
@@ -53,7 +53,7 @@ std::unique_ptr<char[]> Packet::readString(std::stringstream &buffer,
   return str;
 }
 
-uint32_t Packet::readInt(std::stringstream &buffer) {
+uint32_t UdpPacket::readInt(std::stringstream &buffer) {
   int64_t i;
   buffer >> i;
   if (!buffer.good() || i < 0 || i > INT32_MAX) {
@@ -604,7 +604,7 @@ void HintClientbound::receive(int fd) {
 }
 
 // Packet sending and receiving
-void send_packet(Packet &packet, int socket, struct sockaddr *address,
+void send_packet(UdpPacket &packet, int socket, struct sockaddr *address,
                  socklen_t addrlen) {
   const std::stringstream buffer = packet.serialize();
   // ERROR HERE: address type changes in client and server
@@ -616,7 +616,7 @@ void send_packet(Packet &packet, int socket, struct sockaddr *address,
   }
 }
 
-void wait_for_packet(Packet &packet, int socket) {
+void wait_for_packet(UdpPacket &packet, int socket) {
   fd_set file_descriptors;
   FD_ZERO(&file_descriptors);
   FD_SET(socket, &file_descriptors);

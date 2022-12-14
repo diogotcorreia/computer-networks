@@ -16,8 +16,7 @@ int main(int argc, char *argv[]) {
     config.printHelp(std::cout);
     exit(EXIT_SUCCESS);
   }
-  PlayerState state;
-  state.resolveServerAddress(config.host, config.port);
+  PlayerState state(config.host, config.port);
 
   CommandManager commandManager;
   registerCommands(commandManager);
