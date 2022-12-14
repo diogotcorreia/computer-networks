@@ -494,6 +494,10 @@ uint32_t parse_player_id(std::string& args) {
 void display_file(std::string filename) {
   std::ifstream f(filename);
   if (f.is_open()) {
-    std::cout << f.rdbuf();
+    std::cout << f.rdbuf() << std::endl;
+  } else {
+    std::cout
+        << "Failed to open file to display. Please open the file manually."
+        << filename << std::endl;
   }
 }
