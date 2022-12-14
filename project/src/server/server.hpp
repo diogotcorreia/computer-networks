@@ -43,7 +43,7 @@ class Address {
   socklen_t size;
 };
 
-void handleStartGame(Packet& packet);
+void handleStartGame(UdpPacket& packet);
 
 void wait_for_udp_packet(GameServerState& server_state);
 
