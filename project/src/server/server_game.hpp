@@ -6,6 +6,7 @@
 
 #include "common/game.hpp"
 
+// TODO add mutex
 class ServerGame : public Game {
  private:
   std::string word;

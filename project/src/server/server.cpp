@@ -1,6 +1,7 @@
 #include "server.hpp"
 
 #include <iostream>
+#include <thread>
 
 #include "common/constants.hpp"
 
@@ -9,10 +10,21 @@ int main() {
   state.registerPacketHandlers();
   state.resolveServerAddress(DEFAULT_PORT);
 
-  // TODO handle TCP
+  std::thread tcp_thread(main_tcp, std::ref(state));
+  // TODO gracefully stop server
   while (true) {
     // TESTING: receiving and sending a packet
     wait_for_udp_packet(state);
+  }
+
+  // TODO find a way to signal the TCP thread to stop gracefully
+  tcp_thread.join();
+}
+
+void main_tcp(GameServerState &state) {
+  // TODO gracefully stop server
+  while (true) {
+    wait_for_tcp_packet(state);
   }
 }
 
@@ -48,5 +60,11 @@ void handle_packet(std::stringstream &buffer, Address &addr_from,
 
   std::string packet_id_str = std::string(packet_id);
 
+  // TODO add exception catch to send back ERR response
   server_state.callPacketHandler(packet_id_str, buffer, addr_from);
+}
+
+void wait_for_tcp_packet(GameServerState &server_state) {
+  (void)server_state;
+  // TODO
 }
