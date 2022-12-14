@@ -58,7 +58,7 @@ class IOException : public std::runtime_error {
             "IO error while reading/writting from/to filesystem") {}
 };
 
-class Packet {
+class UdpPacket {
  private:
   void readChar(std::stringstream &buffer, char chr);
 
@@ -75,11 +75,11 @@ class Packet {
   virtual std::stringstream serialize() = 0;
   virtual void deserialize(std::stringstream &buffer) = 0;
 
-  virtual ~Packet() = default;
+  virtual ~UdpPacket() = default;
 };
 
 // Start New Game Packet (SNG)
-class StartGameServerbound : public Packet {
+class StartGameServerbound : public UdpPacket {
  public:
   static constexpr const char *ID = "SNG";
   uint32_t player_id;
@@ -89,7 +89,7 @@ class StartGameServerbound : public Packet {
 };
 
 // Reply to Start Game Packet (RSG)
-class ReplyStartGameClientbound : public Packet {
+class ReplyStartGameClientbound : public UdpPacket {
  public:
   static constexpr const char *ID = "RSG";
   bool success;
@@ -100,7 +100,7 @@ class ReplyStartGameClientbound : public Packet {
   void deserialize(std::stringstream &buffer);
 };
 
-class GuessLetterServerbound : public Packet {
+class GuessLetterServerbound : public UdpPacket {
  public:
   static constexpr const char *ID = "PLG";
   uint32_t player_id;
@@ -111,20 +111,19 @@ class GuessLetterServerbound : public Packet {
   void deserialize(std::stringstream &buffer);
 };
 
-class GuessLetterClientbound : public Packet {
+class GuessLetterClientbound : public UdpPacket {
  public:
   enum status { OK, WIN, DUP, NOK, OVR, INV, ERR };
   static constexpr const char *ID = "RLG";
   status status;
   uint32_t trial;
-  uint32_t n;
   std::vector<uint32_t> pos;
 
   std::stringstream serialize();
   void deserialize(std::stringstream &buffer);
 };
 
-class GuessWordServerbound : public Packet {
+class GuessWordServerbound : public UdpPacket {
  public:
   static constexpr const char *ID = "PWG";
   uint32_t player_id;
@@ -136,7 +135,7 @@ class GuessWordServerbound : public Packet {
   void deserialize(std::stringstream &buffer);
 };
 
-class GuessWordClientbound : public Packet {
+class GuessWordClientbound : public UdpPacket {
  public:
   enum status { WIN, NOK, OVR, INV, ERR };
   static constexpr const char *ID = "RWG";
@@ -147,7 +146,7 @@ class GuessWordClientbound : public Packet {
   void deserialize(std::stringstream &buffer);
 };
 
-class QuitGameServerbound : public Packet {
+class QuitGameServerbound : public UdpPacket {
  public:
   static constexpr const char *ID = "QUT";
   uint32_t player_id;
@@ -156,7 +155,7 @@ class QuitGameServerbound : public Packet {
   void deserialize(std::stringstream &buffer);
 };
 
-class QuitGameClientbound : public Packet {
+class QuitGameClientbound : public UdpPacket {
  public:
   static constexpr const char *ID = "RQT";
   bool success;
@@ -165,7 +164,7 @@ class QuitGameClientbound : public Packet {
   void deserialize(std::stringstream &buffer);
 };
 
-class RevealWordServerbound : public Packet {
+class RevealWordServerbound : public UdpPacket {
  public:
   static constexpr const char *ID = "REV";
   uint32_t player_id;
@@ -174,7 +173,7 @@ class RevealWordServerbound : public Packet {
   void deserialize(std::stringstream &buffer);
 };
 
-class RevealWordClientbound : public Packet {
+class RevealWordClientbound : public UdpPacket {
  public:
   static constexpr const char *ID = "RRV";
   uint32_t wordLen;
@@ -266,10 +265,10 @@ class HintClientbound : public TcpPacket {
   void receive(int fd);
 };
 
-void send_packet(Packet &packet, int socket, struct sockaddr *address,
+void send_packet(UdpPacket &packet, int socket, struct sockaddr *address,
                  socklen_t addrlen);
 
-void wait_for_packet(Packet &packet, int socket);
+void wait_for_packet(UdpPacket &packet, int socket);
 
 void write_player_id(std::stringstream &buffer, const uint32_t player_id);
 

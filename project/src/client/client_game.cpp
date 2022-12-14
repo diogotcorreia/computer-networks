@@ -15,6 +15,21 @@ ClientGame::~ClientGame() {
   delete[] this->wordProgress;
 }
 
-void ClientGame::finishGame() {
-  this->isActive = false;
+char* ClientGame::getWordProgress() {
+  return wordProgress;
+}
+
+void ClientGame::updateWordChar(uint32_t index, char letter) {
+  if (index >= wordLen) {
+    return;
+  }
+  wordProgress[index] = letter;
+}
+
+void ClientGame::increaseTrial() {
+  ++this->currentTrial;
+}
+
+void ClientGame::updateNumErrors() {
+  this->numErrors++;
 }

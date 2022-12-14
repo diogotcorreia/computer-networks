@@ -20,29 +20,14 @@ uint32_t Game::getCurrentTrial() {
   return currentTrial;
 }
 
-char* Game::getWordProgress() {
-  return wordProgress;
-}
-
 uint32_t Game::getNumErrors() {
   return numErrors;
 }
 
-bool Game::getIsActive() {
-  return isActive;
+bool Game::isOnGoing() {
+  return onGoing;
 }
 
-void Game::updateWordChar(uint32_t index, char letter) {
-  if (index >= wordLen) {
-    return;
-  }
-  wordProgress[index] = letter;
-}
-
-void Game::updateCurrentTrial(uint32_t num) {
-  this->currentTrial = num;
-}
-
-void Game::updateNumErrors() {
-  this->numErrors++;
+void Game::finishGame() {
+  onGoing = false;
 }
