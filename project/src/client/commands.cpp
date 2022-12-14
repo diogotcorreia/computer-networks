@@ -338,6 +338,8 @@ void ScoreboardCommand::handle(std::string args, PlayerState& state) {
 
   switch (packet_reply.status) {
     case ScoreboardClientbound::status::OK:
+      std::cout << "Received scoreboard and saved to file." << std::endl;
+      std::cout << "Path: " << packet_reply.file_name << std::endl;
       display_file(packet_reply.file_name);
       break;
 
@@ -396,9 +398,13 @@ void StateCommand::handle(std::string args, PlayerState& state) {
 
   switch (packet_reply.status) {
     case StateClientbound::status::ACT:
+      std::cout << "There is an active game." << std::endl;
+      std::cout << "Path to file: " << packet_reply.file_name << std::endl;
       display_file(packet_reply.file_name);
       break;
     case StateClientbound::status::FIN:
+      std::cout << "There is a finished game." << std::endl;
+      std::cout << "Path to file: " << packet_reply.file_name << std::endl;
       display_file(packet_reply.file_name);
       break;
     case StateClientbound::status::NOK:
