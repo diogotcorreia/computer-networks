@@ -328,13 +328,14 @@ void RevealCommand::handle(std::string args, PlayerState& state) {
 
 void ScoreboardCommand::handle(std::string args, PlayerState& state) {
   (void)args;  // unused - no args
+  state.openTCPSocket();
   ScoreboardServerbound scoreboard_packet;
 
   state.sendPacket(scoreboard_packet);
 
   ScoreboardClientbound packet_reply;
   state.waitForPacket(packet_reply);
-
+  state.closeTCPSocket();
   switch (packet_reply.status) {
     case ScoreboardClientbound::status::OK:
       std::cout << "Received scoreboard and saved to file." << std::endl;
@@ -358,6 +359,7 @@ void HintCommand::handle(std::string args, PlayerState& state) {
     return;
   }
 
+  state.openTCPSocket();
   // Populate and send packet
   HintServerbound hint_packet;
   hint_packet.player_id = state.game->getPlayerId();
@@ -365,6 +367,7 @@ void HintCommand::handle(std::string args, PlayerState& state) {
   // Wait for reply
   HintClientbound packet_reply;
   state.waitForPacket(packet_reply);
+  state.closeTCPSocket();
 
   switch (packet_reply.status) {
     case HintClientbound::status::OK:
@@ -388,12 +391,14 @@ void StateCommand::handle(std::string args, PlayerState& state) {
     return;
   }
 
+  state.openTCPSocket();
   StateServerbound packet_out;
   packet_out.player_id = state.game->getPlayerId();
   state.sendPacket(packet_out);
 
   StateClientbound packet_reply;
   state.waitForPacket(packet_reply);
+  state.closeTCPSocket();
 
   switch (packet_reply.status) {
     case StateClientbound::status::ACT:

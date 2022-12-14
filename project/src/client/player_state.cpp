@@ -39,13 +39,6 @@ void PlayerState::setupSockets() {
     perror("Failed to create a UDP socket");
     exit(EXIT_FAILURE);
   }
-
-  // Create a TCP socket
-  if ((this->tcp_socket_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-    // TODO consider using exceptions (?)
-    perror("Failed to create a TCP socket");
-    exit(EXIT_FAILURE);
-  }
 }
 
 void PlayerState::resolveServerAddress(std::string hostname, std::string port) {
@@ -112,4 +105,20 @@ void PlayerState::waitForUdpPacket(Packet &packet) {
 void PlayerState::waitForPacket(TcpPacket &packet) {
   packet.receive(tcp_socket_fd);
   // TODO does this need closing?
+}
+
+void PlayerState::openTCPSocket() {
+  if ((this->tcp_socket_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+    // TODO consider using exceptions (?)
+    perror("Failed to create a TCP socket");
+    exit(EXIT_FAILURE);
+  }
+}
+
+void PlayerState::closeTCPSocket() {
+  if (close(this->tcp_socket_fd) != 0) {
+    // TODO consider using exceptions (?)
+    perror("Failed to close TCP socket");
+    exit(EXIT_FAILURE);
+  }
 }

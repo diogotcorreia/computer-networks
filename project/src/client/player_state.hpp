@@ -27,6 +27,8 @@ class PlayerState {
   void sendUdpPacketAndWaitForReply(Packet& out_packet, Packet& in_packet);
   void sendPacket(TcpPacket& packet);
   void waitForPacket(TcpPacket& packet);
+  void openTCPSocket();
+  void closeTCPSocket();
 };
 
 #endif
