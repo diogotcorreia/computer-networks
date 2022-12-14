@@ -139,13 +139,13 @@ void GuessLetterCommand::handle(std::string args, PlayerState& state) {
     return;
   }
 
-  state.game->updateCurrentTrial(rlg.trial + 1);
   switch (rlg.status) {
     case GuessLetterClientbound::status::OK:
       // Update game state
-      for (uint32_t i = 0; i < rlg.n; i++) {
-        state.game->updateWordChar(rlg.pos[i] - 1, guess);
+      for (auto it = rlg.pos.begin(); it != rlg.pos.end(); ++it) {
+        state.game->updateWordChar(*it - 1, guess);
       }
+      state.game->increaseTrial();
       std::cout << "Letter '" << guess << "' is part of the word!" << std::endl;
       break;
 
@@ -156,6 +156,7 @@ void GuessLetterCommand::handle(std::string args, PlayerState& state) {
           state.game->updateWordChar(i, guess);
         }
       }
+      state.game->increaseTrial();
       // Output game info
       print_game_progress(state);
       state.game->finishGame();
@@ -171,11 +172,13 @@ void GuessLetterCommand::handle(std::string args, PlayerState& state) {
     case GuessLetterClientbound::status::NOK:
       std::cout << "Letter '" << guess << "' is NOT part of the word."
                 << std::endl;
+      state.game->increaseTrial();
       state.game->updateNumErrors();
       break;
 
     case GuessLetterClientbound::status::OVR:
       state.game->updateNumErrors();
+      state.game->increaseTrial();
       print_game_progress(state);
       state.game->finishGame();
       std::cout << "Letter '" << guess << "' is NOT part of the word."
@@ -225,13 +228,13 @@ void GuessWordCommand::handle(std::string args, PlayerState& state) {
     return;
   }
 
-  state.game->updateCurrentTrial(rwg.trial + 1);
   switch (rwg.status) {
     case GuessWordClientbound::status::WIN:
       // Update game state
       for (uint32_t i = 0; i < state.game->getWordLen(); i++) {
         state.game->updateWordChar(i, args[i]);
       }
+      state.game->increaseTrial();
       // Output game info
       print_game_progress(state);
       state.game->finishGame();
@@ -241,12 +244,14 @@ void GuessWordCommand::handle(std::string args, PlayerState& state) {
 
     case GuessWordClientbound::status::NOK:
       state.game->updateNumErrors();
+      state.game->increaseTrial();
       std::cout << "Word '" << args << "' is NOT the correct word."
                 << std::endl;
       break;
 
     case GuessWordClientbound::status::OVR:
       state.game->updateNumErrors();
+      state.game->increaseTrial();
       std::cout << "Word '" << args << "' is NOT the correct word."
                 << std::endl;
       print_game_progress(state);
@@ -329,13 +334,11 @@ void RevealCommand::handle(std::string args, PlayerState& state) {
 
 void ScoreboardCommand::handle(std::string args, PlayerState& state) {
   (void)args;  // unused - no args
+
   ScoreboardServerbound scoreboard_packet;
-
-  state.sendPacket(scoreboard_packet);
-
   ScoreboardClientbound packet_reply;
-  state.waitForPacket(packet_reply);
 
+  state.sendTcpPacketAndWaitForReply(scoreboard_packet, packet_reply);
   switch (packet_reply.status) {
     case ScoreboardClientbound::status::OK:
       std::cout << "Received scoreboard and saved to file." << std::endl;
@@ -359,13 +362,11 @@ void HintCommand::handle(std::string args, PlayerState& state) {
     return;
   }
 
-  // Populate and send packet
   HintServerbound hint_packet;
   hint_packet.player_id = state.game->getPlayerId();
-  state.sendPacket(hint_packet);
-  // Wait for reply
   HintClientbound packet_reply;
-  state.waitForPacket(packet_reply);
+
+  state.sendTcpPacketAndWaitForReply(hint_packet, packet_reply);
 
   switch (packet_reply.status) {
     case HintClientbound::status::OK:
@@ -391,10 +392,9 @@ void StateCommand::handle(std::string args, PlayerState& state) {
 
   StateServerbound packet_out;
   packet_out.player_id = state.game->getPlayerId();
-  state.sendPacket(packet_out);
 
   StateClientbound packet_reply;
-  state.waitForPacket(packet_reply);
+  state.sendTcpPacketAndWaitForReply(packet_out, packet_reply);
 
   switch (packet_reply.status) {
     case StateClientbound::status::ACT:

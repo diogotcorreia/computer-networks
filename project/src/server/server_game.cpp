@@ -19,30 +19,62 @@ ServerGame::ServerGame(uint32_t __playerId) {
     throw std::runtime_error("word is more than 30 characters");
   }
   this->wordLen = (uint32_t)word_len;
-  this->wordProgress = new char[wordLen];
-  memset(this->wordProgress, '_', wordLen);
+  this->lettersRemaining = wordLen;
 }
 
 ServerGame::~ServerGame() {
   // TODO
 }
 
-bool ServerGame::play(char letter) {
-  bool found = false;
+// indexes start at 1
+std::vector<uint32_t> ServerGame::getIndexesOfLetter(char letter) {
+  std::vector<uint32_t> found_indexes;
   for (uint32_t i = 0; i < wordLen; i++) {
     if (word[i] == letter) {
-      wordProgress[i] = letter;
-      found = true;
+      found_indexes.push_back(i + 1);
     }
   }
-  if (!found) {
+  return found_indexes;
+}
+
+std::vector<uint32_t> ServerGame::guessLetter(char letter, uint32_t trial) {
+  if (!isOnGoing()) {
+    throw GameHasEndedException();
+  }
+
+  if (trial != 0 && trial == plays.size()) {
+    // replaying of last guess
+    if (letter != plays.at(trial - 1)) {
+      throw InvalidTrialException();
+    }
+
+    return getIndexesOfLetter(letter);
+  }
+
+  if (trial != plays.size() + 1) {
+    throw InvalidTrialException();
+  }
+
+  for (auto it = plays.begin(); it != plays.end(); ++it) {
+    // check if it is duplicate play
+    if (letter == *it) {
+      throw DuplicateLetterGuessException();
+    }
+  }
+
+  plays.push_back(letter);
+  auto found_indexes = getIndexesOfLetter(letter);
+  if (found_indexes.size() == 0) {
     numErrors++;
   }
   currentTrial++;
-  return found;
+  lettersRemaining -= (uint32_t)found_indexes.size();
+  return found_indexes;
 }
 
-bool ServerGame::guess(char* word_guess) {
+bool ServerGame::guessWord(char* word_guess, uint32_t trial) {
+  (void)trial;
+  // TODO
   if (strcmp(this->word, word_guess) == 0) {
     return true;
   }
@@ -51,21 +83,12 @@ bool ServerGame::guess(char* word_guess) {
   return false;
 }
 
-bool ServerGame::isOver() {
-  if (numErrors >= maxErrors) {
-    return true;
-  }
-  for (uint32_t i = 0; i < wordLen; i++) {
-    if (wordProgress[i] == '_') {
-      return false;
-    }
-  }
-  setActive(false);
-  return true;
+bool ServerGame::hasLost() {
+  return numErrors >= maxErrors;
 }
 
-void ServerGame::setActive(bool active) {
-  this->isActive = active;
+bool ServerGame::hasWon() {
+  return lettersRemaining == 0;
 }
 
 bool ServerGame::hasStarted() {
