@@ -19,7 +19,7 @@ PlayerState::~PlayerState() {
 }
 
 bool PlayerState::hasActiveGame() {
-  return hasGame() && this->game->getIsActive();
+  return hasGame() && this->game->isOnGoing();
 }
 
 bool PlayerState::hasGame() {
