@@ -1,13 +1,19 @@
 #include "server.hpp"
 
+#include <unistd.h>
+
 #include <iostream>
 
 #include "common/constants.hpp"
 
-int main() {
-  GameServerState state;
+int main(int argc, char *argv[]) {
+  ServerConfig config(argc, argv);
+  if (config.help) {
+    config.printHelp(std::cout);
+    exit(EXIT_SUCCESS);
+  }
+  GameServerState state(config.word_file_path, config.port, config.verbose);
   state.registerPacketHandlers();
-  state.resolveServerAddress(DEFAULT_PORT);
 
   // TODO handle TCP
   while (true) {
@@ -49,4 +55,58 @@ void handle_packet(std::stringstream &buffer, Address &addr_from,
   std::string packet_id_str = std::string(packet_id);
 
   server_state.callPacketHandler(packet_id_str, buffer, addr_from);
+}
+
+ServerConfig::ServerConfig(int argc, char *argv[]) {
+  program_path = argv[0];
+  word_file_path = std::string(argv[1]);
+  int opt;
+  bool port_set = false;
+
+  opterr = 0;
+  while ((opt = getopt(argc, argv, "p:vh")) != -1) {
+    switch (opt) {
+      case 'p':
+        port = std::string(optarg);
+        port_set = true;
+        break;
+      case 'h':
+        help = true;
+        return;
+        break;
+      case 'v':
+        verbose = true;
+        break;
+      default:
+        std::cerr << "Unknown argument -" << (char)optopt << std::endl
+                  << std::endl;
+        printHelp(std::cerr);
+        exit(EXIT_FAILURE);
+    }
+  }
+  if (port_set && optind >= argc) {
+    std::cerr << "Error: -p flag requires a port argument" << std::endl;
+    std::cerr << "Usage: " << argv[0] << " [file_path] [-p port] [-v] [-h]"
+              << std::endl;
+    exit(EXIT_FAILURE);
+  }
+  if (verbose && optind >= argc) {
+    std::cerr << "Error: -v flag requires a file path argument" << std::endl;
+    std::cerr << "Usage: " << argv[0] << " [file_path] [-p port] [-v] [-h]"
+              << std::endl;
+    exit(EXIT_FAILURE);
+  }
+  if (optind < argc) {
+    word_file_path = std::string(argv[optind]);
+  }
+}
+
+void ServerConfig::printHelp(std::ostream &stream) {
+  stream << "Usage: " << program_path << " [file_path] [-p GSport] [-v]"
+         << std::endl;
+  stream << "Available arguments:" << std::endl;
+  stream << "file_path\tPath of the word file" << std::endl;
+  stream << "-p GSport\tSet port of Game Server. Default: " << DEFAULT_PORT
+         << std::endl;
+  stream << "-h\t\tEnable verbose mode." << std::endl;
 }
