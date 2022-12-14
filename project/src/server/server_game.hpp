@@ -8,9 +8,10 @@
 
 class ServerGame : public Game {
  private:
-  const char *word;
+  std::string word;
   uint32_t lettersRemaining;
   std::vector<char> plays;
+  std::vector<std::string> word_guesses;
 
   std::vector<uint32_t> getIndexesOfLetter(char letter);
 
@@ -18,7 +19,7 @@ class ServerGame : public Game {
   ServerGame(uint32_t playerId);
   ~ServerGame();
   std::vector<uint32_t> guessLetter(char letter, uint32_t trial);
-  bool guessWord(char *word, uint32_t trial);
+  bool guessWord(std::string &word, uint32_t trial);
   bool hasLost();
   bool hasWon();
   bool hasStarted();

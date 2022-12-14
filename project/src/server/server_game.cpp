@@ -7,7 +7,7 @@ ServerGame::ServerGame(uint32_t __playerId) {
   this->playerId = __playerId;
   // TODO: Get word from file
   word = "test";
-  size_t word_len = strlen(word);
+  size_t word_len = word.size();
   // TODO: Get max errors from one liner
   if (word_len <= 6) {
     this->maxErrors = 7;
@@ -69,17 +69,42 @@ std::vector<uint32_t> ServerGame::guessLetter(char letter, uint32_t trial) {
   }
   currentTrial++;
   lettersRemaining -= (uint32_t)found_indexes.size();
+  if (hasWon() || hasLost()) {
+    onGoing = false;
+  }
   return found_indexes;
 }
 
-bool ServerGame::guessWord(char* word_guess, uint32_t trial) {
-  (void)trial;
-  // TODO
-  if (strcmp(this->word, word_guess) == 0) {
+bool ServerGame::guessWord(std::string &word_guess, uint32_t trial) {
+  if (!isOnGoing()) {
+    throw GameHasEndedException();
+  }
+
+  if (word_guesses.size() > 0 && trial == plays.size() &&
+      *(plays.end() - 1) == 0) {
+    // replaying of last guess
+    if (*(word_guesses.end() - 1) != word_guess) {
+      throw InvalidTrialException();
+    }
+
+    return word == word_guess;
+  }
+
+  if (trial != plays.size() + 1) {
+    throw InvalidTrialException();
+  }
+
+  plays.push_back(0);
+  currentTrial++;
+  if (word == word_guess) {
+    lettersRemaining = 0;
+    onGoing = false;
     return true;
   }
-  this->numErrors++;
-  this->currentTrial++;
+  numErrors++;
+  if (hasLost()) {
+    onGoing = false;
+  }
   return false;
 }
 

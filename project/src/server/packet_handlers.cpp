@@ -66,7 +66,45 @@ void handle_guess_letter(std::stringstream &buffer, Address &addr_from,
     response.status = GuessLetterClientbound::status::ERR;
   } catch (std::exception &e) {
     std::cerr << "There was an unhandled exception that prevented the server "
-                 "from starting a new game:"
+                 "from handling a letter guess:"
+              << e.what() << std::endl;
+    return;
+  }
+
+  send_packet(response, addr_from.socket, (struct sockaddr *)&addr_from.addr,
+              addr_from.size);
+}
+
+void handle_guess_word(std::stringstream &buffer, Address &addr_from,
+                       GameServerState &state) {
+  GuessWordServerbound packet;
+  packet.deserialize(buffer);
+
+  state.cdebug << "Received request to guess word '" << packet.guess
+               << "' from player '" << packet.player_id << "'" << std::endl;
+
+  GuessWordClientbound response;
+  try {
+    ServerGame &game = state.getGame(packet.player_id);
+    response.trial = game.getCurrentTrial();
+    bool correct = game.guessWord(packet.guess, packet.trial);
+
+    if (game.hasLost()) {
+      response.status = GuessWordClientbound::status::OVR;
+    } else if (correct) {
+      response.status = GuessWordClientbound::status::WIN;
+    } else {
+      response.status = GuessWordClientbound::status::NOK;
+    }
+  } catch (NoGameFoundException &e) {
+    response.status = GuessWordClientbound::status::ERR;
+  } catch (InvalidTrialException &e) {
+    response.status = GuessWordClientbound::status::INV;
+  } catch (GameHasEndedException &e) {
+    response.status = GuessWordClientbound::status::ERR;
+  } catch (std::exception &e) {
+    std::cerr << "There was an unhandled exception that prevented the server "
+                 "from handling a word guess:"
               << e.what() << std::endl;
     return;
   }

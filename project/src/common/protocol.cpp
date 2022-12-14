@@ -223,13 +223,13 @@ std::stringstream GuessWordClientbound::serialize() {
   std::stringstream buffer;
   buffer << GuessWordClientbound::ID << " ";
   if (status == WIN) {
-    buffer << "WIN";
+    buffer << "WIN " << trial;
   } else if (status == NOK) {
-    buffer << "NOK";
+    buffer << "NOK " << trial;
   } else if (status == OVR) {
-    buffer << "OVR";
+    buffer << "OVR " << trial;
   } else if (status == INV) {
-    buffer << "INV";
+    buffer << "INV " << trial;
   } else if (status == ERR) {
     buffer << "ERR";
   } else {
