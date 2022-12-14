@@ -497,7 +497,7 @@ void display_file(std::string filename) {
     std::cout << f.rdbuf() << std::endl;
   } else {
     std::cout
-        << "Failed to open file to display. Please open the file manually."
+        << "Failed to open file to display. Please open the file manually:"
         << filename << std::endl;
   }
 }
