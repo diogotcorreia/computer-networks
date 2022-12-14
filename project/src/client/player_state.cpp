@@ -4,7 +4,7 @@
 
 #include <cstring>
 
-PlayerState::PlayerState(std::string hostname, std::string port) {
+PlayerState::PlayerState(std::string &hostname, std::string &port) {
   this->setupSockets();
   this->resolveServerAddress(hostname, port);
 }
@@ -42,7 +42,8 @@ void PlayerState::setupSockets() {
   }
 }
 
-void PlayerState::resolveServerAddress(std::string hostname, std::string port) {
+void PlayerState::resolveServerAddress(std::string &hostname,
+                                       std::string &port) {
   struct addrinfo hints;
   const char *host = hostname.c_str();
   const char *port_str = port.c_str();

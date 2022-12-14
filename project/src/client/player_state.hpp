@@ -13,7 +13,7 @@ class PlayerState {
   struct addrinfo* server_tcp_addr;
 
   void setupSockets();
-  void resolveServerAddress(std::string hostname, std::string port);
+  void resolveServerAddress(std::string& hostname, std::string& port);
   void sendUdpPacket(UdpPacket& packet);
   void waitForUdpPacket(UdpPacket& packet);
   void openTcpSocket();
@@ -24,7 +24,7 @@ class PlayerState {
  public:
   ClientGame* game = NULL;
 
-  PlayerState(std::string hostname, std::string port);
+  PlayerState(std::string& hostname, std::string& port);
   ~PlayerState();
   bool hasActiveGame();
   bool hasGame();
