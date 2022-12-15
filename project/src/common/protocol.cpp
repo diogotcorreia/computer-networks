@@ -35,6 +35,17 @@ char UdpPacket::readChar(std::stringstream &buffer) {
   return c;
 }
 
+char UdpPacket::readASCIIChar(std::stringstream &buffer) {
+  char c;
+  buffer >> c;
+  c = (char)tolower(c);
+
+  if (!buffer.good() || islower(c) == 0) {
+    throw InvalidPacketException();
+  }
+  return c;
+}
+
 void UdpPacket::readSpace(std::stringstream &buffer) {
   readChar(buffer, ' ');
 }
@@ -49,6 +60,18 @@ std::unique_ptr<char[]> UdpPacket::readString(std::stringstream &buffer,
   buffer.get(str.get(), max_len + 1, ' ');
   if (!buffer.good()) {
     throw InvalidPacketException();
+  }
+  return str;
+}
+
+std::unique_ptr<char[]> UdpPacket::readAsciiString(std::stringstream &buffer,
+                                                   uint32_t max_len) {
+  auto str = readString(buffer, max_len);
+  for (uint32_t i = 0; i < max_len; ++i) {
+    str[i] = (char)tolower(str[i]);
+    if (islower(str[i]) == 0) {
+      throw InvalidPacketException();
+    }
   }
   return str;
 }
@@ -124,7 +147,7 @@ void GuessLetterServerbound::deserialize(std::stringstream &buffer) {
   readSpace(buffer);
   player_id = readInt(buffer);
   readSpace(buffer);
-  guess = readChar(buffer);
+  guess = readASCIIChar(buffer);
   readSpace(buffer);
   trial = readInt(buffer);
   readPacketDelimiter(buffer);
@@ -213,7 +236,7 @@ void GuessWordServerbound::deserialize(std::stringstream &buffer) {
   player_id = readInt(buffer);
   readSpace(buffer);
   // TODO improve the read string method
-  guess.assign(readString(buffer, wordLen).get());
+  guess.assign(readAsciiString(buffer, wordLen).get());
   readSpace(buffer);
   trial = readInt(buffer);
   readPacketDelimiter(buffer);
@@ -340,7 +363,7 @@ void RevealWordClientbound::deserialize(std::stringstream &buffer) {
   buffer >> std::noskipws;
   readPacketId(buffer, RevealWordClientbound::ID);
   readSpace(buffer);
-  auto readWord = readString(buffer, wordLen);
+  auto readWord = readAsciiString(buffer, wordLen);
   word = std::unique_ptr(std::move(readWord));
 };
 
