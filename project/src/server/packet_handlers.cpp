@@ -112,3 +112,29 @@ void handle_guess_word(std::stringstream &buffer, Address &addr_from,
   send_packet(response, addr_from.socket, (struct sockaddr *)&addr_from.addr,
               addr_from.size);
 }
+
+void handle_quit_game(std::stringstream &buffer, Address &addr_from,
+                      GameServerState &state) {
+  QuitGameServerbound packet;
+  packet.deserialize(buffer);
+
+  state.cdebug << "Received request to quit game from player '"
+               << packet.player_id << "'" << std::endl;
+
+  QuitGameClientbound response;
+  try {
+    ServerGame &game = state.getGame(packet.player_id);
+    game.finishGame();
+    response.success = true;
+  } catch (NoGameFoundException &e) {
+    response.success = false;
+  } catch (std::exception &e) {
+    std::cerr << "There was an unhandled exception that prevented the server "
+                 "from handling a quit game request:"
+              << e.what() << std::endl;
+    return;
+  }
+
+  send_packet(response, addr_from.socket, (struct sockaddr *)&addr_from.addr,
+              addr_from.size);
+}
