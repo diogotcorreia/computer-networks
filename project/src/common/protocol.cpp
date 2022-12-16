@@ -382,19 +382,30 @@ void TcpPacket::readPacketDelimiter(int fd) {
   readChar(fd, '\n');
 }
 
-std::string TcpPacket::readString(const int fd) {
+std::string TcpPacket::readString(const int fd, char *delimiter) {
   std::string result;
   char c = -1;
 
-  while (c != ' ') {  // TODO do we need to check for EOF?
+  while (c != ' ' && c != '\n') {  // TODO do we need to check for EOF?
     if (read(fd, &c, 1) != 1) {
       throw InvalidPacketException();
     }
     result += c;
   }
+  *delimiter = c;
 
   result.pop_back();
 
+  return result;
+}
+
+std::string TcpPacket::readString(const int fd) {
+  std::string result;
+  char c;
+  result = readString(fd, &c);
+  if (c != ' ') {
+    throw InvalidPacketException();
+  }
   return result;
 }
 
@@ -476,13 +487,16 @@ void ScoreboardClientbound::send(int fd) {
 void ScoreboardClientbound::receive(int fd) {
   readPacketId(fd, ScoreboardClientbound::ID);
   readSpace(fd);
-  auto status_str = readString(fd);
+  char delimiter;
+  auto status_str = readString(fd, &delimiter);
   if (status_str == "OK") {
+    if (delimiter != ' ') throw InvalidPacketException();
     this->status = OK;
     file_name = readString(fd);
     uint32_t file_size = readInt(fd);
     readAndSaveToFile(fd, file_name, file_size);
   } else if (status_str == "EMTPY") {
+    if (delimiter != '\n') throw InvalidPacketException();
     this->status = EMPTY;
   } else {
     throw InvalidPacketException();
