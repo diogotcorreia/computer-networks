@@ -119,3 +119,14 @@ bool ServerGame::hasWon() {
 bool ServerGame::hasStarted() {
   return this->getCurrentTrial() > 1;
 }
+
+uint32_t ServerGame::getScore() {
+  if (!hasWon()) {
+    return 0;
+  }
+  return (uint32_t)((currentTrial - numErrors) / currentTrial);
+}
+
+std::string ServerGame::getWord() {
+  return word;
+}

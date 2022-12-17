@@ -23,6 +23,8 @@ class ServerGame : public Game {
   bool hasLost();
   bool hasWon();
   bool hasStarted();
+  uint32_t getScore();
+  std::string getWord();
 };
 
 /** Exceptions **/

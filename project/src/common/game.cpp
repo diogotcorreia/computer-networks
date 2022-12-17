@@ -20,6 +20,10 @@ uint32_t Game::getCurrentTrial() {
   return currentTrial;
 }
 
+uint32_t Game::getGoodTrials() {
+  return currentTrial - numErrors;
+}
+
 uint32_t Game::getNumErrors() {
   return numErrors;
 }

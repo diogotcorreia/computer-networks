@@ -459,11 +459,13 @@ void ScoreboardServerbound::receive(int fd) {
 void ScoreboardClientbound::send(int fd) {
   std::stringstream stream;
   stream << ScoreboardClientbound::ID << " ";
+  // get size of file_data
+  file_data.seekg(0, std::ios::end);
+  uint32_t size = (uint32_t)file_data.tellg();
+
   if (status == OK) {
     stream << "OK ";
-    // TODO read from actual scoreboard or something
-    stream << "scoreboard.txt 4 "
-           << "test";
+    stream << file_name << " " << size << " " << file_data.rdbuf();
   } else if (status == EMPTY) {
     stream << "EMPTY ";
   } else {

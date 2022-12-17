@@ -59,7 +59,7 @@ typedef void (*PacketHandler)(std::stringstream&, Address&, GameServerState&);
 class GameServerState {
   std::unordered_map<std::string, PacketHandler> packet_handlers;
   std::unordered_map<uint32_t, ServerGame> games;
-
+  std::vector<ServerGame> scoreboard{};
   void setup_sockets();
 
  public:
@@ -77,6 +77,9 @@ class GameServerState {
                          Address& addr_from);
   ServerGame& getGame(uint32_t player_id);
   ServerGame& createGame(uint32_t player_id);
+  void addtoScoreboard(ServerGame* game);
+  std::stringstream getScoreboard();
+  static bool cmpGames(ServerGame& a, ServerGame& b);
 };
 
 /** Exceptions **/
