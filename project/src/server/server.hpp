@@ -7,8 +7,8 @@
 
 class ServerConfig {
  public:
-  char* program_path;
-  std::string word_file_path;
+  char* programPath;
+  std::string wordFilePath;
   std::string port = DEFAULT_PORT;  // TODO consider parsing port as int
   bool help = false;
   bool verbose = false;

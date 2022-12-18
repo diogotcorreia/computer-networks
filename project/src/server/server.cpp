@@ -12,7 +12,7 @@ int main(int argc, char *argv[]) {
     config.printHelp(std::cout);
     exit(EXIT_SUCCESS);
   }
-  GameServerState state(config.word_file_path, config.port, config.verbose);
+  GameServerState state(config.wordFilePath, config.port, config.verbose);
   state.registerPacketHandlers();
 
   // TODO handle TCP
@@ -58,7 +58,7 @@ void handle_packet(std::stringstream &buffer, Address &addr_from,
 }
 
 ServerConfig::ServerConfig(int argc, char *argv[]) {
-  program_path = argv[0];
+  programPath = argv[0];
   int opt;
 
   opterr = 0;
@@ -77,9 +77,9 @@ ServerConfig::ServerConfig(int argc, char *argv[]) {
       case 1:
         // The `-` flag in `getopt` makes non-options behave as if they
         // were values of an option -0x01
-        if (word_file_path.empty()) {
+        if (wordFilePath.empty()) {
           // Only keep the first non-option argument
-          word_file_path = std::string(optarg);
+          wordFilePath = std::string(optarg);
         }
         break;
       case ':':
@@ -97,7 +97,7 @@ ServerConfig::ServerConfig(int argc, char *argv[]) {
     }
   }
 
-  if (word_file_path.empty()) {
+  if (wordFilePath.empty()) {
     std::cerr << "Required argument word_file not provided" << std::endl
               << std::endl;
     printHelp(std::cerr);
@@ -106,7 +106,7 @@ ServerConfig::ServerConfig(int argc, char *argv[]) {
 }
 
 void ServerConfig::printHelp(std::ostream &stream) {
-  stream << "Usage: " << program_path << " word_file [-p GSport] [-v]"
+  stream << "Usage: " << programPath << " word_file [-p GSport] [-v]"
          << std::endl;
   stream << "Available arguments:" << std::endl;
   stream << "word_file\tPath to the word file" << std::endl;
