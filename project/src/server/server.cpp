@@ -59,16 +59,13 @@ void handle_packet(std::stringstream &buffer, Address &addr_from,
 
 ServerConfig::ServerConfig(int argc, char *argv[]) {
   program_path = argv[0];
-  word_file_path = std::string(argv[1]);
   int opt;
-  bool port_set = false;
 
   opterr = 0;
-  while ((opt = getopt(argc, argv, "p:vh")) != -1) {
+  while ((opt = getopt(argc, argv, "-:p:vh")) != -1) {
     switch (opt) {
       case 'p':
         port = std::string(optarg);
-        port_set = true;
         break;
       case 'h':
         help = true;
@@ -77,6 +74,21 @@ ServerConfig::ServerConfig(int argc, char *argv[]) {
       case 'v':
         verbose = true;
         break;
+      case 1:
+        // The `-` flag in `getopt` makes non-options behave as if they
+        // were values of an option -0x01
+        if (word_file_path.empty()) {
+          // Only keep the first non-option argument
+          word_file_path = std::string(optarg);
+        }
+        break;
+      case ':':
+        std::cerr << "Missing required value for option -" << (char)optopt
+                  << std::endl
+                  << std::endl;
+        printHelp(std::cerr);
+        exit(EXIT_FAILURE);
+        break;
       default:
         std::cerr << "Unknown argument -" << (char)optopt << std::endl
                   << std::endl;
@@ -84,28 +96,20 @@ ServerConfig::ServerConfig(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
   }
-  if (port_set && optind >= argc) {
-    std::cerr << "Error: -p flag requires a port argument" << std::endl;
-    std::cerr << "Usage: " << argv[0] << " [file_path] [-p port] [-v] [-h]"
+
+  if (word_file_path.empty()) {
+    std::cerr << "Required argument word_file not provided" << std::endl
               << std::endl;
+    printHelp(std::cerr);
     exit(EXIT_FAILURE);
-  }
-  if (verbose && optind >= argc) {
-    std::cerr << "Error: -v flag requires a file path argument" << std::endl;
-    std::cerr << "Usage: " << argv[0] << " [file_path] [-p port] [-v] [-h]"
-              << std::endl;
-    exit(EXIT_FAILURE);
-  }
-  if (optind < argc) {
-    word_file_path = std::string(argv[optind]);
   }
 }
 
 void ServerConfig::printHelp(std::ostream &stream) {
-  stream << "Usage: " << program_path << " [file_path] [-p GSport] [-v]"
+  stream << "Usage: " << program_path << " word_file [-p GSport] [-v]"
          << std::endl;
   stream << "Available arguments:" << std::endl;
-  stream << "file_path\tPath of the word file" << std::endl;
+  stream << "word_file\tPath to the word file" << std::endl;
   stream << "-p GSport\tSet port of Game Server. Default: " << DEFAULT_PORT
          << std::endl;
   stream << "-h\t\tEnable verbose mode." << std::endl;
