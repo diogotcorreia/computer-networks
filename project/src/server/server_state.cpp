@@ -8,10 +8,9 @@
 #include "common/protocol.hpp"
 #include "packet_handlers.hpp"
 
-GameServerState::GameServerState(std::string &word_file_path_,
-                                 std::string &port, bool verbose_) {
-  this->verbose = verbose_;
-  this->word_file_path = word_file_path_;
+GameServerState::GameServerState(std::string &__word_file_path,
+                                 std::string &port, bool __verbose)
+    : word_file_path{__word_file_path}, cdebug{DebugStream(__verbose)} {
   this->setup_sockets();
   this->resolveServerAddress(port);
 }

@@ -60,7 +60,6 @@ class GameServerState {
   std::unordered_map<std::string, PacketHandler> packet_handlers;
   std::unordered_map<uint32_t, ServerGame> games;
   std::string word_file_path;
-  bool verbose;
   void setup_sockets();
 
  public:
@@ -68,10 +67,10 @@ class GameServerState {
   int tcp_socket_fd;
   struct addrinfo* server_udp_addr;
   struct addrinfo* server_tcp_addr;
-  DebugStream cdebug = DebugStream(true);
+  DebugStream cdebug;
 
-  GameServerState(std::string& word_file_path_, std::string& port,
-                  bool verbose_);
+  GameServerState(std::string& __word_file_path, std::string& port,
+                  bool __verbose);
   ~GameServerState();
   void resolveServerAddress(std::string& port);
   void registerPacketHandlers();

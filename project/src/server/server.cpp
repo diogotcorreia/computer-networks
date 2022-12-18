@@ -15,6 +15,8 @@ int main(int argc, char *argv[]) {
   GameServerState state(config.wordFilePath, config.port, config.verbose);
   state.registerPacketHandlers();
 
+  state.cdebug << "Verbose mode is active" << std::endl << std::endl;
+
   // TODO handle TCP
   while (true) {
     // TESTING: receiving and sending a packet
