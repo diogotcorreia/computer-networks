@@ -156,9 +156,10 @@ void handle_reveal_word(std::stringstream &buffer, Address &addr_from,
   RevealWordClientbound response;
   try {
     ServerGame &game = state.getGame(packet.player_id);
-    std::unique_ptr<char[]> word_ptr(new char[game.getWord().size()]);
-    std::copy(game.getWord().begin(), game.getWord().end(), word_ptr.get());
-    response.word = std::move(word_ptr);
+    response.word = game.getWord();
+  } catch (NoGameFoundException &e) {
+    // The protocol says we should not reply if there is not an on-going game
+    return;
   } catch (std::exception &e) {
     std::cerr << "There was an unhandled exception that prevented the server "
                  "from handling a word reveal:"
