@@ -47,7 +47,6 @@ ClientConfig::ClientConfig(int argc, char *argv[]) {
   program_path = argv[0];
   int opt;
 
-  opterr = 0;  // don't print default error message on unknown arg
   while ((opt = getopt(argc, argv, "hn:p:")) != -1) {
     switch (opt) {
       case 'n':
@@ -60,8 +59,7 @@ ClientConfig::ClientConfig(int argc, char *argv[]) {
         help = true;
         break;
       default:
-        std::cerr << "Unknown argument -" << (char)optopt << std::endl
-                  << std::endl;
+        std::cerr << std::endl;
         printHelp(std::cerr);
         exit(EXIT_FAILURE);
     }
@@ -71,7 +69,7 @@ ClientConfig::ClientConfig(int argc, char *argv[]) {
 void ClientConfig::printHelp(std::ostream &stream) {
   stream << "Usage: " << program_path << " [-n GSIP] [-p GSport] [-h]"
          << std::endl;
-  stream << "Available arguments:" << std::endl;
+  stream << "Available options:" << std::endl;
   stream << "-n GSIP\t\tSet hostname of Game Server. Default: "
          << DEFAULT_HOSTNAME << std::endl;
   stream << "-p GSport\tSet port of Game Server. Default: " << DEFAULT_PORT
