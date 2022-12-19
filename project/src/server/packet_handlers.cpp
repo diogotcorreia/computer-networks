@@ -7,19 +7,24 @@
 void handle_start_game(std::stringstream &buffer, Address &addr_from,
                        GameServerState &state) {
   StartGameServerbound packet;
-  packet.deserialize(buffer);
-
-  state.cdebug << "Received request to start new game from player '"
-               << packet.player_id << "'" << std::endl;
-
   ReplyStartGameClientbound response;
+
   try {
+    packet.deserialize(buffer);
+    state.cdebug << "Received request to start new game from player '"
+                 << packet.player_id << "'" << std::endl;
     auto game = state.createGame(packet.player_id);
-    response.success = true;
+    state.cdebug << "Created new game" << std::endl;
+    response.status = ReplyStartGameClientbound::OK;
+    state.cdebug << "building packet" << std::endl;
     response.n_letters = game.getWordLen();
     response.max_errors = game.getMaxErrors();
   } catch (GameAlreadyStartedException &e) {
-    response.success = false;
+    state.cdebug << "Player id has already started a game" << std::endl;
+    response.status = ReplyStartGameClientbound::NOK;
+  } catch (InvalidPacketException &e) {
+    state.cdebug << "Invalid packet" << std::endl;
+    response.status = ReplyStartGameClientbound::ERR;
   } catch (std::exception &e) {
     std::cerr << "There was an unhandled exception that prevented the server "
                  "from starting a new game:"
