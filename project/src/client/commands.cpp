@@ -134,7 +134,8 @@ void GuessLetterCommand::handle(std::string args, PlayerState& state) {
   // Check packet status
   if (rlg.status == GuessLetterClientbound::status::ERR) {
     std::cout
-        << "Letter guess failed: there is no on-going game for this player."
+        << "Word guess failed: there is no on-going game for this player on "
+           "the server. Use 'state' command to check the state of the game."
         << std::endl;
     return;
   }
@@ -223,8 +224,10 @@ void GuessWordCommand::handle(std::string args, PlayerState& state) {
 
   // Check packet status
   if (rwg.status == GuessWordClientbound::status::ERR) {
-    std::cout << "Word guess failed: there is no on-going game for this player."
-              << std::endl;
+    std::cout
+        << "Word guess failed: there is no on-going game for this player on "
+           "the server. Use 'state' command to check the state of the game."
+        << std::endl;
     return;
   }
 
@@ -329,7 +332,7 @@ void RevealCommand::handle(std::string args, PlayerState& state) {
       state.game->getWordLen();  // TODO length should be infered from request
   state.sendUdpPacketAndWaitForReply(packet_out, rrv);
 
-  std::cout << "Word: " << rrv.word.get() << std::endl;
+  std::cout << "Word: " << rrv.word << std::endl;
 }
 
 void ScoreboardCommand::handle(std::string args, PlayerState& state) {
@@ -406,6 +409,9 @@ void StateCommand::handle(std::string args, PlayerState& state) {
       std::cout << "There is a finished game." << std::endl;
       std::cout << "Path to file: " << packet_reply.file_name << std::endl;
       display_file(packet_reply.file_name);
+      if (state.hasActiveGame()) {
+        state.game->finishGame();
+      }
       break;
     case StateClientbound::status::NOK:
       std::cout << "There is no game history available for this player."

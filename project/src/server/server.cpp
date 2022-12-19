@@ -1,14 +1,22 @@
 #include "server.hpp"
 
+#include <unistd.h>
+
 #include <iostream>
 #include <thread>
 
 #include "common/constants.hpp"
 
-int main() {
-  GameServerState state;
+int main(int argc, char *argv[]) {
+  ServerConfig config(argc, argv);
+  if (config.help) {
+    config.printHelp(std::cout);
+    exit(EXIT_SUCCESS);
+  }
+  GameServerState state(config.wordFilePath, config.port, config.verbose);
   state.registerPacketHandlers();
-  state.resolveServerAddress(DEFAULT_PORT);
+
+  state.cdebug << "Verbose mode is active" << std::endl << std::endl;
 
   std::thread tcp_thread(main_tcp, std::ref(state));
   // TODO gracefully stop server
@@ -67,4 +75,54 @@ void handle_packet(std::stringstream &buffer, Address &addr_from,
 void wait_for_tcp_packet(GameServerState &server_state) {
   (void)server_state;
   // TODO
+}
+
+ServerConfig::ServerConfig(int argc, char *argv[]) {
+  programPath = argv[0];
+  int opt;
+
+  while ((opt = getopt(argc, argv, "-p:vh")) != -1) {
+    switch (opt) {
+      case 'p':
+        port = std::string(optarg);
+        break;
+      case 'h':
+        help = true;
+        return;
+        break;
+      case 'v':
+        verbose = true;
+        break;
+      case 1:
+        // The `-` flag in `getopt` makes non-options behave as if they
+        // were values of an option -0x01
+        if (wordFilePath.empty()) {
+          // Only keep the first non-option argument
+          wordFilePath = std::string(optarg);
+        }
+        break;
+      default:
+        std::cerr << std::endl;
+        printHelp(std::cerr);
+        exit(EXIT_FAILURE);
+    }
+  }
+
+  if (wordFilePath.empty()) {
+    std::cerr << programPath << ": required argument 'word_file' not provided"
+              << std::endl
+              << std::endl;
+    printHelp(std::cerr);
+    exit(EXIT_FAILURE);
+  }
+}
+
+void ServerConfig::printHelp(std::ostream &stream) {
+  stream << "Usage: " << programPath << " word_file [-p GSport] [-v]"
+         << std::endl;
+  stream << "Available options:" << std::endl;
+  stream << "word_file\tPath to the word file" << std::endl;
+  stream << "-p GSport\tSet port of Game Server. Default: " << DEFAULT_PORT
+         << std::endl;
+  stream << "-h\t\tEnable verbose mode." << std::endl;
 }

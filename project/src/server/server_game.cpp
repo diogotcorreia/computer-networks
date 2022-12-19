@@ -119,3 +119,7 @@ bool ServerGame::hasWon() {
 bool ServerGame::hasStarted() {
   return this->getCurrentTrial() > 1;
 }
+
+std::string ServerGame::getWord() {
+  return word;
+}
