@@ -38,12 +38,11 @@ char UdpPacket::readChar(std::stringstream &buffer) {
 char UdpPacket::readAlphabeticalChar(std::stringstream &buffer) {
   char c;
   buffer >> c;
-  c = (char)tolower(c);
 
-  if (!buffer.good() || islower(c) == 0) {
+  if (!buffer.good() || !isalpha((unsigned char)c)) {
     throw InvalidPacketException();
   }
-  return c;
+  return (char)tolower((unsigned char)c);
 }
 
 void UdpPacket::readSpace(std::stringstream &buffer) {
@@ -68,10 +67,14 @@ std::unique_ptr<char[]> UdpPacket::readAlphabeticalString(
     std::stringstream &buffer, uint32_t max_len) {
   auto str = readString(buffer, max_len);
   for (uint32_t i = 0; i < max_len; ++i) {
-    str[i] = (char)tolower(str[i]);
-    if (islower(str[i]) == 0) {
+    if (str[i] == '\0') {
+      break;  // reached end of C string
+    }
+    if (!isalpha((unsigned char)str[i])) {
       throw InvalidPacketException();
     }
+
+    str[i] = (char)tolower((unsigned char)str[i]);
   }
   return str;
 }
