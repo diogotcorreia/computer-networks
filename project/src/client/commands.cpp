@@ -332,7 +332,7 @@ void RevealCommand::handle(std::string args, PlayerState& state) {
       state.game->getWordLen();  // TODO length should be infered from request
   state.sendUdpPacketAndWaitForReply(packet_out, rrv);
 
-  std::cout << "Word: " << rrv.word.get() << std::endl;
+  std::cout << "Word: " << rrv.word << std::endl;
 }
 
 void ScoreboardCommand::handle(std::string args, PlayerState& state) {
