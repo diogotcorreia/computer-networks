@@ -394,6 +394,12 @@ void TcpPacket::readChar(int fd, char chr) {
 
 char TcpPacket::readChar(int fd) {
   char c = 0;
+  if (delimiter != 0) {
+    // use last read char instead, since it wasn't consumed yet
+    c = delimiter;
+    delimiter = 0;
+    return c;
+  }
   if (read(fd, &c, 1) != 1) {
     throw InvalidPacketException();
   }
@@ -408,30 +414,20 @@ void TcpPacket::readPacketDelimiter(int fd) {
   readChar(fd, '\n');
 }
 
-std::string TcpPacket::readString(const int fd, char *delimiter) {
+std::string TcpPacket::readString(const int fd) {
   std::string result;
-  char c = -1;
+  char c = 0;
 
-  while (c != ' ' && c != '\n') {  // TODO do we need to check for EOF?
+  while (!std::iswspace((wint_t)c)) {
     if (read(fd, &c, 1) != 1) {
       throw InvalidPacketException();
     }
     result += c;
   }
-  *delimiter = c;
+  delimiter = c;
 
   result.pop_back();
 
-  return result;
-}
-
-std::string TcpPacket::readString(const int fd) {
-  std::string result;
-  char c;
-  result = readString(fd, &c);
-  if (c != ' ') {
-    throw InvalidPacketException();
-  }
   return result;
 }
 
@@ -513,16 +509,17 @@ void ScoreboardClientbound::send(int fd) {
 void ScoreboardClientbound::receive(int fd) {
   readPacketId(fd, ScoreboardClientbound::ID);
   readSpace(fd);
-  char delimiter;
-  auto status_str = readString(fd, &delimiter);
+  auto status_str = readString(fd);
   if (status_str == "OK") {
-    if (delimiter != ' ') throw InvalidPacketException();
     this->status = OK;
+    readSpace(fd);
     file_name = readString(fd);
+    readSpace(fd);
     uint32_t file_size = readInt(fd);
+    readSpace(fd);
     readAndSaveToFile(fd, file_name, file_size);
-  } else if (status_str == "EMTPY") {
-    if (delimiter != '\n') throw InvalidPacketException();
+  } else if (status_str == "EMPTY") {
+    readSpace(fd);
     this->status = EMPTY;
   } else {
     throw InvalidPacketException();
@@ -557,7 +554,7 @@ void StateClientbound::send(int fd) {
     stream << "state.txt 4 "
            << "test";
   } else if (status == FIN) {
-    stream << "FIN";
+    stream << "FIN ";
     stream << "state.txt 4 "
            << "test";
   } else if (status == NOK) {
@@ -584,8 +581,11 @@ void StateClientbound::receive(int fd) {
   } else {
     throw InvalidPacketException();
   }
+  readSpace(fd);
   file_name = readString(fd);
+  readSpace(fd);
   uint32_t file_size = readInt(fd);
+  readSpace(fd);
   readAndSaveToFile(fd, file_name, file_size);
   readPacketDelimiter(fd);
 }
@@ -632,8 +632,11 @@ void HintClientbound::receive(int fd) {
   auto status_str = readString(fd);
   if (status_str == "OK") {
     this->status = OK;
+    readSpace(fd);
     file_name = readString(fd);
+    readSpace(fd);
     uint32_t file_size = readInt(fd);
+    readSpace(fd);
     readAndSaveToFile(fd, file_name, file_size);
   } else if (status_str == "NOK") {
     this->status = NOK;

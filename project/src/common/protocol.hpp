@@ -188,16 +188,16 @@ class RevealWordClientbound : public UdpPacket {
 
 class TcpPacket {
  private:
+  char delimiter = 0;
+
   void readChar(int fd, char chr);
 
  protected:
   void writeString(int fd, const std::string &str);
-  void writePlayerId(int fd, const uint32_t player_id);
   void readPacketId(int fd, const char *id);
   void readSpace(int fd);
   char readChar(int fd);
   void readPacketDelimiter(int fd);
-  std::string readString(const int fd, char *delimiter);
   std::string readString(const int fd);
   uint32_t readInt(const int fd);
   void readAndSaveToFile(const int fd, const std::string &file_name,
