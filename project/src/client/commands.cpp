@@ -1,6 +1,7 @@
 #include "commands.hpp"
 
 #include <cstring>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 
@@ -133,7 +134,8 @@ void GuessLetterCommand::handle(std::string args, PlayerState& state) {
   // Check packet status
   if (rlg.status == GuessLetterClientbound::status::ERR) {
     std::cout
-        << "Letter guess failed: there is no on-going game for this player."
+        << "Word guess failed: there is no on-going game for this player on "
+           "the server. Use 'state' command to check the state of the game."
         << std::endl;
     return;
   }
@@ -222,8 +224,10 @@ void GuessWordCommand::handle(std::string args, PlayerState& state) {
 
   // Check packet status
   if (rwg.status == GuessWordClientbound::status::ERR) {
-    std::cout << "Word guess failed: there is no on-going game for this player."
-              << std::endl;
+    std::cout
+        << "Word guess failed: there is no on-going game for this player on "
+           "the server. Use 'state' command to check the state of the game."
+        << std::endl;
     return;
   }
 
@@ -342,7 +346,7 @@ void ScoreboardCommand::handle(std::string args, PlayerState& state) {
     case ScoreboardClientbound::status::OK:
       std::cout << "Received scoreboard and saved to file." << std::endl;
       std::cout << "Path: " << packet_reply.file_name << std::endl;
-      // TODO print scoreboard (?)
+      display_file(packet_reply.file_name);
       break;
 
     case ScoreboardClientbound::status::EMPTY:
@@ -399,10 +403,15 @@ void StateCommand::handle(std::string args, PlayerState& state) {
     case StateClientbound::status::ACT:
       std::cout << "There is an active game." << std::endl;
       std::cout << "Path to file: " << packet_reply.file_name << std::endl;
+      display_file(packet_reply.file_name);
       break;
     case StateClientbound::status::FIN:
       std::cout << "There is a finished game." << std::endl;
       std::cout << "Path to file: " << packet_reply.file_name << std::endl;
+      display_file(packet_reply.file_name);
+      if (state.hasActiveGame()) {
+        state.game->finishGame();
+      }
       break;
     case StateClientbound::status::NOK:
       std::cout << "There is no game history available for this player."
@@ -486,4 +495,15 @@ uint32_t parse_player_id(std::string& args) {
   }
 
   return (uint32_t)player_id;
+}
+
+void display_file(std::string filename) {
+  std::ifstream f(filename);
+  if (f.is_open()) {
+    std::cout << f.rdbuf() << std::endl;
+  } else {
+    std::cout
+        << "Failed to open file to display. Please open the file manually:"
+        << filename << std::endl;
+  }
 }

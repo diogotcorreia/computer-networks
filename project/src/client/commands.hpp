@@ -137,4 +137,6 @@ void print_game_progress(PlayerState& state);
 
 uint32_t parse_player_id(std::string& args);
 
+void display_file(std::string filename);
+
 #endif

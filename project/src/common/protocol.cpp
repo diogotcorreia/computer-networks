@@ -35,6 +35,16 @@ char UdpPacket::readChar(std::stringstream &buffer) {
   return c;
 }
 
+char UdpPacket::readAlphabeticalChar(std::stringstream &buffer) {
+  char c;
+  buffer >> c;
+
+  if (!buffer.good() || !isalpha((unsigned char)c)) {
+    throw InvalidPacketException();
+  }
+  return (char)tolower((unsigned char)c);
+}
+
 void UdpPacket::readSpace(std::stringstream &buffer) {
   readChar(buffer, ' ');
 }
@@ -49,6 +59,22 @@ std::unique_ptr<char[]> UdpPacket::readString(std::stringstream &buffer,
   buffer.get(str.get(), max_len + 1, ' ');
   if (!buffer.good()) {
     throw InvalidPacketException();
+  }
+  return str;
+}
+
+std::unique_ptr<char[]> UdpPacket::readAlphabeticalString(
+    std::stringstream &buffer, uint32_t max_len) {
+  auto str = readString(buffer, max_len);
+  for (uint32_t i = 0; i < max_len; ++i) {
+    if (str[i] == '\0') {
+      break;  // reached end of C string
+    }
+    if (!isalpha((unsigned char)str[i])) {
+      throw InvalidPacketException();
+    }
+
+    str[i] = (char)tolower((unsigned char)str[i]);
   }
   return str;
 }
@@ -124,7 +150,7 @@ void GuessLetterServerbound::deserialize(std::stringstream &buffer) {
   readSpace(buffer);
   player_id = readInt(buffer);
   readSpace(buffer);
-  guess = readChar(buffer);
+  guess = readAlphabeticalChar(buffer);
   readSpace(buffer);
   trial = readInt(buffer);
   readPacketDelimiter(buffer);
@@ -213,7 +239,7 @@ void GuessWordServerbound::deserialize(std::stringstream &buffer) {
   player_id = readInt(buffer);
   readSpace(buffer);
   // TODO improve the read string method
-  guess.assign(readString(buffer, wordLen).get());
+  guess.assign(readAlphabeticalString(buffer, wordLen).get());
   readSpace(buffer);
   trial = readInt(buffer);
   readPacketDelimiter(buffer);
@@ -223,13 +249,13 @@ std::stringstream GuessWordClientbound::serialize() {
   std::stringstream buffer;
   buffer << GuessWordClientbound::ID << " ";
   if (status == WIN) {
-    buffer << "WIN";
+    buffer << "WIN " << trial;
   } else if (status == NOK) {
-    buffer << "NOK";
+    buffer << "NOK " << trial;
   } else if (status == OVR) {
-    buffer << "OVR";
+    buffer << "OVR " << trial;
   } else if (status == INV) {
-    buffer << "INV";
+    buffer << "INV " << trial;
   } else if (status == ERR) {
     buffer << "ERR";
   } else {
@@ -340,7 +366,7 @@ void RevealWordClientbound::deserialize(std::stringstream &buffer) {
   buffer >> std::noskipws;
   readPacketId(buffer, RevealWordClientbound::ID);
   readSpace(buffer);
-  auto readWord = readString(buffer, wordLen);
+  auto readWord = readAlphabeticalString(buffer, wordLen);
   word = std::unique_ptr(std::move(readWord));
 };
 
