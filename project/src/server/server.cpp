@@ -63,8 +63,7 @@ ServerConfig::ServerConfig(int argc, char *argv[]) {
   programPath = argv[0];
   int opt;
 
-  opterr = 0;
-  while ((opt = getopt(argc, argv, "-:p:vh")) != -1) {
+  while ((opt = getopt(argc, argv, "-p:vh")) != -1) {
     switch (opt) {
       case 'p':
         port = std::string(optarg);
@@ -84,23 +83,16 @@ ServerConfig::ServerConfig(int argc, char *argv[]) {
           wordFilePath = std::string(optarg);
         }
         break;
-      case ':':
-        std::cerr << "Missing required value for option -" << (char)optopt
-                  << std::endl
-                  << std::endl;
-        printHelp(std::cerr);
-        exit(EXIT_FAILURE);
-        break;
       default:
-        std::cerr << "Unknown argument -" << (char)optopt << std::endl
-                  << std::endl;
+        std::cerr << std::endl;
         printHelp(std::cerr);
         exit(EXIT_FAILURE);
     }
   }
 
   if (wordFilePath.empty()) {
-    std::cerr << "Required argument word_file not provided" << std::endl
+    std::cerr << programPath << ": required argument 'word_file' not provided"
+              << std::endl
               << std::endl;
     printHelp(std::cerr);
     exit(EXIT_FAILURE);
@@ -110,7 +102,7 @@ ServerConfig::ServerConfig(int argc, char *argv[]) {
 void ServerConfig::printHelp(std::ostream &stream) {
   stream << "Usage: " << programPath << " word_file [-p GSport] [-v]"
          << std::endl;
-  stream << "Available arguments:" << std::endl;
+  stream << "Available options:" << std::endl;
   stream << "word_file\tPath to the word file" << std::endl;
   stream << "-p GSport\tSet port of Game Server. Default: " << DEFAULT_PORT
          << std::endl;
