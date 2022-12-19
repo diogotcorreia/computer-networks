@@ -14,9 +14,7 @@ void handle_start_game(std::stringstream &buffer, Address &addr_from,
     state.cdebug << "Received request to start new game from player '"
                  << packet.player_id << "'" << std::endl;
     auto game = state.createGame(packet.player_id);
-    state.cdebug << "Created new game" << std::endl;
     response.status = ReplyStartGameClientbound::OK;
-    state.cdebug << "building packet" << std::endl;
     response.n_letters = game.getWordLen();
     response.max_errors = game.getMaxErrors();
   } catch (GameAlreadyStartedException &e) {
