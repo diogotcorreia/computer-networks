@@ -59,7 +59,7 @@ typedef void (*PacketHandler)(std::stringstream&, Address&, GameServerState&);
 class GameServerState {
   std::unordered_map<std::string, PacketHandler> packet_handlers;
   std::unordered_map<uint32_t, ServerGame> games;
-
+  std::string word_file_path;
   void setup_sockets();
 
  public:
@@ -67,11 +67,12 @@ class GameServerState {
   int tcp_socket_fd;
   struct addrinfo* server_udp_addr;
   struct addrinfo* server_tcp_addr;
-  DebugStream cdebug = DebugStream(true);
+  DebugStream cdebug;
 
-  GameServerState();
+  GameServerState(std::string& __word_file_path, std::string& port,
+                  bool __verbose);
   ~GameServerState();
-  void resolveServerAddress(std::string port);
+  void resolveServerAddress(std::string& port);
   void registerPacketHandlers();
   void callPacketHandler(std::string packet_id, std::stringstream& stream,
                          Address& addr_from);

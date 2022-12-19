@@ -8,8 +8,11 @@
 #include "common/protocol.hpp"
 #include "packet_handlers.hpp"
 
-GameServerState::GameServerState() {
+GameServerState::GameServerState(std::string &__word_file_path,
+                                 std::string &port, bool __verbose)
+    : word_file_path{__word_file_path}, cdebug{DebugStream(__verbose)} {
   this->setup_sockets();
+  this->resolveServerAddress(port);
 }
 
 GameServerState::~GameServerState() {
@@ -41,14 +44,14 @@ void GameServerState::setup_sockets() {
   }
 }
 
-void GameServerState::resolveServerAddress(std::string port) {
+void GameServerState::resolveServerAddress(std::string &port) {
   struct addrinfo hints;
-
+  const char *port_str = port.c_str();
   // Get UDP address
   memset(&hints, 0, sizeof hints);
   hints.ai_family = AF_INET;       // IPv4
   hints.ai_socktype = SOCK_DGRAM;  // UDP socket
-  if (getaddrinfo(NULL, port.c_str(), &hints, &this->server_udp_addr) != 0) {
+  if (getaddrinfo(NULL, port_str, &hints, &this->server_udp_addr) != 0) {
     // TODO consider using exceptions (?)
     perror("Failed to get address for UDP connection");
     exit(EXIT_FAILURE);
