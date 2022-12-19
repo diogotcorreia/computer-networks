@@ -138,3 +138,61 @@ void handle_scoreboard(Address &addr_from, GameServerState &state) {
 
   response.send(addr_from.socket);
 }
+
+void handle_quit_game(std::stringstream &buffer, Address &addr_from,
+                      GameServerState &state) {
+  QuitGameServerbound packet;
+  packet.deserialize(buffer);
+
+  state.cdebug << "Received request to quit game from player '"
+               << packet.player_id << "'" << std::endl;
+
+  QuitGameClientbound response;
+  try {
+    ServerGame &game = state.getGame(packet.player_id);
+    if (game.isOnGoing()) {
+      game.finishGame();
+      response.success = true;
+    } else {
+      response.success = false;
+    }
+  } catch (NoGameFoundException &e) {
+    response.success = false;
+  } catch (std::exception &e) {
+    std::cerr << "There was an unhandled exception that prevented the server "
+                 "from handling a quit game request:"
+              << e.what() << std::endl;
+    return;
+  }
+
+  send_packet(response, addr_from.socket, (struct sockaddr *)&addr_from.addr,
+              addr_from.size);
+}
+
+void handle_reveal_word(std::stringstream &buffer, Address &addr_from,
+                        GameServerState &state) {
+  RevealWordServerbound packet;
+  packet.deserialize(buffer);
+
+  state.cdebug << "Received request to reveal word from player '"
+               << packet.player_id << "'" << std::endl;
+  state.cdebug << "Word is: " << state.getGame(packet.player_id).getWord()
+               << std::endl;
+
+  RevealWordClientbound response;
+  try {
+    ServerGame &game = state.getGame(packet.player_id);
+    response.word = game.getWord();
+  } catch (NoGameFoundException &e) {
+    // The protocol says we should not reply if there is not an on-going game
+    return;
+  } catch (std::exception &e) {
+    std::cerr << "There was an unhandled exception that prevented the server "
+                 "from handling a word reveal:"
+              << e.what() << std::endl;
+    return;
+  }
+
+  send_packet(response, addr_from.socket, (struct sockaddr *)&addr_from.addr,
+              addr_from.size);
+}

@@ -14,4 +14,10 @@ void handle_guess_letter(std::stringstream &buffer, Address &addr_from,
 void handle_guess_word(std::stringstream &buffer, Address &addr_from,
                        GameServerState &state);
 
+void handle_quit_game(std::stringstream &buffer, Address &addr_from,
+                      GameServerState &state);
+
+void handle_reveal_word(std::stringstream &buffer, Address &addr_from,
+                        GameServerState &state);
+
 #endif
