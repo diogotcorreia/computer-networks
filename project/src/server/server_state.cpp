@@ -27,6 +27,7 @@ void GameServerState::registerPacketHandlers() {
   packet_handlers.insert({GuessLetterServerbound::ID, handle_guess_letter});
   packet_handlers.insert({GuessWordServerbound::ID, handle_guess_word});
   packet_handlers.insert({QuitGameServerbound::ID, handle_quit_game});
+  packet_handlers.insert({RevealWordServerbound::ID, handle_reveal_word});
 }
 
 void GameServerState::setup_sockets() {
