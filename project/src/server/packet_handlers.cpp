@@ -124,8 +124,12 @@ void handle_quit_game(std::stringstream &buffer, Address &addr_from,
   QuitGameClientbound response;
   try {
     ServerGame &game = state.getGame(packet.player_id);
-    game.finishGame();
-    response.success = true;
+    if (game.isOnGoing()) {
+      game.finishGame();
+      response.success = true;
+    } else {
+      response.success = false;
+    }
   } catch (NoGameFoundException &e) {
     response.success = false;
   } catch (std::exception &e) {
