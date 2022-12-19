@@ -118,7 +118,7 @@ class HelpCommand : public CommandHandler {
 
  public:
   HelpCommand(CommandManager& __manager)
-      : CommandHandler("help", "h", std::nullopt, "Show command list"),
+      : CommandHandler("help", "?", std::nullopt, "Show command list"),
         manager(__manager) {}
 };
 
