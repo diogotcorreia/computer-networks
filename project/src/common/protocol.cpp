@@ -53,23 +53,19 @@ void UdpPacket::readPacketDelimiter(std::stringstream &buffer) {
   readChar(buffer, '\n');
 }
 
-std::unique_ptr<char[]> UdpPacket::readString(std::stringstream &buffer,
-                                              uint32_t max_len) {
-  auto str = std::make_unique<char[]>(max_len + 1);
-  buffer.get(str.get(), max_len + 1, ' ');
+std::string UdpPacket::readString(std::stringstream &buffer, uint32_t max_len) {
+  char str[max_len + 1];
+  buffer.get(str, max_len + 1, ' ');
   if (!buffer.good()) {
     throw InvalidPacketException();
   }
-  return str;
+  return std::string(str);
 }
 
-std::unique_ptr<char[]> UdpPacket::readAlphabeticalString(
-    std::stringstream &buffer, uint32_t max_len) {
+std::string UdpPacket::readAlphabeticalString(std::stringstream &buffer,
+                                              uint32_t max_len) {
   auto str = readString(buffer, max_len);
-  for (uint32_t i = 0; i < max_len; ++i) {
-    if (str[i] == '\0') {
-      break;  // reached end of C string
-    }
+  for (uint32_t i = 0; i < str.length(); ++i) {
     if (!isalpha((unsigned char)str[i])) {
       throw InvalidPacketException();
     }
@@ -122,13 +118,13 @@ void ReplyStartGameClientbound::deserialize(std::stringstream &buffer) {
   readPacketId(buffer, ReplyStartGameClientbound::ID);
   readSpace(buffer);
   auto success_str = readString(buffer, 3);
-  if (strcmp(success_str.get(), "OK") == 0) {
+  if (success_str == "OK") {
     success = true;
     readSpace(buffer);
     n_letters = readInt(buffer);
     readSpace(buffer);
     max_errors = readInt(buffer);
-  } else if (strcmp(success_str.get(), "NOK") == 0) {
+  } else if (success_str == "NOK") {
     success = false;
   } else {
     throw InvalidPacketException();
@@ -190,7 +186,7 @@ void GuessLetterClientbound::deserialize(std::stringstream &buffer) {
   readSpace(buffer);
   auto success = readString(buffer, 3);
 
-  if (strcmp(success.get(), "ERR") == 0) {
+  if (success == "ERR") {
     status = ERR;
     readPacketDelimiter(buffer);
     return;
@@ -199,7 +195,7 @@ void GuessLetterClientbound::deserialize(std::stringstream &buffer) {
   readSpace(buffer);
   trial = readInt(buffer);
 
-  if (strcmp(success.get(), "OK") == 0) {
+  if (success == "OK") {
     status = OK;
     readSpace(buffer);
     uint32_t n = readInt(buffer);
@@ -208,15 +204,15 @@ void GuessLetterClientbound::deserialize(std::stringstream &buffer) {
       readSpace(buffer);
       pos.push_back(readInt(buffer));
     }
-  } else if (strcmp(success.get(), "WIN") == 0) {
+  } else if (success == "WIN") {
     status = WIN;
-  } else if (strcmp(success.get(), "DUP") == 0) {
+  } else if (success == "DUP") {
     status = DUP;
-  } else if (strcmp(success.get(), "NOK") == 0) {
+  } else if (success == "NOK") {
     status = NOK;
-  } else if (strcmp(success.get(), "OVR") == 0) {
+  } else if (success == "OVR") {
     status = OVR;
-  } else if (strcmp(success.get(), "INV") == 0) {
+  } else if (success == "INV") {
     status = INV;
   } else {
     throw InvalidPacketException();
@@ -239,7 +235,7 @@ void GuessWordServerbound::deserialize(std::stringstream &buffer) {
   player_id = readInt(buffer);
   readSpace(buffer);
   // TODO improve the read string method
-  guess.assign(readAlphabeticalString(buffer, wordLen).get());
+  guess = readAlphabeticalString(buffer, wordLen);
   readSpace(buffer);
   trial = readInt(buffer);
   readPacketDelimiter(buffer);
@@ -272,24 +268,23 @@ void GuessWordClientbound::deserialize(std::stringstream &buffer) {
   readSpace(buffer);
   auto statusString = readString(buffer, 3);
 
-  if (strcmp(statusString.get(), "ERR") == 0) {
+  if (statusString == "ERR") {
     status = ERR;
+    readPacketDelimiter(buffer);
     return;
   }
 
   readSpace(buffer);
   trial = readInt(buffer);
 
-  if (strcmp(statusString.get(), "WIN") == 0) {
+  if (statusString == "WIN") {
     status = WIN;
-  } else if (strcmp(statusString.get(), "NOK") == 0) {
+  } else if (statusString == "NOK") {
     status = NOK;
-  } else if (strcmp(statusString.get(), "OVR") == 0) {
+  } else if (statusString == "OVR") {
     status = OVR;
-  } else if (strcmp(statusString.get(), "INV") == 0) {
+  } else if (statusString == "INV") {
     status = INV;
-  } else if (strcmp(statusString.get(), "ERR") == 0) {
-    status = ERR;
   } else {
     throw InvalidPacketException();
   }
@@ -329,9 +324,9 @@ void QuitGameClientbound::deserialize(std::stringstream &buffer) {
   readPacketId(buffer, QuitGameClientbound::ID);
   readSpace(buffer);
   auto successString = readString(buffer, 2);
-  if (strcmp(successString.get(), "OK") == 0) {
+  if (successString == "OK") {
     success = true;
-  } else if (strcmp(successString.get(), "ERR") == 0) {
+  } else if (successString == "ERR") {
     success = false;
   } else {
     throw InvalidPacketException();
@@ -357,8 +352,7 @@ void RevealWordServerbound::deserialize(std::stringstream &buffer) {
 
 std::stringstream RevealWordClientbound::serialize() {
   std::stringstream buffer;
-  // TODO: check status formatting in buffer
-  buffer << RevealWordClientbound::ID << " " << word.get() << std::endl;
+  buffer << RevealWordClientbound::ID << " " << word << std::endl;
   return buffer;
 };
 
@@ -366,8 +360,7 @@ void RevealWordClientbound::deserialize(std::stringstream &buffer) {
   buffer >> std::noskipws;
   readPacketId(buffer, RevealWordClientbound::ID);
   readSpace(buffer);
-  auto readWord = readAlphabeticalString(buffer, wordLen);
-  word = std::unique_ptr(std::move(readWord));
+  word = readAlphabeticalString(buffer, wordLen);
 };
 
 void TcpPacket::writeString(int fd, const std::string &str) {

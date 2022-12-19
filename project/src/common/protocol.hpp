@@ -68,10 +68,9 @@ class UdpPacket {
   char readChar(std::stringstream &buffer);
   char readAlphabeticalChar(std::stringstream &buffer);
   void readPacketDelimiter(std::stringstream &buffer);
-  std::unique_ptr<char[]> readString(std::stringstream &buffer,
+  std::string readString(std::stringstream &buffer, uint32_t max_len);
+  std::string readAlphabeticalString(std::stringstream &buffer,
                                      uint32_t max_len);
-  std::unique_ptr<char[]> readAlphabeticalString(std::stringstream &buffer,
-                                                 uint32_t max_len);
   uint32_t readInt(std::stringstream &buffer);
 
  public:
@@ -180,7 +179,7 @@ class RevealWordClientbound : public UdpPacket {
  public:
   static constexpr const char *ID = "RRV";
   uint32_t wordLen;
-  std::unique_ptr<char[]> word;
+  std::string word;
 
   std::stringstream serialize();
   void deserialize(std::stringstream &buffer);
