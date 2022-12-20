@@ -62,6 +62,7 @@ class GameServerState {
   std::unordered_map<std::string, UdpPacketHandler> udp_packet_handlers;
   std::unordered_map<std::string, TcpPacketHandler> tcp_packet_handlers;
   std::unordered_map<uint32_t, ServerGame> games;
+  std::mutex gamesLock;
   std::string word_file_path;
   void setup_sockets();
 
@@ -80,8 +81,8 @@ class GameServerState {
   void callUdpPacketHandler(std::string packet_id, std::stringstream& stream,
                             Address& addr_from);
   void callTcpPacketHandler(std::string packet_id, int connection_fd);
-  ServerGame& getGame(uint32_t player_id);
-  ServerGame& createGame(uint32_t player_id);
+  ServerGameSync getGame(uint32_t player_id);
+  ServerGameSync createGame(uint32_t player_id);
 };
 
 /** Exceptions **/

@@ -115,31 +115,41 @@ void GameServerState::callTcpPacketHandler(std::string packet_id,
   handler->second(connection_fd, *this);
 }
 
-ServerGame &GameServerState::createGame(uint32_t player_id) {
+ServerGameSync GameServerState::createGame(uint32_t player_id) {
+  std::scoped_lock<std::mutex> g_lock(gamesLock);
+
   auto game = games.find(player_id);
   if (game != games.end()) {
-    if (game->second.hasStarted()) {
-      throw GameAlreadyStartedException();
-    }
-    if (game->second.isOnGoing()) {
-      return game->second;
+    {
+      ServerGameSync game_sync = ServerGameSync(game->second);
+      if (game_sync->isOnGoing()) {
+        if (game_sync->hasStarted()) {
+          throw GameAlreadyStartedException();
+        }
+        return game_sync;
+      }
     }
 
+    std::cout << "Deleting game" << std::endl;
     // Delete existing game, so we can create a new one below
     games.erase(game);
   }
 
-  auto new_game = ServerGame(player_id);
-  games.insert(std::pair(player_id, new_game));
+  // Some C++ magic to create an instance of the class inside the map, without
+  // moving it, since mutexes can't be moved
+  games.emplace(std::piecewise_construct, std::forward_as_tuple(player_id),
+                std::forward_as_tuple(player_id));
 
-  return games.at(player_id);
+  return ServerGameSync(games.at(player_id));
 }
 
-ServerGame &GameServerState::getGame(uint32_t player_id) {
+ServerGameSync GameServerState::getGame(uint32_t player_id) {
+  std::scoped_lock<std::mutex> g_lock(gamesLock);
+
   auto game = games.find(player_id);
   if (game == games.end()) {
     throw NoGameFoundException();
   }
 
-  return game->second;
+  return ServerGameSync(game->second);
 }

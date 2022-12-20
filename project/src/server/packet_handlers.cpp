@@ -14,10 +14,11 @@ void handle_start_game(std::stringstream &buffer, Address &addr_from,
 
   ReplyStartGameClientbound response;
   try {
-    auto game = state.createGame(packet.player_id);
+    ServerGameSync game = state.createGame(packet.player_id);
+
     response.success = true;
-    response.n_letters = game.getWordLen();
-    response.max_errors = game.getMaxErrors();
+    response.n_letters = game->getWordLen();
+    response.max_errors = game->getMaxErrors();
   } catch (GameAlreadyStartedException &e) {
     response.success = false;
   } catch (std::exception &e) {
@@ -41,15 +42,16 @@ void handle_guess_letter(std::stringstream &buffer, Address &addr_from,
 
   GuessLetterClientbound response;
   try {
-    ServerGame &game = state.getGame(packet.player_id);
-    response.trial = game.getCurrentTrial();
-    auto found = game.guessLetter(packet.guess, packet.trial);
+    ServerGameSync game = state.getGame(packet.player_id);
 
-    if (game.hasLost()) {
+    response.trial = game->getCurrentTrial();
+    auto found = game->guessLetter(packet.guess, packet.trial);
+
+    if (game->hasLost()) {
       response.status = GuessLetterClientbound::status::OVR;
     } else if (found.size() == 0) {
       response.status = GuessLetterClientbound::status::NOK;
-    } else if (game.hasWon()) {
+    } else if (game->hasWon()) {
       response.status = GuessLetterClientbound::status::WIN;
     } else {
       response.status = GuessLetterClientbound::status::OK;
@@ -85,11 +87,12 @@ void handle_guess_word(std::stringstream &buffer, Address &addr_from,
 
   GuessWordClientbound response;
   try {
-    ServerGame &game = state.getGame(packet.player_id);
-    response.trial = game.getCurrentTrial();
-    bool correct = game.guessWord(packet.guess, packet.trial);
+    ServerGameSync game = state.getGame(packet.player_id);
 
-    if (game.hasLost()) {
+    response.trial = game->getCurrentTrial();
+    bool correct = game->guessWord(packet.guess, packet.trial);
+
+    if (game->hasLost()) {
       response.status = GuessWordClientbound::status::OVR;
     } else if (correct) {
       response.status = GuessWordClientbound::status::WIN;
@@ -123,9 +126,10 @@ void handle_quit_game(std::stringstream &buffer, Address &addr_from,
 
   QuitGameClientbound response;
   try {
-    ServerGame &game = state.getGame(packet.player_id);
-    if (game.isOnGoing()) {
-      game.finishGame();
+    ServerGameSync game = state.getGame(packet.player_id);
+
+    if (game->isOnGoing()) {
+      game->finishGame();
       response.success = true;
     } else {
       response.success = false;
@@ -150,13 +154,14 @@ void handle_reveal_word(std::stringstream &buffer, Address &addr_from,
 
   state.cdebug << "Received request to reveal word from player '"
                << packet.player_id << "'" << std::endl;
-  state.cdebug << "Word is: " << state.getGame(packet.player_id).getWord()
-               << std::endl;
 
   RevealWordClientbound response;
   try {
-    ServerGame &game = state.getGame(packet.player_id);
-    response.word = game.getWord();
+    ServerGameSync game = state.getGame(packet.player_id);
+
+    state.cdebug << "Word is: " << game->getWord() << std::endl;
+
+    response.word = game->getWord();
   } catch (NoGameFoundException &e) {
     // The protocol says we should not reply if there is not an on-going game
     return;
@@ -180,11 +185,12 @@ void handle_state(int connection_fd, GameServerState &state) {
 
   StateClientbound response;
   try {
-    ServerGame &game = state.getGame(packet.player_id);
+    ServerGameSync game = state.getGame(packet.player_id);
+
     // TODO
     response.status = StateClientbound::status::ACT;
     response.file_name = "state.txt";
-    response.file_data = game.getWord();
+    response.file_data = game->getWord();
   } catch (NoGameFoundException &e) {
     // TODO
   } catch (std::exception &e) {
