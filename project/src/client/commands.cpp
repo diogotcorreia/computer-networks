@@ -286,12 +286,25 @@ void QuitCommand::handle(std::string args, PlayerState& state) {
   QuitGameClientbound rq;
   state.sendUdpPacketAndWaitForReply(packet_out, rq);
 
+  if (rq.status == QuitGameClientbound::status::ERR) {
+    std::cout << "Error with the request. Please try again." << std::endl;
+    return;
+  }
+
   // Check packet status
-  if (rq.success) {
-    std::cout << "Game quit successfully." << std::endl;
-    state.game->finishGame();
-  } else {
-    std::cout << "Failed to quit game." << std::endl;
+  switch (rq.status) {
+    case QuitGameClientbound::status::OK:
+      std::cout << "Game quit successfully." << std::endl;
+      state.game->finishGame();
+      break;
+
+    case QuitGameClientbound::status::NOK:
+      std::cout << "Failed to quit game." << std::endl;
+      break;
+
+    case QuitGameClientbound::status::ERR:
+    default:
+      break;
   }
 }
 
@@ -306,12 +319,25 @@ void ExitCommand::handle(std::string args, PlayerState& state) {
     state.sendUdpPacketAndWaitForReply(packet_out, rq);
 
     // Check packet status
-    if (rq.success) {
-      std::cout << "Game quit successfully." << std::endl;
-      state.game->finishGame();
-    } else {
-      std::cout << "Failed to quit game." << std::endl;
+    if (rq.status == QuitGameClientbound::status::ERR) {
+      std::cout << "Error with the request. Please try again." << std::endl;
       return;
+    }
+
+    // Check packet status
+    switch (rq.status) {
+      case QuitGameClientbound::status::OK:
+        std::cout << "Game quit successfully." << std::endl;
+        state.game->finishGame();
+        break;
+
+      case QuitGameClientbound::status::NOK:
+        std::cout << "Failed to quit game." << std::endl;
+        break;
+
+      case QuitGameClientbound::status::ERR:
+      default:
+        break;
     }
   }
   exit(EXIT_SUCCESS);
@@ -447,10 +473,22 @@ void KillCommand::handle(std::string args, PlayerState& state) {
   QuitGameClientbound rq;
   state.sendUdpPacketAndWaitForReply(packet_out, rq);
   // Check packet status
-  if (rq.success) {
-    std::cout << "Killed game successfully." << std::endl;
-  } else {
-    std::cout << "There is no on-going game or this player." << std::endl;
+  if (rq.status == QuitGameClientbound::status::ERR) {
+    std::cout << "Error with the request. Please try again." << std::endl;
+    return;
+  }
+  switch (rq.status) {
+    case QuitGameClientbound::status::OK:
+      std::cout << "Game quit successfully." << std::endl;
+      break;
+
+    case QuitGameClientbound::status::NOK:
+      std::cout << "Failed to quit game." << std::endl;
+      break;
+
+    case QuitGameClientbound::status::ERR:
+    default:
+      break;
   }
 }
 

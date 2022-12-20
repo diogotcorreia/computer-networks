@@ -126,17 +126,17 @@ void handle_quit_game(std::stringstream &buffer, Address &addr_from,
     ServerGame &game = state.getGame(packet.player_id);
     if (game.isOnGoing()) {
       game.finishGame();
-      response.success = true;
+      response.status = QuitGameClientbound::status::OK;
     } else {
-      response.success = false;
+      response.status = QuitGameClientbound::status::NOK;
     }
   } catch (NoGameFoundException &e) {
-    response.success = false;
+    response.status = QuitGameClientbound::status::NOK;
   } catch (std::exception &e) {
     std::cerr << "There was an unhandled exception that prevented the server "
                  "from handling a quit game request:"
               << e.what() << std::endl;
-    return;
+    response.status = QuitGameClientbound::status::ERR;
   }
 
   send_packet(response, addr_from.socket, (struct sockaddr *)&addr_from.addr,

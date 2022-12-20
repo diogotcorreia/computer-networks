@@ -310,10 +310,14 @@ void QuitGameServerbound::deserialize(std::stringstream &buffer) {
 std::stringstream QuitGameClientbound::serialize() {
   std::stringstream buffer;
   buffer << QuitGameClientbound::ID << " ";
-  if (success) {
+  if (status == OK) {
     buffer << "OK";
-  } else {
+  } else if (status == NOK) {
+    buffer << "NOK";
+  } else if (status == ERR) {
     buffer << "ERR";
+  } else {
+    throw PacketSerializationException();
   }
   buffer << std::endl;
   return buffer;
@@ -323,11 +327,13 @@ void QuitGameClientbound::deserialize(std::stringstream &buffer) {
   buffer >> std::noskipws;
   readPacketId(buffer, QuitGameClientbound::ID);
   readSpace(buffer);
-  auto successString = readString(buffer, 2);
-  if (successString == "OK") {
-    success = true;
-  } else if (successString == "ERR") {
-    success = false;
+  auto status_str = readString(buffer, 2);
+  if (status_str == "OK") {
+    status = OK;
+  } else if (status_str == "NOK") {
+    status = NOK;
+  } else if (status_str == "ERR") {
+    status = ERR;
   } else {
     throw InvalidPacketException();
   }
