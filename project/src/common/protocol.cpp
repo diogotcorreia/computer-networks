@@ -241,7 +241,7 @@ void GuessWordServerbound::deserialize(std::stringstream &buffer) {
   player_id = readInt(buffer);
   readSpace(buffer);
   // TODO improve the read string method
-  guess = readAlphabeticalString(buffer, wordLen);
+  guess = readAlphabeticalString(buffer, WORD_MAX_LEN);
   readSpace(buffer);
   trial = readInt(buffer);
   readPacketDelimiter(buffer);
