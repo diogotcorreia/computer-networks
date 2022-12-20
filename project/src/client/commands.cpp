@@ -297,11 +297,6 @@ void QuitCommand::handle(std::string args, PlayerState& state) {
   QuitGameClientbound rq;
   state.sendUdpPacketAndWaitForReply(packet_out, rq);
 
-  if (rq.status == QuitGameClientbound::status::ERR) {
-    std::cout << "Error with the request. Please try again." << std::endl;
-    return;
-  }
-
   // Check packet status
   switch (rq.status) {
     case QuitGameClientbound::status::OK:
@@ -315,6 +310,7 @@ void QuitCommand::handle(std::string args, PlayerState& state) {
 
     case QuitGameClientbound::status::ERR:
     default:
+      std::cout << "Error with the request. Please try again." << std::endl;
       break;
   }
 }
@@ -484,21 +480,18 @@ void KillCommand::handle(std::string args, PlayerState& state) {
   QuitGameClientbound rq;
   state.sendUdpPacketAndWaitForReply(packet_out, rq);
   // Check packet status
-  if (rq.status == QuitGameClientbound::status::ERR) {
-    std::cout << "Error with the request. Please try again." << std::endl;
-    return;
-  }
   switch (rq.status) {
     case QuitGameClientbound::status::OK:
       std::cout << "Game quit successfully." << std::endl;
       break;
 
     case QuitGameClientbound::status::NOK:
-      std::cout << "Failed to quit game." << std::endl;
+      // Game was already finished
       break;
 
     case QuitGameClientbound::status::ERR:
     default:
+      std::cout << "Failed to quit game on server." << std::endl;
       break;
   }
 }
