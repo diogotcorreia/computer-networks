@@ -3,6 +3,7 @@
 #include <unistd.h>
 
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 
@@ -100,26 +101,53 @@ void GameServerState::resolveServerAddress(std::string &port) {
 }
 
 void GameServerState::registerWords(std::string &__word_file_path) {
-  this->word_file_dir =
-      __word_file_path.substr(0, __word_file_path.find_last_of('/'));
-  std::cout << "Reading words from " << __word_file_path << std::endl;
-  std::ifstream word_file(__word_file_path);
-  if (!word_file.is_open()) {
-    perror("Failed to open word file");
+  try {
+    std::filesystem::path word_file_path(std::filesystem::current_path());
+    word_file_path.append(__word_file_path);
+
+    std::cout << "Reading words from " << word_file_path << std::endl;
+
+    std::ifstream word_file(word_file_path);
+    if (!word_file.is_open()) {
+      perror("Failed to open word file");
+      exit(EXIT_FAILURE);
+    }
+
+    std::string line;
+    while (std::getline(word_file, line)) {
+      auto split_index = line.find(' ');
+      Word word;
+      word.word = line.substr(0, split_index);
+      if (split_index != std::string::npos) {
+        std::filesystem::path hint_file_path(word_file_path);
+        hint_file_path.remove_filename().append(line.substr(split_index + 1));
+
+        if (!hint_file_path.has_filename()) {
+          std::cerr << "[WARNING] Hint file path " << hint_file_path
+                    << ", for word '" << word.word << "' is not a file."
+                    << std::endl;
+        }
+
+        word.hint_path = hint_file_path;
+      } else {
+        std::cerr << "[WARNING] Word '" << word.word
+                  << "' does not have an hint file" << std::endl;
+        word.hint_path = std::nullopt;
+      }
+      this->words.push_back(word);
+    }
+
+    std::cout << "Loaded " << words.size() << " word(s)";
+  } catch (std::exception &e) {
+    std::cerr << "Failed to open word file: " << e.what() << std::endl;
+    exit(EXIT_FAILURE);
+  } catch (...) {
+    std::cerr << "Failed to open word file: unknown" << std::endl;
     exit(EXIT_FAILURE);
   }
-  std::string line;
-  while (std::getline(word_file, line)) {
-    Word word;
-    word.word = line.substr(0, line.find(' '));
-    word.image_path =
-        this->word_file_dir + "/" + line.substr(line.find(' ') + 1);
-    this->words.push_back(word);
-  }
-  word_file.close();
 }
 
-Word GameServerState::selectRandomWord() {
+Word &GameServerState::selectRandomWord() {
   uint32_t index;
   if (test) {
     index = (this->current_word_index) % (uint32_t)this->words.size();
@@ -174,12 +202,12 @@ ServerGameSync GameServerState::createGame(uint32_t player_id) {
     // Delete existing game, so we can create a new one below
     games.erase(game);
   }
-  // TODO: select sequential or random
-  Word word = this->selectRandomWord();
+
+  Word &word = this->selectRandomWord();
   // Some C++ magic to create an instance of the class inside the map, without
   // moving it, since mutexes can't be moved
   games.emplace(std::piecewise_construct, std::forward_as_tuple(player_id),
-                std::forward_as_tuple(player_id, word.word, word.image_path));
+                std::forward_as_tuple(player_id, word.word, word.hint_path));
 
   return ServerGameSync(games.at(player_id));
 }

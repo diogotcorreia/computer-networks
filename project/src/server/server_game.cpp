@@ -4,8 +4,8 @@
 #include <stdexcept>
 
 ServerGame::ServerGame(uint32_t __playerId, std::string __word,
-                       std::string __image_path)
-    : word{__word}, image_path{__image_path} {
+                       std::optional<std::filesystem::path> __hint_path)
+    : word{__word}, hint_path{__hint_path} {
   this->playerId = __playerId;
   size_t word_len = word.size();
   // TODO: Get max errors from one liner
@@ -132,6 +132,13 @@ std::string ServerGame::getWord() {
   return word;
 }
 
-std::string ServerGame::getImagePath() {
-  return image_path;
+std::optional<std::filesystem::path> ServerGame::getHintFilePath() {
+  return hint_path;
+}
+
+std::string ServerGame::getHintFileName() {
+  if (hint_path.has_value()) {
+    return std::string(hint_path.value().filename());
+  }
+  return std::string();
 }

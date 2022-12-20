@@ -3,7 +3,9 @@
 
 #include <netdb.h>
 
+#include <filesystem>
 #include <iostream>
+#include <optional>
 #include <sstream>
 #include <unordered_map>
 
@@ -18,7 +20,7 @@ class Address {
 
 struct Word {
   std::string word;
-  std::string image_path;
+  std::optional<std::filesystem::path> hint_path;
 };
 
 class DebugStream {
@@ -87,7 +89,7 @@ class GameServerState {
   void resolveServerAddress(std::string& port);
   void registerPacketHandlers();
   void registerWords(std::string& __word_file_path);
-  Word selectRandomWord();
+  Word& selectRandomWord();
   void callUdpPacketHandler(std::string packet_id, std::stringstream& stream,
                             Address& addr_from);
   void callTcpPacketHandler(std::string packet_id, int connection_fd);
