@@ -1,10 +1,10 @@
 #include "server.hpp"
 
+#include <arpa/inet.h>
 #include <unistd.h>
 
 #include <iostream>
-
-#include "common/constants.hpp"
+#include <thread>
 
 int main(int argc, char *argv[]) {
   ServerConfig config(argc, argv);
@@ -17,10 +17,29 @@ int main(int argc, char *argv[]) {
 
   state.cdebug << "Verbose mode is active" << std::endl << std::endl;
 
-  // TODO handle TCP
+  std::thread tcp_thread(main_tcp, std::ref(state));
+  // TODO gracefully stop server
   while (true) {
     // TESTING: receiving and sending a packet
     wait_for_udp_packet(state);
+  }
+
+  // TODO find a way to signal the TCP thread to stop gracefully
+  tcp_thread.join();
+}
+
+void main_tcp(GameServerState &state) {
+  WorkerPool worker_pool(state);
+
+  if (listen(state.tcp_socket_fd, TCP_MAX_QUEUE_SIZE) < 0) {
+    perror("listen");
+    std::cerr << "TCP server is being shutdown..." << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  // TODO gracefully stop server
+  while (true) {
+    wait_for_tcp_packet(state, worker_pool);
   }
 }
 
@@ -37,6 +56,11 @@ void wait_for_udp_packet(GameServerState &server_state) {
     perror("recvfrom");
     exit(1);
   }
+
+  char addr_str[INET_ADDRSTRLEN + 1] = {0};
+  inet_ntop(AF_INET, &addr_from.addr.sin_addr, addr_str, INET_ADDRSTRLEN);
+  std::cout << "Receiving incoming UDP message from " << addr_str << ":"
+            << ntohs(addr_from.addr.sin_port) << std::endl;
 
   stream << buffer;
 
@@ -56,7 +80,35 @@ void handle_packet(std::stringstream &buffer, Address &addr_from,
 
   std::string packet_id_str = std::string(packet_id);
 
-  server_state.callPacketHandler(packet_id_str, buffer, addr_from);
+  // TODO add exception catch to send back ERR response
+  server_state.callUdpPacketHandler(packet_id_str, buffer, addr_from);
+}
+
+void wait_for_tcp_packet(GameServerState &server_state, WorkerPool &pool) {
+  Address addr_from;
+
+  addr_from.size = sizeof(addr_from.addr);
+  int connection_fd =
+      accept(server_state.tcp_socket_fd, (struct sockaddr *)&addr_from.addr,
+             &addr_from.size);
+  if (connection_fd < 0) {
+    perror("accept");
+    std::cerr << "[ERROR] Failed to accept a connection" << std::endl;
+    return;
+  }
+
+  char addr_str[INET_ADDRSTRLEN + 1] = {0};
+  inet_ntop(AF_INET, &addr_from.addr.sin_addr, addr_str, INET_ADDRSTRLEN);
+  std::cout << "Receiving incoming TCP connection from " << addr_str << ":"
+            << ntohs(addr_from.addr.sin_port) << std::endl;
+
+  try {
+    pool.delegateConnection(connection_fd);
+  } catch (std::exception &e) {
+    std::cerr << "[ERROR] Failed to delegate connection to worker: " << e.what()
+              << " Closing connection." << std::endl;
+    close(connection_fd);
+  }
 }
 
 ServerConfig::ServerConfig(int argc, char *argv[]) {

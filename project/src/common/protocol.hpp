@@ -93,8 +93,9 @@ class StartGameServerbound : public UdpPacket {
 // Reply to Start Game Packet (RSG)
 class ReplyStartGameClientbound : public UdpPacket {
  public:
+  enum status { OK, NOK, ERR };
   static constexpr const char *ID = "RSG";
-  bool success;
+  status status;
   uint32_t n_letters;
   uint32_t max_errors;
 
@@ -253,6 +254,7 @@ class StateClientbound : public TcpPacket {
   static constexpr const char *ID = "RST";
   status status;
   std::string file_name;
+  std::string file_data;
 
   void send(int fd);
   void receive(int fd);
