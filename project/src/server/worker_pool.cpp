@@ -94,7 +94,7 @@ std::string read_packet_id(int fd) {
     ssize_t n = read(fd, &id[PACKET_ID_LEN - to_read], to_read);
     if (n < 0) {
       std::cerr << "Received malformated packet ID" << std::endl;
-      throw new InvalidPacketException();
+      throw InvalidPacketException();
     }
     to_read -= (size_t)n;
   }

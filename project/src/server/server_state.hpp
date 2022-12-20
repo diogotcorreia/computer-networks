@@ -7,6 +7,7 @@
 #include <sstream>
 #include <unordered_map>
 
+#include "scoreboard.hpp"
 #include "server_game.hpp"
 
 class Address {
@@ -71,6 +72,7 @@ class GameServerState {
   int tcp_socket_fd;
   struct addrinfo* server_udp_addr;
   struct addrinfo* server_tcp_addr;
+  Scoreboard scoreboard;
   DebugStream cdebug;
 
   GameServerState(std::string& __word_file_path, std::string& port,

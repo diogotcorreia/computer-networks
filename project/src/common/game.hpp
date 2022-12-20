@@ -18,6 +18,7 @@ class Game {
   uint32_t getWordLen();
   uint32_t getMaxErrors();
   uint32_t getCurrentTrial();
+  uint32_t getGoodTrials();
   uint32_t getNumErrors();
   bool isOnGoing();
   void finishGame();  // setOnGoing(false)
