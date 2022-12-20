@@ -244,7 +244,10 @@ void GuessWordCommand::handle(std::string args, PlayerState& state) {
       std::cout << "Word '" << args << "' is the correct word." << std::endl;
       std::cout << "YOU WON!" << std::endl;
       break;
-
+    case GuessWordClientbound::status::DUP:
+      std::cout << "Word '" << args << "' has already been guessed before."
+                << std::endl;
+      break;
     case GuessWordClientbound::status::NOK:
       state.game->updateNumErrors();
       state.game->increaseTrial();

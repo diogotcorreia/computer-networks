@@ -98,6 +98,9 @@ void handle_guess_word(std::stringstream &buffer, Address &addr_from,
     }
   } catch (NoGameFoundException &e) {
     response.status = GuessWordClientbound::status::ERR;
+  } catch (DuplicateWordGuessException &e) {
+    response.status = GuessWordClientbound::status::DUP;
+    response.trial -= 1;
   } catch (InvalidTrialException &e) {
     response.status = GuessWordClientbound::status::INV;
   } catch (GameHasEndedException &e) {
