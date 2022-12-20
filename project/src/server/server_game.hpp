@@ -10,6 +10,7 @@
 class ServerGame : public Game {
  private:
   std::string word;
+  std::string image_path;
   uint32_t lettersRemaining;
   std::vector<char> plays;
   std::vector<std::string> word_guesses;
@@ -19,7 +20,7 @@ class ServerGame : public Game {
  public:
   std::mutex lock;
 
-  ServerGame(uint32_t playerId);
+  ServerGame(uint32_t playerId, std::string word, std::string image_path);
   ~ServerGame();
   std::vector<uint32_t> guessLetter(char letter, uint32_t trial);
   bool guessWord(std::string& word, uint32_t trial);
@@ -27,6 +28,7 @@ class ServerGame : public Game {
   bool hasWon();
   bool hasStarted();
   std::string getWord();
+  std::string getImagePath();
 };
 
 class ServerGameSync {

@@ -3,6 +3,7 @@
 #include <unistd.h>
 
 #include <cstring>
+#include <fstream>
 #include <iostream>
 
 #include "common/protocol.hpp"
@@ -10,9 +11,10 @@
 
 GameServerState::GameServerState(std::string &__word_file_path,
                                  std::string &port, bool __verbose)
-    : word_file_path{__word_file_path}, cdebug{DebugStream(__verbose)} {
+    : cdebug{DebugStream(__verbose)} {
   this->setup_sockets();
   this->resolveServerAddress(port);
+  this->registerWords(__word_file_path);
 }
 
 GameServerState::~GameServerState() {
@@ -96,6 +98,37 @@ void GameServerState::resolveServerAddress(std::string &port) {
   std::cout << "Listening for connections on port " << port << std::endl;
 }
 
+void GameServerState::registerWords(std::string &__word_file_path) {
+  this->word_file_dir =
+      __word_file_path.substr(0, __word_file_path.find_last_of('/'));
+  std::cout << "Reading words from " << __word_file_path << std::endl;
+  std::ifstream word_file(__word_file_path);
+  if (!word_file.is_open()) {
+    perror("Failed to open word file");
+    exit(EXIT_FAILURE);
+  }
+  std::string line;
+  while (std::getline(word_file, line)) {
+    Word word;
+    word.word = line.substr(0, line.find(' '));
+    word.image_path =
+        this->word_file_dir + "/" + line.substr(line.find(' ') + 1);
+    this->words.push_back(word);
+  }
+  word_file.close();
+}
+
+Word GameServerState::selectRandomWord(bool sequential) {
+  uint32_t index;
+  if (sequential) {
+    index = (this->current_word_index) % (uint32_t)this->words.size();
+    this->current_word_index = index + 1;
+  } else {
+    index = (uint32_t)rand() % (uint32_t)this->words.size();
+  }
+  return this->words[index];
+}
+
 void GameServerState::callUdpPacketHandler(std::string packet_id,
                                            std::stringstream &stream,
                                            Address &addr_from) {
@@ -140,11 +173,12 @@ ServerGameSync GameServerState::createGame(uint32_t player_id) {
     // Delete existing game, so we can create a new one below
     games.erase(game);
   }
-
+  // TODO: select sequential or random
+  Word word = this->selectRandomWord(false);
   // Some C++ magic to create an instance of the class inside the map, without
   // moving it, since mutexes can't be moved
   games.emplace(std::piecewise_construct, std::forward_as_tuple(player_id),
-                std::forward_as_tuple(player_id));
+                std::forward_as_tuple(player_id, word.word, word.image_path));
 
   return ServerGameSync(games.at(player_id));
 }

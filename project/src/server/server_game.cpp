@@ -3,10 +3,10 @@
 #include <cstring>
 #include <stdexcept>
 
-ServerGame::ServerGame(uint32_t __playerId) {
+ServerGame::ServerGame(uint32_t __playerId, std::string __word,
+                       std::string __image_path)
+    : word{__word}, image_path{__image_path} {
   this->playerId = __playerId;
-  // TODO: Get word from file
-  word = "test";
   size_t word_len = word.size();
   // TODO: Get max errors from one liner
   if (word_len <= 6) {
@@ -130,4 +130,8 @@ bool ServerGame::hasStarted() {
 
 std::string ServerGame::getWord() {
   return word;
+}
+
+std::string ServerGame::getImagePath() {
+  return image_path;
 }

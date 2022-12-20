@@ -16,6 +16,11 @@ class Address {
   socklen_t size;
 };
 
+struct Word {
+  std::string word;
+  std::string image_path;
+};
+
 class DebugStream {
   bool active;
 
@@ -62,8 +67,10 @@ class GameServerState {
   std::unordered_map<std::string, UdpPacketHandler> udp_packet_handlers;
   std::unordered_map<std::string, TcpPacketHandler> tcp_packet_handlers;
   std::unordered_map<uint32_t, ServerGame> games;
+  std::vector<Word> words;
   std::mutex gamesLock;
-  std::string word_file_path;
+  std::string word_file_dir;
+  uint32_t current_word_index = 0;
   void setup_sockets();
 
  public:
@@ -78,6 +85,8 @@ class GameServerState {
   ~GameServerState();
   void resolveServerAddress(std::string& port);
   void registerPacketHandlers();
+  void registerWords(std::string& __word_file_path);
+  Word selectRandomWord(bool sequential);
   void callUdpPacketHandler(std::string packet_id, std::stringstream& stream,
                             Address& addr_from);
   void callTcpPacketHandler(std::string packet_id, int connection_fd);
