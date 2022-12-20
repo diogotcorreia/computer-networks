@@ -96,21 +96,24 @@ void StartCommand::handle(std::string args, PlayerState& state) {
   state.sendUdpPacketAndWaitForReply(packet_out, rsg);
 
   // Check status
+  ClientGame* game;
   switch (rsg.status) {
     case ReplyStartGameClientbound::status::OK:
       // Start game
-      ClientGame* game =
-          new ClientGame(player_id, rsg.n_letters, rsg.max_errors);
+      game = new ClientGame(player_id, rsg.n_letters, rsg.max_errors);
       state.startGame(game);
       // Output game info
       std::cout << "Game started successfully!" << std::endl;
       break;
+
     case ReplyStartGameClientbound::status::NOK:
       std::cout
           << "Game failed to start: that player already has an on-going game."
           << std::endl;
       break;
+
     case ReplyStartGameClientbound::status::ERR:
+    default:
       std::cout << "Game failed to start: packet was wrongly structured."
                 << std::endl;
       break;
