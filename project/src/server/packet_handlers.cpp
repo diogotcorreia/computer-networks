@@ -208,26 +208,37 @@ void handle_quit_game(std::stringstream &buffer, Address &addr_from,
   try {
     packet.deserialize(buffer);
 
-    state.cdebug << "Received request to quit game from player '"
-                 << packet.player_id << "'" << std::endl;
+    state.cdebug << "[Player " << std::setfill('0')
+                 << std::setw(PLAYER_ID_MAX_LEN) << packet.player_id
+                 << "] Quitting game" << std::endl;
 
     ServerGameSync game = state.getGame(packet.player_id);
 
     if (game->isOnGoing()) {
       game->finishGame();
       response.status = QuitGameClientbound::status::OK;
+      state.cdebug << "[Player " << std::setfill('0')
+                   << std::setw(PLAYER_ID_MAX_LEN) << packet.player_id
+                   << "] Fulfilling quit request" << std::endl;
     } else {
       response.status = QuitGameClientbound::status::NOK;
+      state.cdebug << "[Player " << std::setfill('0')
+                   << std::setw(PLAYER_ID_MAX_LEN) << packet.player_id
+                   << "] Game has already ended" << std::endl;
     }
   } catch (NoGameFoundException &e) {
     response.status = QuitGameClientbound::status::NOK;
+    state.cdebug << "[Player " << std::setfill('0')
+                 << std::setw(PLAYER_ID_MAX_LEN) << packet.player_id
+                 << "] No game initialized" << std::endl;
   } catch (InvalidPacketException &e) {
-    state.cdebug << "Invalid packet" << std::endl;
+    state.cdebug << "[Quit] Invalid packet" << std::endl;
     response.status = QuitGameClientbound::status::ERR;
   } catch (std::exception &e) {
-    std::cerr << "There was an unhandled exception that prevented the server "
-                 "from handling a quit game request:"
-              << e.what() << std::endl;
+    std::cerr
+        << "[Quit] There was an unhandled exception that prevented the server "
+           "from handling a quit game request:"
+        << e.what() << std::endl;
     return;
   }
 
@@ -272,19 +283,24 @@ void handle_scoreboard(int connection_fd, GameServerState &state) {
   ScoreboardServerbound packet;
   packet.receive(connection_fd);  // handle outside try and propagate error
 
-  state.cdebug << "Received request for scoreboard" << std::endl;
+  state.cdebug << "[Scoreboard] Received request." << std::endl;
 
   ScoreboardClientbound response;
   try {
     auto scoreboard_str = state.scoreboard.toString();
     if (scoreboard_str.has_value()) {
       response.status = ScoreboardClientbound::status::OK;
+      state.cdebug << "[Scoreboard] Fulfilling request." << std::endl;
       response.file_data = scoreboard_str.value();
     } else {
       response.status = ScoreboardClientbound::status::EMPTY;
+      state.cdebug
+          << "[Scoreboard] There is no score, sending empty scoreboard."
+          << std::endl;
     }
   } catch (std::exception &e) {
-    std::cerr << "There was an unhandled exception that prevented the server "
+    std::cerr << "[Scoreboard] There was an unhandled exception that prevented "
+                 "the server "
                  "from handling a scoreboard request:"
               << e.what() << std::endl;
     return;
@@ -297,8 +313,9 @@ void handle_state(int connection_fd, GameServerState &state) {
   StateServerbound packet;
   packet.receive(connection_fd);
 
-  state.cdebug << "Received request to show game state from player '"
-               << packet.player_id << "'" << std::endl;
+  state.cdebug << "[Player " << std::setfill('0')
+               << std::setw(PLAYER_ID_MAX_LEN) << packet.player_id
+               << "] Received state request." << std::endl;
 
   StateClientbound response;
   try {
@@ -308,12 +325,16 @@ void handle_state(int connection_fd, GameServerState &state) {
     response.status = StateClientbound::status::ACT;
     response.file_name = "state.txt";
     response.file_data = game->getWord();
+    state.cdebug << "[Player " << std::setfill('0')
+                 << std::setw(PLAYER_ID_MAX_LEN) << packet.player_id
+                 << "] Fulfilling state request." << std::endl;
   } catch (NoGameFoundException &e) {
     // TODO
   } catch (std::exception &e) {
-    std::cerr << "There was an unhandled exception that prevented the server "
-                 "from handling a state request:"
-              << e.what() << std::endl;
+    std::cerr
+        << "[State] There was an unhandled exception that prevented the server "
+           "from handling a state request:"
+        << e.what() << std::endl;
     return;
   }
 
