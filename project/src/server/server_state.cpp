@@ -48,6 +48,12 @@ void GameServerState::setup_sockets() {
     perror("Failed to create a TCP socket");
     exit(EXIT_FAILURE);
   }
+  const int enable = 1;
+  if (setsockopt(this->tcp_socket_fd, SOL_SOCKET, SO_REUSEADDR, &enable,
+                 sizeof(int)) < 0) {
+    perror("Failed to set socket options");
+    exit(EXIT_FAILURE);
+  }
 }
 
 void GameServerState::resolveServerAddress(std::string &port) {
