@@ -155,6 +155,11 @@ void GuessLetterServerbound::deserialize(std::stringstream &buffer) {
   guess = readAlphabeticalChar(buffer);
   readSpace(buffer);
   trial = readInt(buffer);
+
+  if (trial < TRIAL_MIN || trial > TRIAL_MAX) {
+    throw InvalidPacketException();
+  }
+
   readPacketDelimiter(buffer);
 };
 
@@ -201,6 +206,10 @@ void GuessLetterClientbound::deserialize(std::stringstream &buffer) {
   readSpace(buffer);
   trial = readInt(buffer);
 
+  if (trial + 1 < TRIAL_MIN || trial > TRIAL_MAX) {
+    throw InvalidPacketException();
+  }
+
   if (success == "OK") {
     status = OK;
     readSpace(buffer);
@@ -242,8 +251,16 @@ void GuessWordServerbound::deserialize(std::stringstream &buffer) {
   readSpace(buffer);
   // TODO improve the read string method
   guess = readAlphabeticalString(buffer, WORD_MAX_LEN);
+  if (guess.length() < WORD_MIN_LEN || guess.length() > WORD_MAX_LEN) {
+    throw InvalidPacketException();
+  }
+
   readSpace(buffer);
   trial = readInt(buffer);
+  if (trial < TRIAL_MIN || trial > TRIAL_MAX) {
+    throw InvalidPacketException();
+  }
+
   readPacketDelimiter(buffer);
 };
 
@@ -284,6 +301,10 @@ void GuessWordClientbound::deserialize(std::stringstream &buffer) {
 
   readSpace(buffer);
   trial = readInt(buffer);
+
+  if (trial + 1 < TRIAL_MIN || trial > TRIAL_MAX) {
+    throw InvalidPacketException();
+  }
 
   if (statusString == "WIN") {
     status = WIN;
