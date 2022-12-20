@@ -33,10 +33,12 @@ void Worker::execute() {
 
       std::cout << "Got packet ID " << packet_id << std::endl;
 
+      pool->server_state.callTcpPacketHandler(packet_id, tcp_socket_fd);
+
       close(tcp_socket_fd);
 
     } catch (std::exception &e) {
-      std::cerr << "Worker encountered an exception while running:" << e.what()
+      std::cerr << "Worker encountered an exception while running: " << e.what()
                 << std::endl;
     } catch (...) {
       std::cerr << "Worker encountered an unknown exception while running."

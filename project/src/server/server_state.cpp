@@ -23,11 +23,15 @@ GameServerState::~GameServerState() {
 }
 
 void GameServerState::registerPacketHandlers() {
-  packet_handlers.insert({StartGameServerbound::ID, handle_start_game});
-  packet_handlers.insert({GuessLetterServerbound::ID, handle_guess_letter});
-  packet_handlers.insert({GuessWordServerbound::ID, handle_guess_word});
-  packet_handlers.insert({QuitGameServerbound::ID, handle_quit_game});
-  packet_handlers.insert({RevealWordServerbound::ID, handle_reveal_word});
+  // UDP
+  udp_packet_handlers.insert({StartGameServerbound::ID, handle_start_game});
+  udp_packet_handlers.insert({GuessLetterServerbound::ID, handle_guess_letter});
+  udp_packet_handlers.insert({GuessWordServerbound::ID, handle_guess_word});
+  udp_packet_handlers.insert({QuitGameServerbound::ID, handle_quit_game});
+  udp_packet_handlers.insert({RevealWordServerbound::ID, handle_reveal_word});
+
+  // TCP
+  tcp_packet_handlers.insert({StateServerbound::ID, handle_state});
 }
 
 void GameServerState::setup_sockets() {
@@ -86,16 +90,29 @@ void GameServerState::resolveServerAddress(std::string &port) {
   std::cout << "Listening for connections on port " << port << std::endl;
 }
 
-void GameServerState::callPacketHandler(std::string packet_id,
-                                        std::stringstream &stream,
-                                        Address &addr_from) {
-  auto handler = this->packet_handlers.find(packet_id);
-  if (handler == this->packet_handlers.end()) {
+void GameServerState::callUdpPacketHandler(std::string packet_id,
+                                           std::stringstream &stream,
+                                           Address &addr_from) {
+  auto handler = this->udp_packet_handlers.find(packet_id);
+  if (handler == this->udp_packet_handlers.end()) {
+    // TODO add exception
     std::cout << "Unknown Packet ID" << std::endl;
     return;
   }
 
   handler->second(stream, addr_from, *this);
+}
+
+void GameServerState::callTcpPacketHandler(std::string packet_id,
+                                           int connection_fd) {
+  auto handler = this->tcp_packet_handlers.find(packet_id);
+  if (handler == this->tcp_packet_handlers.end()) {
+    // TODO add exception
+    std::cout << "Unknown Packet ID" << std::endl;
+    return;
+  }
+
+  handler->second(connection_fd, *this);
 }
 
 ServerGame &GameServerState::createGame(uint32_t player_id) {

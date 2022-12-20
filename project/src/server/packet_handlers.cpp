@@ -170,3 +170,29 @@ void handle_reveal_word(std::stringstream &buffer, Address &addr_from,
   send_packet(response, addr_from.socket, (struct sockaddr *)&addr_from.addr,
               addr_from.size);
 }
+
+void handle_state(int connection_fd, GameServerState &state) {
+  StateServerbound packet;
+  packet.receive(connection_fd);
+
+  state.cdebug << "Received request to show game state from player '"
+               << packet.player_id << "'" << std::endl;
+
+  StateClientbound response;
+  try {
+    ServerGame &game = state.getGame(packet.player_id);
+    // TODO
+    response.status = StateClientbound::status::ACT;
+    response.file_name = "state.txt";
+    response.file_data = game.getWord();
+  } catch (NoGameFoundException &e) {
+    // TODO
+  } catch (std::exception &e) {
+    std::cerr << "There was an unhandled exception that prevented the server "
+                 "from handling a state request:"
+              << e.what() << std::endl;
+    return;
+  }
+
+  response.send(connection_fd);
+}

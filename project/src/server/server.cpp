@@ -81,7 +81,7 @@ void handle_packet(std::stringstream &buffer, Address &addr_from,
   std::string packet_id_str = std::string(packet_id);
 
   // TODO add exception catch to send back ERR response
-  server_state.callPacketHandler(packet_id_str, buffer, addr_from);
+  server_state.callUdpPacketHandler(packet_id_str, buffer, addr_from);
 }
 
 void wait_for_tcp_packet(GameServerState &server_state, WorkerPool &pool) {

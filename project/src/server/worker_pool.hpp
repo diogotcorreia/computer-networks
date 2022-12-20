@@ -29,12 +29,13 @@ class Worker {
 };
 
 class WorkerPool {
-  GameServerState &server_state;
   Worker workers[TCP_WORKER_POOL_SIZE];
   bool busy_threads[TCP_WORKER_POOL_SIZE];
   std::mutex busy_threads_lock;
 
  public:
+  GameServerState &server_state;
+
   WorkerPool(GameServerState &__server_state);
   void delegateConnection(int connection_fd);
   void freeWorker(uint32_t worker_id);
