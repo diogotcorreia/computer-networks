@@ -94,7 +94,15 @@ bool ServerGame::guessWord(std::string &word_guess, uint32_t trial) {
     throw InvalidTrialException();
   }
 
+  for (auto it = word_guesses.begin(); it != word_guesses.end(); ++it) {
+    // check if it is duplicate play
+    if (word_guess == *it) {
+      throw DuplicateWordGuessException();
+    }
+  }
+
   plays.push_back(0);
+  word_guesses.push_back(word_guess);
   currentTrial++;
   if (word == word_guess) {
     lettersRemaining = 0;

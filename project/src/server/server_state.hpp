@@ -54,11 +54,15 @@ class DebugStream {
 
 class GameServerState;
 
-typedef void (*PacketHandler)(std::stringstream&, Address&, GameServerState&);
+typedef void (*UdpPacketHandler)(std::stringstream&, Address&,
+                                 GameServerState&);
+typedef void (*TcpPacketHandler)(int connection_fd, GameServerState&);
 
 class GameServerState {
-  std::unordered_map<std::string, PacketHandler> packet_handlers;
+  std::unordered_map<std::string, UdpPacketHandler> udp_packet_handlers;
+  std::unordered_map<std::string, TcpPacketHandler> tcp_packet_handlers;
   std::unordered_map<uint32_t, ServerGame> games;
+  std::mutex gamesLock;
   std::vector<ServerGame> scoreboard{};
   std::string word_file_path;
   void setup_sockets();
@@ -75,10 +79,11 @@ class GameServerState {
   ~GameServerState();
   void resolveServerAddress(std::string& port);
   void registerPacketHandlers();
-  void callPacketHandler(std::string packet_id, std::stringstream& stream,
-                         Address& addr_from);
-  ServerGame& getGame(uint32_t player_id);
-  ServerGame& createGame(uint32_t player_id);
+  void callUdpPacketHandler(std::string packet_id, std::stringstream& stream,
+                            Address& addr_from);
+  void callTcpPacketHandler(std::string packet_id, int connection_fd);
+  ServerGameSync getGame(uint32_t player_id);
+  ServerGameSync createGame(uint32_t player_id);
   void addtoScoreboard(ServerGame* game);
   std::stringstream getScoreboard();
   static bool cmpGames(ServerGame& a, ServerGame& b);

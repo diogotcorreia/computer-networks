@@ -25,11 +25,15 @@ GameServerState::~GameServerState() {
 }
 
 void GameServerState::registerPacketHandlers() {
-  packet_handlers.insert({StartGameServerbound::ID, handle_start_game});
-  packet_handlers.insert({GuessLetterServerbound::ID, handle_guess_letter});
-  packet_handlers.insert({GuessWordServerbound::ID, handle_guess_word});
-  packet_handlers.insert({QuitGameServerbound::ID, handle_quit_game});
-  packet_handlers.insert({RevealWordServerbound::ID, handle_reveal_word});
+  // UDP
+  udp_packet_handlers.insert({StartGameServerbound::ID, handle_start_game});
+  udp_packet_handlers.insert({GuessLetterServerbound::ID, handle_guess_letter});
+  udp_packet_handlers.insert({GuessWordServerbound::ID, handle_guess_word});
+  udp_packet_handlers.insert({QuitGameServerbound::ID, handle_quit_game});
+  udp_packet_handlers.insert({RevealWordServerbound::ID, handle_reveal_word});
+
+  // TCP
+  tcp_packet_handlers.insert({StateServerbound::ID, handle_state});
 }
 
 void GameServerState::setup_sockets() {
@@ -44,6 +48,12 @@ void GameServerState::setup_sockets() {
   if ((this->tcp_socket_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
     // TODO consider using exceptions (?)
     perror("Failed to create a TCP socket");
+    exit(EXIT_FAILURE);
+  }
+  const int enable = 1;
+  if (setsockopt(this->tcp_socket_fd, SOL_SOCKET, SO_REUSEADDR, &enable,
+                 sizeof(int)) < 0) {
+    perror("Failed to set socket options");
     exit(EXIT_FAILURE);
   }
 }
@@ -88,11 +98,12 @@ void GameServerState::resolveServerAddress(std::string &port) {
   std::cout << "Listening for connections on port " << port << std::endl;
 }
 
-void GameServerState::callPacketHandler(std::string packet_id,
-                                        std::stringstream &stream,
-                                        Address &addr_from) {
-  auto handler = this->packet_handlers.find(packet_id);
-  if (handler == this->packet_handlers.end()) {
+void GameServerState::callUdpPacketHandler(std::string packet_id,
+                                           std::stringstream &stream,
+                                           Address &addr_from) {
+  auto handler = this->udp_packet_handlers.find(packet_id);
+  if (handler == this->udp_packet_handlers.end()) {
+    // TODO add exception
     std::cout << "Unknown Packet ID" << std::endl;
     return;
   }
@@ -100,33 +111,55 @@ void GameServerState::callPacketHandler(std::string packet_id,
   handler->second(stream, addr_from, *this);
 }
 
-ServerGame &GameServerState::createGame(uint32_t player_id) {
+void GameServerState::callTcpPacketHandler(std::string packet_id,
+                                           int connection_fd) {
+  auto handler = this->tcp_packet_handlers.find(packet_id);
+  if (handler == this->tcp_packet_handlers.end()) {
+    // TODO add exception
+    std::cout << "Unknown Packet ID" << std::endl;
+    return;
+  }
+
+  handler->second(connection_fd, *this);
+}
+
+ServerGameSync GameServerState::createGame(uint32_t player_id) {
+  std::scoped_lock<std::mutex> g_lock(gamesLock);
+
   auto game = games.find(player_id);
   if (game != games.end()) {
-    if (game->second.hasStarted()) {
-      throw GameAlreadyStartedException();
-    }
-    if (game->second.isOnGoing()) {
-      return game->second;
+    {
+      ServerGameSync game_sync = ServerGameSync(game->second);
+      if (game_sync->isOnGoing()) {
+        if (game_sync->hasStarted()) {
+          throw GameAlreadyStartedException();
+        }
+        return game_sync;
+      }
     }
 
+    std::cout << "Deleting game" << std::endl;
     // Delete existing game, so we can create a new one below
     games.erase(game);
   }
 
-  auto new_game = ServerGame(player_id);
-  games.insert(std::pair(player_id, new_game));
+  // Some C++ magic to create an instance of the class inside the map, without
+  // moving it, since mutexes can't be moved
+  games.emplace(std::piecewise_construct, std::forward_as_tuple(player_id),
+                std::forward_as_tuple(player_id));
 
-  return games.at(player_id);
+  return ServerGameSync(games.at(player_id));
 }
 
-ServerGame &GameServerState::getGame(uint32_t player_id) {
+ServerGameSync GameServerState::getGame(uint32_t player_id) {
+  std::scoped_lock<std::mutex> g_lock(gamesLock);
+
   auto game = games.find(player_id);
   if (game == games.end()) {
     throw NoGameFoundException();
   }
 
-  return game->second;
+  return ServerGameSync(game->second);
 }
 
 void GameServerState::addtoScoreboard(ServerGame *game) {

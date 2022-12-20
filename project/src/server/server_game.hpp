@@ -1,6 +1,7 @@
 #ifndef SERVER_GAME_H
 #define SERVER_GAME_H
 
+#include <mutex>
 #include <stdexcept>
 #include <vector>
 
@@ -16,15 +17,33 @@ class ServerGame : public Game {
   std::vector<uint32_t> getIndexesOfLetter(char letter);
 
  public:
+  std::mutex lock;
+
   ServerGame(uint32_t playerId);
   ~ServerGame();
   std::vector<uint32_t> guessLetter(char letter, uint32_t trial);
-  bool guessWord(std::string &word, uint32_t trial);
+  bool guessWord(std::string& word, uint32_t trial);
   bool hasLost();
   bool hasWon();
   bool hasStarted();
   uint32_t getScore();
   std::string getWord();
+};
+
+class ServerGameSync {
+ private:
+  std::unique_lock<std::mutex> slock;
+  ServerGame& game;
+
+ public:
+  ServerGameSync(ServerGame& __game) : slock{__game.lock}, game{__game} {};
+
+  ServerGame& operator*() {
+    return game;
+  }
+  ServerGame* operator->() {
+    return &game;
+  }
 };
 
 /** Exceptions **/
@@ -34,6 +53,13 @@ class DuplicateLetterGuessException : public std::runtime_error {
   DuplicateLetterGuessException()
       : std::runtime_error(
             "That letter has already been guessed in this game before.") {}
+};
+
+class DuplicateWordGuessException : public std::runtime_error {
+ public:
+  DuplicateWordGuessException()
+      : std::runtime_error(
+            "That word has already been guessed in this game before.") {}
 };
 
 class InvalidTrialException : public std::runtime_error {

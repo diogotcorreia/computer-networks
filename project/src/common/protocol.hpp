@@ -93,8 +93,9 @@ class StartGameServerbound : public UdpPacket {
 // Reply to Start Game Packet (RSG)
 class ReplyStartGameClientbound : public UdpPacket {
  public:
+  enum status { OK, NOK, ERR };
   static constexpr const char *ID = "RSG";
-  bool success;
+  status status;
   uint32_t n_letters;
   uint32_t max_errors;
 
@@ -131,7 +132,6 @@ class GuessWordServerbound : public UdpPacket {
   uint32_t player_id;
   std::string guess;
   uint32_t trial;
-  uint32_t wordLen;
 
   std::stringstream serialize();
   void deserialize(std::stringstream &buffer);
@@ -139,7 +139,7 @@ class GuessWordServerbound : public UdpPacket {
 
 class GuessWordClientbound : public UdpPacket {
  public:
-  enum status { WIN, NOK, OVR, INV, ERR };
+  enum status { WIN, DUP, NOK, OVR, INV, ERR };
   static constexpr const char *ID = "RWG";
   status status;
   uint32_t trial;
@@ -159,8 +159,9 @@ class QuitGameServerbound : public UdpPacket {
 
 class QuitGameClientbound : public UdpPacket {
  public:
+  enum status { OK, NOK, ERR };
   static constexpr const char *ID = "RQT";
-  bool success;
+  status status;
 
   std::stringstream serialize();
   void deserialize(std::stringstream &buffer);
@@ -253,6 +254,7 @@ class StateClientbound : public TcpPacket {
   static constexpr const char *ID = "RST";
   status status;
   std::string file_name;
+  std::string file_data;
 
   void send(int fd);
   void receive(int fd);

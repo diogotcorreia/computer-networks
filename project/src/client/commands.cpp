@@ -96,16 +96,27 @@ void StartCommand::handle(std::string args, PlayerState& state) {
   state.sendUdpPacketAndWaitForReply(packet_out, rsg);
 
   // Check status
-  if (rsg.success) {
-    // Start game
-    ClientGame* game = new ClientGame(player_id, rsg.n_letters, rsg.max_errors);
-    state.startGame(game);
-    // Output game info
-    std::cout << "Game started successfully!" << std::endl;
-  } else {
-    std::cout
-        << "Game failed to start: that player already has an on-going game."
-        << std::endl;
+  ClientGame* game;
+  switch (rsg.status) {
+    case ReplyStartGameClientbound::status::OK:
+      // Start game
+      game = new ClientGame(player_id, rsg.n_letters, rsg.max_errors);
+      state.startGame(game);
+      // Output game info
+      std::cout << "Game started successfully!" << std::endl;
+      break;
+
+    case ReplyStartGameClientbound::status::NOK:
+      std::cout
+          << "Game failed to start: that player already has an on-going game."
+          << std::endl;
+      break;
+
+    case ReplyStartGameClientbound::status::ERR:
+    default:
+      std::cout << "Game failed to start: packet was wrongly structured."
+                << std::endl;
+      break;
   }
 }
 
@@ -216,7 +227,6 @@ void GuessWordCommand::handle(std::string args, PlayerState& state) {
   GuessWordServerbound packet_out;
   packet_out.player_id = state.game->getPlayerId();
   packet_out.trial = state.game->getCurrentTrial();
-  packet_out.wordLen = state.game->getWordLen();
   packet_out.guess = args;
 
   GuessWordClientbound rwg;
@@ -244,7 +254,10 @@ void GuessWordCommand::handle(std::string args, PlayerState& state) {
       std::cout << "Word '" << args << "' is the correct word." << std::endl;
       std::cout << "YOU WON!" << std::endl;
       break;
-
+    case GuessWordClientbound::status::DUP:
+      std::cout << "Word '" << args << "' has already been guessed before."
+                << std::endl;
+      break;
     case GuessWordClientbound::status::NOK:
       state.game->updateNumErrors();
       state.game->increaseTrial();
@@ -287,11 +300,21 @@ void QuitCommand::handle(std::string args, PlayerState& state) {
   state.sendUdpPacketAndWaitForReply(packet_out, rq);
 
   // Check packet status
-  if (rq.success) {
-    std::cout << "Game quit successfully." << std::endl;
-    state.game->finishGame();
-  } else {
-    std::cout << "Failed to quit game." << std::endl;
+  switch (rq.status) {
+    case QuitGameClientbound::status::OK:
+      std::cout << "Game quit successfully." << std::endl;
+      state.game->finishGame();
+      break;
+
+    case QuitGameClientbound::status::NOK:
+      std::cout << "Game had already finished." << std::endl;
+      state.game->finishGame();
+      break;
+
+    case QuitGameClientbound::status::ERR:
+    default:
+      std::cout << "Error with the request. Please try again." << std::endl;
+      break;
   }
 }
 
@@ -306,12 +329,21 @@ void ExitCommand::handle(std::string args, PlayerState& state) {
     state.sendUdpPacketAndWaitForReply(packet_out, rq);
 
     // Check packet status
-    if (rq.success) {
-      std::cout << "Game quit successfully." << std::endl;
-      state.game->finishGame();
-    } else {
-      std::cout << "Failed to quit game." << std::endl;
-      return;
+    switch (rq.status) {
+      case QuitGameClientbound::status::OK:
+        std::cout << "Game quit successfully." << std::endl;
+        state.game->finishGame();
+        break;
+
+      case QuitGameClientbound::status::NOK:
+        std::cout << "Game had already finished." << std::endl;
+        state.game->finishGame();
+        break;
+
+      case QuitGameClientbound::status::ERR:
+      default:
+        std::cout << "Failed to quit game." << std::endl;
+        break;
     }
   }
   exit(EXIT_SUCCESS);
@@ -447,10 +479,20 @@ void KillCommand::handle(std::string args, PlayerState& state) {
   QuitGameClientbound rq;
   state.sendUdpPacketAndWaitForReply(packet_out, rq);
   // Check packet status
-  if (rq.success) {
-    std::cout << "Killed game successfully." << std::endl;
-  } else {
-    std::cout << "There is no on-going game or this player." << std::endl;
+  switch (rq.status) {
+    case QuitGameClientbound::status::OK:
+      std::cout << "Game quit successfully." << std::endl;
+      break;
+
+    case QuitGameClientbound::status::NOK:
+      std::cout << "There is no on-going game for this player." << std::endl;
+      // Game was already finished
+      break;
+
+    case QuitGameClientbound::status::ERR:
+    default:
+      std::cout << "Failed to quit game on server." << std::endl;
+      break;
   }
 }
 

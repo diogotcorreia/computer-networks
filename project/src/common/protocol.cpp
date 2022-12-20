@@ -104,10 +104,14 @@ void StartGameServerbound::deserialize(std::stringstream &buffer) {
 std::stringstream ReplyStartGameClientbound::serialize() {
   std::stringstream buffer;
   buffer << ReplyStartGameClientbound::ID << " ";
-  if (success) {
+  if (status == ReplyStartGameClientbound::status::OK) {
     buffer << "OK " << n_letters << " " << max_errors;
-  } else {
+  } else if (status == ReplyStartGameClientbound::status::NOK) {
     buffer << "NOK";
+  } else if (status == ReplyStartGameClientbound::status::ERR) {
+    buffer << "ERR";
+  } else {
+    throw PacketSerializationException();
   }
   buffer << std::endl;
   return buffer;
@@ -117,15 +121,17 @@ void ReplyStartGameClientbound::deserialize(std::stringstream &buffer) {
   buffer >> std::noskipws;
   readPacketId(buffer, ReplyStartGameClientbound::ID);
   readSpace(buffer);
-  auto success_str = readString(buffer, 3);
-  if (success_str == "OK") {
-    success = true;
+  auto status_str = readString(buffer, 3);
+  if (status_str == "OK") {
+    status = OK;
     readSpace(buffer);
     n_letters = readInt(buffer);
     readSpace(buffer);
     max_errors = readInt(buffer);
-  } else if (success_str == "NOK") {
-    success = false;
+  } else if (status_str == "NOK") {
+    status = NOK;
+  } else if (status_str == "ERR") {
+    status = ERR;
   } else {
     throw InvalidPacketException();
   }
@@ -149,6 +155,11 @@ void GuessLetterServerbound::deserialize(std::stringstream &buffer) {
   guess = readAlphabeticalChar(buffer);
   readSpace(buffer);
   trial = readInt(buffer);
+
+  if (trial < TRIAL_MIN || trial > TRIAL_MAX) {
+    throw InvalidPacketException();
+  }
+
   readPacketDelimiter(buffer);
 };
 
@@ -195,6 +206,10 @@ void GuessLetterClientbound::deserialize(std::stringstream &buffer) {
   readSpace(buffer);
   trial = readInt(buffer);
 
+  if (trial + 1 < TRIAL_MIN || trial > TRIAL_MAX) {
+    throw InvalidPacketException();
+  }
+
   if (success == "OK") {
     status = OK;
     readSpace(buffer);
@@ -235,9 +250,17 @@ void GuessWordServerbound::deserialize(std::stringstream &buffer) {
   player_id = readInt(buffer);
   readSpace(buffer);
   // TODO improve the read string method
-  guess = readAlphabeticalString(buffer, wordLen);
+  guess = readAlphabeticalString(buffer, WORD_MAX_LEN);
+  if (guess.length() < WORD_MIN_LEN || guess.length() > WORD_MAX_LEN) {
+    throw InvalidPacketException();
+  }
+
   readSpace(buffer);
   trial = readInt(buffer);
+  if (trial < TRIAL_MIN || trial > TRIAL_MAX) {
+    throw InvalidPacketException();
+  }
+
   readPacketDelimiter(buffer);
 };
 
@@ -248,6 +271,8 @@ std::stringstream GuessWordClientbound::serialize() {
     buffer << "WIN " << trial;
   } else if (status == NOK) {
     buffer << "NOK " << trial;
+  } else if (status == DUP) {
+    buffer << "DUP " << trial;
   } else if (status == OVR) {
     buffer << "OVR " << trial;
   } else if (status == INV) {
@@ -277,10 +302,16 @@ void GuessWordClientbound::deserialize(std::stringstream &buffer) {
   readSpace(buffer);
   trial = readInt(buffer);
 
+  if (trial + 1 < TRIAL_MIN || trial > TRIAL_MAX) {
+    throw InvalidPacketException();
+  }
+
   if (statusString == "WIN") {
     status = WIN;
   } else if (statusString == "NOK") {
     status = NOK;
+  } else if (statusString == "DUP") {
+    status = DUP;
   } else if (statusString == "OVR") {
     status = OVR;
   } else if (statusString == "INV") {
@@ -310,10 +341,14 @@ void QuitGameServerbound::deserialize(std::stringstream &buffer) {
 std::stringstream QuitGameClientbound::serialize() {
   std::stringstream buffer;
   buffer << QuitGameClientbound::ID << " ";
-  if (success) {
+  if (status == OK) {
     buffer << "OK";
-  } else {
+  } else if (status == NOK) {
+    buffer << "NOK";
+  } else if (status == ERR) {
     buffer << "ERR";
+  } else {
+    throw PacketSerializationException();
   }
   buffer << std::endl;
   return buffer;
@@ -323,11 +358,13 @@ void QuitGameClientbound::deserialize(std::stringstream &buffer) {
   buffer >> std::noskipws;
   readPacketId(buffer, QuitGameClientbound::ID);
   readSpace(buffer);
-  auto successString = readString(buffer, 2);
-  if (successString == "OK") {
-    success = true;
-  } else if (successString == "ERR") {
-    success = false;
+  auto status_str = readString(buffer, 2);
+  if (status_str == "OK") {
+    status = OK;
+  } else if (status_str == "NOK") {
+    status = NOK;
+  } else if (status_str == "ERR") {
+    status = ERR;
   } else {
     throw InvalidPacketException();
   }
@@ -546,12 +583,10 @@ void StateClientbound::send(int fd) {
   stream << StateClientbound::ID << " ";
   if (status == ACT) {
     stream << "ACT ";
-    stream << "state.txt 4 "
-           << "test";
+    stream << file_name << " " << file_data.length() << " " << file_data;
   } else if (status == FIN) {
     stream << "FIN ";
-    stream << "state.txt 4 "
-           << "test";
+    stream << file_name << " " << file_data.length() << " " << file_data;
   } else if (status == NOK) {
     stream << "NOK";
   } else {
