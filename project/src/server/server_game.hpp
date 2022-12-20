@@ -54,6 +54,13 @@ class DuplicateLetterGuessException : public std::runtime_error {
             "That letter has already been guessed in this game before.") {}
 };
 
+class DuplicateWordGuessException : public std::runtime_error {
+ public:
+  DuplicateWordGuessException()
+      : std::runtime_error(
+            "That word has already been guessed in this game before.") {}
+};
+
 class InvalidTrialException : public std::runtime_error {
  public:
   InvalidTrialException()

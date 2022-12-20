@@ -254,6 +254,8 @@ std::stringstream GuessWordClientbound::serialize() {
     buffer << "WIN " << trial;
   } else if (status == NOK) {
     buffer << "NOK " << trial;
+  } else if (status == DUP) {
+    buffer << "DUP " << trial;
   } else if (status == OVR) {
     buffer << "OVR " << trial;
   } else if (status == INV) {
@@ -287,6 +289,8 @@ void GuessWordClientbound::deserialize(std::stringstream &buffer) {
     status = WIN;
   } else if (statusString == "NOK") {
     status = NOK;
+  } else if (statusString == "DUP") {
+    status = DUP;
   } else if (statusString == "OVR") {
     status = OVR;
   } else if (statusString == "INV") {

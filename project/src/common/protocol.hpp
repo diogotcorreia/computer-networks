@@ -139,7 +139,7 @@ class GuessWordServerbound : public UdpPacket {
 
 class GuessWordClientbound : public UdpPacket {
  public:
-  enum status { WIN, NOK, OVR, INV, ERR };
+  enum status { WIN, DUP, NOK, OVR, INV, ERR };
   static constexpr const char *ID = "RWG";
   status status;
   uint32_t trial;
