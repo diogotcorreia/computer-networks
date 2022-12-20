@@ -160,8 +160,9 @@ class QuitGameServerbound : public UdpPacket {
 
 class QuitGameClientbound : public UdpPacket {
  public:
+  enum status { OK, NOK, ERR };
   static constexpr const char *ID = "RQT";
-  bool success;
+  status status;
 
   std::stringstream serialize();
   void deserialize(std::stringstream &buffer);
