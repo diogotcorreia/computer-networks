@@ -132,7 +132,6 @@ class GuessWordServerbound : public UdpPacket {
   uint32_t player_id;
   std::string guess;
   uint32_t trial;
-  uint32_t wordLen;
 
   std::stringstream serialize();
   void deserialize(std::stringstream &buffer);
