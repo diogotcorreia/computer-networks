@@ -123,13 +123,13 @@ void handle_guess_word(std::stringstream &buffer, Address &addr_from,
 void handle_quit_game(std::stringstream &buffer, Address &addr_from,
                       GameServerState &state) {
   QuitGameServerbound packet;
-  packet.deserialize(buffer);
-
-  state.cdebug << "Received request to quit game from player '"
-               << packet.player_id << "'" << std::endl;
-
   QuitGameClientbound response;
   try {
+    packet.deserialize(buffer);
+
+    state.cdebug << "Received request to quit game from player '"
+                 << packet.player_id << "'" << std::endl;
+
     ServerGameSync game = state.getGame(packet.player_id);
 
     if (game->isOnGoing()) {
@@ -140,11 +140,14 @@ void handle_quit_game(std::stringstream &buffer, Address &addr_from,
     }
   } catch (NoGameFoundException &e) {
     response.status = QuitGameClientbound::status::NOK;
+  } catch (InvalidPacketException &e) {
+    state.cdebug << "Invalid packet" << std::endl;
+    response.status = QuitGameClientbound::status::ERR;
   } catch (std::exception &e) {
     std::cerr << "There was an unhandled exception that prevented the server "
                  "from handling a quit game request:"
               << e.what() << std::endl;
-    response.status = QuitGameClientbound::status::ERR;
+    return;
   }
 
   send_packet(response, addr_from.socket, (struct sockaddr *)&addr_from.addr,
