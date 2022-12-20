@@ -21,4 +21,7 @@
 #define HELP_MENU_DESCRIPTION_COLUMN_WIDTH 40
 #define HELP_MENU_ALIAS_COLUMN_WIDTH 40
 
+#define TCP_WORKER_POOL_SIZE (5)  // TODO set back to 50
+#define TCP_MAX_QUEUE_SIZE (5)
+
 #endif

@@ -544,12 +544,10 @@ void StateClientbound::send(int fd) {
   stream << StateClientbound::ID << " ";
   if (status == ACT) {
     stream << "ACT ";
-    stream << "state.txt 4 "
-           << "test";
+    stream << file_name << " " << file_data.length() << " " << file_data;
   } else if (status == FIN) {
     stream << "FIN ";
-    stream << "state.txt 4 "
-           << "test";
+    stream << file_name << " " << file_data.length() << " " << file_data;
   } else if (status == NOK) {
     stream << "NOK";
   } else {
