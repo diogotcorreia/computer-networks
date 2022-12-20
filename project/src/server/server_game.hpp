@@ -27,6 +27,7 @@ class ServerGame : public Game {
   bool hasWon();
   bool hasStarted();
   uint32_t getScore();
+  std::string getStateString();
   std::string getWord();
 };
 
