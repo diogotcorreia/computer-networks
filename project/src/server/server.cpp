@@ -12,7 +12,8 @@ int main(int argc, char *argv[]) {
     config.printHelp(std::cout);
     exit(EXIT_SUCCESS);
   }
-  GameServerState state(config.wordFilePath, config.port, config.verbose);
+  GameServerState state(config.wordFilePath, config.port, config.verbose,
+                        config.test);
   state.registerPacketHandlers();
 
   state.cdebug << "Verbose mode is active" << std::endl << std::endl;
@@ -115,7 +116,7 @@ ServerConfig::ServerConfig(int argc, char *argv[]) {
   programPath = argv[0];
   int opt;
 
-  while ((opt = getopt(argc, argv, "-p:vh")) != -1) {
+  while ((opt = getopt(argc, argv, "-p:vht")) != -1) {
     switch (opt) {
       case 'p':
         port = std::string(optarg);
@@ -126,6 +127,9 @@ ServerConfig::ServerConfig(int argc, char *argv[]) {
         break;
       case 'v':
         verbose = true;
+        break;
+      case 't':
+        test = true;
         break;
       case 1:
         // The `-` flag in `getopt` makes non-options behave as if they

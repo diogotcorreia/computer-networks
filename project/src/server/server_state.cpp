@@ -10,8 +10,9 @@
 #include "packet_handlers.hpp"
 
 GameServerState::GameServerState(std::string &__word_file_path,
-                                 std::string &port, bool __verbose)
+                                 std::string &port, bool __verbose, bool __test)
     : cdebug{DebugStream(__verbose)} {
+  this->test = __test;
   this->setup_sockets();
   this->resolveServerAddress(port);
   this->registerWords(__word_file_path);
@@ -118,9 +119,9 @@ void GameServerState::registerWords(std::string &__word_file_path) {
   word_file.close();
 }
 
-Word GameServerState::selectRandomWord(bool sequential) {
+Word GameServerState::selectRandomWord() {
   uint32_t index;
-  if (sequential) {
+  if (test) {
     index = (this->current_word_index) % (uint32_t)this->words.size();
     this->current_word_index = index + 1;
   } else {
@@ -174,7 +175,7 @@ ServerGameSync GameServerState::createGame(uint32_t player_id) {
     games.erase(game);
   }
   // TODO: select sequential or random
-  Word word = this->selectRandomWord(false);
+  Word word = this->selectRandomWord();
   // Some C++ magic to create an instance of the class inside the map, without
   // moving it, since mutexes can't be moved
   games.emplace(std::piecewise_construct, std::forward_as_tuple(player_id),
