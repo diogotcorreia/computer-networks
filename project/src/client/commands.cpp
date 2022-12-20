@@ -327,12 +327,6 @@ void ExitCommand::handle(std::string args, PlayerState& state) {
     state.sendUdpPacketAndWaitForReply(packet_out, rq);
 
     // Check packet status
-    if (rq.status == QuitGameClientbound::status::ERR) {
-      std::cout << "Error with the request. Please try again." << std::endl;
-      return;
-    }
-
-    // Check packet status
     switch (rq.status) {
       case QuitGameClientbound::status::OK:
         std::cout << "Game quit successfully." << std::endl;
