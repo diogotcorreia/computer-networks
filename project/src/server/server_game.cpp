@@ -132,7 +132,7 @@ uint32_t ServerGame::getScore() {
   if (!hasWon()) {
     return 0;
   }
-  return (uint32_t)((currentTrial - numErrors) / currentTrial);
+  return (uint32_t)(getGoodTrials() * 100 / (currentTrial - 1));
 }
 
 std::string ServerGame::getWord() {

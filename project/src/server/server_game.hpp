@@ -33,9 +33,10 @@ class ServerGame : public Game {
 class ServerGameSync {
  private:
   std::unique_lock<std::mutex> slock;
-  ServerGame& game;
 
  public:
+  ServerGame& game;
+
   ServerGameSync(ServerGame& __game) : slock{__game.lock}, game{__game} {};
 
   ServerGame& operator*() {

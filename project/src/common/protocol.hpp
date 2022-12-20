@@ -224,7 +224,7 @@ class ScoreboardClientbound : public TcpPacket {
   static constexpr const char *ID = "RSB";
   status status;
   std::string file_name;
-  std::stringstream file_data;
+  std::string file_data;
 
   void send(int fd);
   void receive(int fd);

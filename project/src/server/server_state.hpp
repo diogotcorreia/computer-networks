@@ -7,6 +7,7 @@
 #include <sstream>
 #include <unordered_map>
 
+#include "scoreboard.hpp"
 #include "server_game.hpp"
 
 class Address {
@@ -63,7 +64,6 @@ class GameServerState {
   std::unordered_map<std::string, TcpPacketHandler> tcp_packet_handlers;
   std::unordered_map<uint32_t, ServerGame> games;
   std::mutex gamesLock;
-  std::vector<ServerGame> scoreboard{};
   std::string word_file_path;
   void setup_sockets();
 
@@ -72,6 +72,7 @@ class GameServerState {
   int tcp_socket_fd;
   struct addrinfo* server_udp_addr;
   struct addrinfo* server_tcp_addr;
+  Scoreboard scoreboard;
   DebugStream cdebug;
 
   GameServerState(std::string& __word_file_path, std::string& port,
@@ -84,9 +85,6 @@ class GameServerState {
   void callTcpPacketHandler(std::string packet_id, int connection_fd);
   ServerGameSync getGame(uint32_t player_id);
   ServerGameSync createGame(uint32_t player_id);
-  void addtoScoreboard(ServerGame* game);
-  std::stringstream getScoreboard();
-  static bool cmpGames(ServerGame& a, ServerGame& b);
 };
 
 /** Exceptions **/

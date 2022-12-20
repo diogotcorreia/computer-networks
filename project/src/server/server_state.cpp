@@ -2,9 +2,7 @@
 
 #include <unistd.h>
 
-#include <algorithm>
 #include <cstring>
-#include <iomanip>
 #include <iostream>
 
 #include "common/protocol.hpp"
@@ -33,6 +31,7 @@ void GameServerState::registerPacketHandlers() {
   udp_packet_handlers.insert({RevealWordServerbound::ID, handle_reveal_word});
 
   // TCP
+  tcp_packet_handlers.insert({ScoreboardServerbound::ID, handle_scoreboard});
   tcp_packet_handlers.insert({StateServerbound::ID, handle_state});
 }
 
@@ -160,47 +159,4 @@ ServerGameSync GameServerState::getGame(uint32_t player_id) {
   }
 
   return ServerGameSync(game->second);
-}
-
-void GameServerState::addtoScoreboard(ServerGame *game) {
-  if (scoreboard.size() < 10 || cmpGames(*game, scoreboard.back())) {
-    scoreboard.push_back(ServerGame(*game));
-    std::sort(scoreboard.begin(), scoreboard.end(), cmpGames);
-    if (scoreboard.size() > 10) {
-      scoreboard.pop_back();
-    }
-  }
-}
-
-bool GameServerState::cmpGames(ServerGame &a, ServerGame &b) {
-  return a.getScore() > b.getScore();
-}
-
-std::stringstream GameServerState::getScoreboard() {
-  if (scoreboard.size() == 0) {
-    throw NoGameFoundException();
-  }
-  std::stringstream file;
-  int i = 0;
-
-  file << "-------------------------------- TOP 10 SCORES "
-          "--------------------------------"
-       << std::endl;
-  file << std::endl;
-  file << "    SCORE PLAYER     WORD                             GOOD TRIALS  "
-          "TOTAL TRIALS"
-       << std::endl;
-  for (auto game : scoreboard) {
-    i++;
-    file << std::setfill(' ') << std::setw(2) << i << " - " << game.getScore()
-         << "  " << game.getPlayerId() << "  " << std::setfill(' ') << std::left
-         << std::setw(38) << game.getWord() << "  " << std::setfill(' ')
-         << std::left << std::setw(2) << game.getGoodTrials() << "            "
-         << std::setfill(' ') << std::left << std::setw(2)
-         << game.getCurrentTrial() << std::endl;
-  }
-  file << std::endl;
-  file << std::endl;
-
-  return file;
 }
