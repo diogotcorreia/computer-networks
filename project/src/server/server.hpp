@@ -4,6 +4,7 @@
 #include "common/constants.hpp"
 #include "server_game.hpp"
 #include "server_state.hpp"
+#include "worker_pool.hpp"
 
 class ServerConfig {
  public:
@@ -17,9 +18,13 @@ class ServerConfig {
   void printHelp(std::ostream& stream);
 };
 
+void main_tcp(GameServerState& state);
+
 void wait_for_udp_packet(GameServerState& server_state);
 
 void handle_packet(std::stringstream& buffer, Address& addr_from,
                    GameServerState& server_state);
+
+void wait_for_tcp_packet(GameServerState& server_state, WorkerPool& pool);
 
 #endif

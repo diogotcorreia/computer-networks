@@ -253,6 +253,7 @@ class StateClientbound : public TcpPacket {
   static constexpr const char *ID = "RST";
   status status;
   std::string file_name;
+  std::string file_data;
 
   void send(int fd);
   void receive(int fd);

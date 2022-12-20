@@ -5,6 +5,8 @@
 
 #include "server_state.hpp"
 
+// UDP
+
 void handle_start_game(std::stringstream &buffer, Address &addr_from,
                        GameServerState &state);
 
@@ -19,5 +21,9 @@ void handle_quit_game(std::stringstream &buffer, Address &addr_from,
 
 void handle_reveal_word(std::stringstream &buffer, Address &addr_from,
                         GameServerState &state);
+
+// TCP
+
+void handle_state(int connection_fd, GameServerState &state);
 
 #endif
