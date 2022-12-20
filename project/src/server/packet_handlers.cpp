@@ -212,6 +212,7 @@ void handle_scoreboard(int connection_fd, GameServerState &state) {
     auto scoreboard_str = state.scoreboard.toString();
     if (scoreboard_str.has_value()) {
       response.status = ScoreboardClientbound::status::OK;
+      response.file_name = "scoreboard.txt";
       response.file_data = scoreboard_str.value();
     } else {
       response.status = ScoreboardClientbound::status::EMPTY;
