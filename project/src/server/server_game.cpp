@@ -102,6 +102,7 @@ bool ServerGame::guessWord(std::string &word_guess, uint32_t trial) {
   }
 
   plays.push_back(0);
+  word_guesses.push_back(word_guess);
   currentTrial++;
   if (word == word_guess) {
     lettersRemaining = 0;
