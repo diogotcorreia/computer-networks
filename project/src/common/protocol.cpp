@@ -522,11 +522,10 @@ void ScoreboardServerbound::receive(int fd) {
 void ScoreboardClientbound::send(int fd) {
   std::stringstream stream;
   stream << ScoreboardClientbound::ID << " ";
+
   if (status == OK) {
     stream << "OK ";
-    // TODO read from actual scoreboard or something
-    stream << "scoreboard.txt 4 "
-           << "test";
+    stream << file_name << " " << file_data.length() << " " << file_data;
   } else if (status == EMPTY) {
     stream << "EMPTY";
   } else {

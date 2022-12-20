@@ -31,6 +31,7 @@ void GameServerState::registerPacketHandlers() {
   udp_packet_handlers.insert({RevealWordServerbound::ID, handle_reveal_word});
 
   // TCP
+  tcp_packet_handlers.insert({ScoreboardServerbound::ID, handle_scoreboard});
   tcp_packet_handlers.insert({StateServerbound::ID, handle_state});
 }
 

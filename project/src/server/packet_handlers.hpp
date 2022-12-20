@@ -24,6 +24,8 @@ void handle_reveal_word(std::stringstream &buffer, Address &addr_from,
 
 // TCP
 
+void handle_scoreboard(int connection_fd, GameServerState &state);
+
 void handle_state(int connection_fd, GameServerState &state);
 
 #endif
