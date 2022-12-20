@@ -305,7 +305,8 @@ void QuitCommand::handle(std::string args, PlayerState& state) {
       break;
 
     case QuitGameClientbound::status::NOK:
-      std::cout << "Failed to quit game." << std::endl;
+      std::cout << "Game had already finished." << std::endl;
+      state.game->finishGame();
       break;
 
     case QuitGameClientbound::status::ERR:
@@ -339,11 +340,13 @@ void ExitCommand::handle(std::string args, PlayerState& state) {
         break;
 
       case QuitGameClientbound::status::NOK:
-        std::cout << "Failed to quit game." << std::endl;
+        std::cout << "Game had already finished." << std::endl;
+        state.game->finishGame();
         break;
 
       case QuitGameClientbound::status::ERR:
       default:
+        std::cout << "Failed to quit game." << std::endl;
         break;
     }
   }
@@ -486,6 +489,7 @@ void KillCommand::handle(std::string args, PlayerState& state) {
       break;
 
     case QuitGameClientbound::status::NOK:
+      std::cout << "There is no on-going game for this player." << std::endl;
       // Game was already finished
       break;
 
