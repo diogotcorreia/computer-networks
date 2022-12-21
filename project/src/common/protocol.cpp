@@ -656,9 +656,11 @@ void HintClientbound::send(int fd) {
   stream << HintClientbound::ID << " ";
   if (status == OK) {
     stream << "OK ";
-    // TODO read from file system
-    stream << "hint.txt 4 "
-           << "test";
+    stream << file_name << " " << getFileSize(file_path) << " ";
+    writeString(fd, stream.str());
+    stream.str(std::string());
+    stream.clear();
+    sendFile(fd, file_path);
   } else if (status == NOK) {
     stream << "NOK";
   } else {
@@ -747,4 +749,36 @@ void wait_for_packet(UdpPacket &packet, int socket) {
 void write_player_id(std::stringstream &buffer, const uint32_t player_id) {
   buffer << std::setfill('0') << std::setw(PLAYER_ID_MAX_LEN) << player_id;
   buffer.copyfmt(std::ios(NULL));  // reset formatting
+}
+
+void sendFile(int connection_fd, std::filesystem::path file_path) {
+  std::ifstream file(file_path, std::ios::in | std::ios::binary);
+  if (!file) {
+    std::cerr << "Error opening file: " << file_path << std::endl;
+    throw PacketSerializationException();
+  }
+
+  char buffer[FILE_BUFFER_LEN];
+  while (file) {
+    file.read(buffer, FILE_BUFFER_LEN);
+    ssize_t bytes_read = (ssize_t)file.gcount();
+    ssize_t bytes_sent = 0;
+    while (bytes_sent < bytes_read) {
+      ssize_t sent = send(connection_fd, buffer + bytes_sent,
+                          (size_t)(bytes_read - bytes_sent), 0);
+      if (sent < 0) {
+        throw PacketSerializationException();
+      }
+      bytes_sent += sent;
+    }
+  }
+}
+
+uint32_t getFileSize(std::filesystem::path file_path) {
+  // Open the file
+  try {
+    return (uint32_t)std::filesystem::file_size(file_path);
+  } catch (...) {
+    throw PacketSerializationException();
+  }
 }

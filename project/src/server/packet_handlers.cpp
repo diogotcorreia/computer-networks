@@ -1,5 +1,6 @@
 #include "packet_handlers.hpp"
 
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 
@@ -273,6 +274,52 @@ void handle_scoreboard(int connection_fd, GameServerState &state) {
   } catch (std::exception &e) {
     std::cerr << "[Scoreboard] There was an unhandled exception that prevented "
                  "the server from handling a scoreboard request:"
+              << e.what() << std::endl;
+    return;
+  }
+
+  response.send(connection_fd);
+}
+
+void handle_hint(int connection_fd, GameServerState &state) {
+  HintServerbound packet;
+  HintClientbound response;
+  try {
+    packet.receive(connection_fd);
+
+    state.cdebug << playerTag(packet.player_id) << "Requested hint"
+                 << std::endl;
+
+    ServerGameSync game = state.getGame(packet.player_id);
+
+    if (!game->isOnGoing()) {
+      response.status = HintClientbound::status::NOK;
+      state.cdebug << playerTag(packet.player_id)
+                   << "Fulfilling hint request: game had already ended."
+                   << std::endl;
+    } else if (!game->getHintFilePath().has_value() ||
+               !std::filesystem::exists(game->getHintFilePath().value())) {
+      response.status = HintClientbound::status::NOK;
+      state.cdebug << playerTag(packet.player_id)
+                   << "Current game doesn't have a hint to send." << std::endl;
+    } else {
+      response.status = HintClientbound::status::OK;
+      response.file_path = game->getHintFilePath().value();
+      response.file_name = game->getHintFileName();
+      state.cdebug << playerTag(packet.player_id)
+                   << "Fulfilling hint request: sending hint from file: "
+                   << game->getHintFilePath().value() << std::endl;
+    }
+  } catch (NoGameFoundException &e) {
+    response.status = HintClientbound::status::NOK;
+    state.cdebug << playerTag(packet.player_id) << "Game not found"
+                 << std::endl;
+  } catch (InvalidPacketException &e) {
+    response.status = HintClientbound::status::NOK;
+    state.cdebug << "[Hint] Invalid packet" << std::endl;
+  } catch (std::exception &e) {
+    std::cerr << "[Hint] There was an unhandled exception that prevented the "
+                 "server from handling a hint request:"
               << e.what() << std::endl;
     return;
   }
