@@ -3,7 +3,20 @@
 
 #include <sstream>
 
+#include "common/constants.hpp"
 #include "server_state.hpp"
+
+class playerTag {  // IOManip helper
+  uint32_t player_id;
+
+ public:
+  explicit playerTag(uint32_t __player_id) : player_id{__player_id} {}
+  friend std::ostream &operator<<(std::ostream &os, const playerTag &obj) {
+    os << "[Player " << std::setfill('0') << std::setw(PLAYER_ID_MAX_LEN)
+       << obj.player_id << "] ";
+    return os;
+  }
+};
 
 // UDP
 
