@@ -283,7 +283,6 @@ void handle_state(int connection_fd, GameServerState &state) {
   try {
     ServerGameSync game = state.getGame(packet.player_id);
 
-    // TODO
     if (game->isOnGoing()) {
       response.status = StateClientbound::status::ACT;
       state.cdebug << playerTag(packet.player_id)

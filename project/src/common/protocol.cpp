@@ -358,7 +358,7 @@ void QuitGameClientbound::deserialize(std::stringstream &buffer) {
   buffer >> std::noskipws;
   readPacketId(buffer, QuitGameClientbound::ID);
   readSpace(buffer);
-  auto status_str = readString(buffer, 2);
+  auto status_str = readString(buffer, 3);
   if (status_str == "OK") {
     status = OK;
   } else if (status_str == "NOK") {
