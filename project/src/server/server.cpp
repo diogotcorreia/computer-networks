@@ -162,11 +162,13 @@ ServerConfig::ServerConfig(int argc, char *argv[]) {
 }
 
 void ServerConfig::printHelp(std::ostream &stream) {
-  stream << "Usage: " << programPath << " word_file [-p GSport] [-v]"
+  stream << "Usage: " << programPath << " word_file [-p GSport] [-v] [-t]"
          << std::endl;
   stream << "Available options:" << std::endl;
   stream << "word_file\tPath to the word file" << std::endl;
   stream << "-p GSport\tSet port of Game Server. Default: " << DEFAULT_PORT
          << std::endl;
   stream << "-h\t\tEnable verbose mode." << std::endl;
+  stream << "-t\t\tEnable test mode. Words will be selected sequentially."
+         << std::endl;
 }
