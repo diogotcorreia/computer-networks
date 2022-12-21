@@ -65,7 +65,7 @@ void PlayerState::resolveServerAddress(std::string &hostname,
   if (getaddrinfo(host, port_str, &hints, &this->server_tcp_addr) != 0) {
     // TODO consider using exceptions (?)
     perror("Failed to get address for TCP connection");
-    exit(1);
+    exit(EXIT_FAILURE);
   }
 }
 
