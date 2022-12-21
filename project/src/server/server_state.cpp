@@ -17,6 +17,7 @@ GameServerState::GameServerState(std::string &__word_file_path,
   this->setup_sockets();
   this->resolveServerAddress(port);
   this->registerWords(__word_file_path);
+  srand((uint32_t)time(NULL));  // Initialize rand seed
 }
 
 GameServerState::~GameServerState() {
@@ -137,7 +138,7 @@ void GameServerState::registerWords(std::string &__word_file_path) {
       this->words.push_back(word);
     }
 
-    std::cout << "Loaded " << words.size() << " word(s)";
+    std::cout << "Loaded " << words.size() << " word(s)" << std::endl;
   } catch (std::exception &e) {
     std::cerr << "Failed to open word file: " << e.what() << std::endl;
     exit(EXIT_FAILURE);
