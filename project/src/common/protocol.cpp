@@ -51,6 +51,10 @@ void UdpPacket::readSpace(std::stringstream &buffer) {
 
 void UdpPacket::readPacketDelimiter(std::stringstream &buffer) {
   readChar(buffer, '\n');
+  buffer.peek();
+  if (!buffer.eof()) {
+    throw InvalidPacketException();
+  }
 }
 
 std::string UdpPacket::readString(std::stringstream &buffer, uint32_t max_len) {
