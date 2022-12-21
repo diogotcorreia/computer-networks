@@ -13,8 +13,8 @@
 GameServerState::GameServerState(std::string &__word_file_path,
                                  std::string &port, bool __verbose,
                                  bool __select_sequentially)
-    : cdebug{DebugStream(__verbose)},
-      select_sequentially{__select_sequentially} {
+    : select_sequentially{__select_sequentially},
+      cdebug{DebugStream(__verbose)} {
   this->setup_sockets();
   this->resolveServerAddress(port);
   this->registerWords(__word_file_path);
