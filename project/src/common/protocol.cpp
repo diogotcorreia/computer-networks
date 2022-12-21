@@ -51,6 +51,10 @@ void UdpPacket::readSpace(std::stringstream &buffer) {
 
 void UdpPacket::readPacketDelimiter(std::stringstream &buffer) {
   readChar(buffer, '\n');
+  buffer.peek();
+  if (!buffer.eof()) {
+    throw InvalidPacketException();
+  }
 }
 
 std::string UdpPacket::readString(std::stringstream &buffer, uint32_t max_len) {
@@ -398,6 +402,7 @@ void RevealWordClientbound::deserialize(std::stringstream &buffer) {
   readPacketId(buffer, RevealWordClientbound::ID);
   readSpace(buffer);
   word = readAlphabeticalString(buffer, wordLen);
+  readPacketDelimiter(buffer);
 };
 
 void TcpPacket::writeString(int fd, const std::string &str) {
