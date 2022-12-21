@@ -33,16 +33,23 @@ void Worker::execute() {
 
       pool->server_state.callTcpPacketHandler(packet_id, tcp_socket_fd);
 
-      close(tcp_socket_fd);
+    } catch (InvalidPacketException &e) {
+      try {
+        ErrorTcpPacket error_packet;
+        error_packet.send(tcp_socket_fd);
+      } catch (...) {
+        std::cerr << "Failed to reply with ERR packet" << std::endl;
+      }
     } catch (std::exception &e) {
       std::cerr << "Worker #" << worker_id
                 << " encountered an exception while running: " << e.what()
                 << std::endl;
     } catch (...) {
-      std::cerr << "Worker # " << worker_id
+      std::cerr << "Worker #" << worker_id
                 << " encountered an unknown exception while running."
                 << std::endl;
     }
+    close(tcp_socket_fd);
     to_execute = false;
     pool->freeWorker(worker_id);
   }
@@ -92,7 +99,7 @@ std::string read_packet_id(int fd) {
 
   while (to_read > 0) {
     ssize_t n = read(fd, &id[PACKET_ID_LEN - to_read], to_read);
-    if (n < 0) {
+    if (n <= 0) {
       std::cerr << "Received malformated packet ID" << std::endl;
       throw InvalidPacketException();
     }

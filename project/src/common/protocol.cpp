@@ -405,6 +405,17 @@ void RevealWordClientbound::deserialize(std::stringstream &buffer) {
   readPacketDelimiter(buffer);
 };
 
+std::stringstream ErrorUdpPacket::serialize() {
+  std::stringstream buffer;
+  buffer << ErrorUdpPacket::ID << std::endl;
+  return buffer;
+};
+
+void ErrorUdpPacket::deserialize(std::stringstream &buffer) {
+  (void)buffer;
+  // unimplemented
+};
+
 void TcpPacket::writeString(int fd, const std::string &str) {
   if (write(fd, str.c_str(), str.length()) != (ssize_t)str.length()) {
     throw PacketSerializationException();
@@ -675,6 +686,16 @@ void HintClientbound::receive(int fd) {
     throw InvalidPacketException();
   }
   readPacketDelimiter(fd);
+}
+
+void ErrorTcpPacket::send(int fd) {
+  writeString(fd, ErrorTcpPacket::ID);
+  writeString(fd, "\n");
+}
+
+void ErrorTcpPacket::receive(int fd) {
+  (void)fd;
+  // unimplemented
 }
 
 // Packet sending and receiving

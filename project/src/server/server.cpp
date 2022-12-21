@@ -6,6 +6,8 @@
 #include <iostream>
 #include <thread>
 
+#include "common/protocol.hpp"
+
 int main(int argc, char *argv[]) {
   ServerConfig config(argc, argv);
   if (config.help) {
@@ -61,7 +63,7 @@ void wait_for_udp_packet(GameServerState &server_state) {
   addr_from.socket = server_state.udp_socket_fd;
   if (n == -1) {
     perror("recvfrom");
-    exit(1);
+    exit(EXIT_FAILURE);
   }
 
   char addr_str[INET_ADDRSTRLEN + 1] = {0};
@@ -76,19 +78,32 @@ void wait_for_udp_packet(GameServerState &server_state) {
 
 void handle_packet(std::stringstream &buffer, Address &addr_from,
                    GameServerState &server_state) {
-  char packet_id[PACKET_ID_LEN + 1];
-  buffer >> packet_id;
+  try {
+    char packet_id[PACKET_ID_LEN + 1];
+    buffer >> packet_id;
 
-  if (!buffer.good()) {
-    // TODO consider using exceptions (?)
-    std::cerr << "Received malformated packet ID" << std::endl;
-    return;
+    if (!buffer.good()) {
+      std::cerr << "Received malformatted packet ID" << std::endl;
+      throw InvalidPacketException();
+    }
+
+    std::string packet_id_str = std::string(packet_id);
+
+    server_state.callUdpPacketHandler(packet_id_str, buffer, addr_from);
+  } catch (InvalidPacketException &e) {
+    try {
+      ErrorUdpPacket error_packet;
+      send_packet(error_packet, addr_from.socket,
+                  (struct sockaddr *)&addr_from.addr, addr_from.size);
+    } catch (std::exception &ex) {
+      std::cerr << "Failed to reply with ERR packet: " << ex.what()
+                << std::endl;
+    }
+  } catch (std::exception &e) {
+    std::cerr << "Failed to handle UDP packet: " << e.what() << std::endl;
+  } catch (...) {
+    std::cerr << "Failed to handle UDP packet: unknown" << std::endl;
   }
-
-  std::string packet_id_str = std::string(packet_id);
-
-  // TODO add exception catch to send back ERR response
-  server_state.callUdpPacketHandler(packet_id_str, buffer, addr_from);
 }
 
 void wait_for_tcp_packet(GameServerState &server_state, WorkerPool &pool) {

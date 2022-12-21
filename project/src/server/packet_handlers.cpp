@@ -213,13 +213,13 @@ void handle_quit_game(std::stringstream &buffer, Address &addr_from,
 void handle_reveal_word(std::stringstream &buffer, Address &addr_from,
                         GameServerState &state) {
   RevealWordServerbound packet;
-  packet.deserialize(buffer);
-
-  state.cdebug << playerTag(packet.player_id) << "Asked to reveal word"
-               << std::endl;
-
   RevealWordClientbound response;
   try {
+    packet.deserialize(buffer);
+
+    state.cdebug << playerTag(packet.player_id) << "Asked to reveal word"
+                 << std::endl;
+
     ServerGameSync game = state.getGame(packet.player_id);
 
     state.cdebug << playerTag(packet.player_id) << "Word is " << game->getWord()
@@ -230,6 +230,10 @@ void handle_reveal_word(std::stringstream &buffer, Address &addr_from,
     // The protocol says we should not reply if there is not an on-going game
     state.cdebug << playerTag(packet.player_id) << "No game found" << std::endl;
     return;
+  } catch (InvalidPacketException &e) {
+    state.cdebug << "[Reveal] Invalid packet" << std::endl;
+    // Propagate error to reply with "ERR", since there is no error code here
+    throw;
   } catch (std::exception &e) {
     std::cerr << "[Reveal] There was an unhandled exception that prevented the "
                  "server from handling a word reveal:"
@@ -243,12 +247,12 @@ void handle_reveal_word(std::stringstream &buffer, Address &addr_from,
 
 void handle_scoreboard(int connection_fd, GameServerState &state) {
   ScoreboardServerbound packet;
-  packet.receive(connection_fd);  // handle outside try and propagate error
-
-  state.cdebug << "[Scoreboard] Received request" << std::endl;
-
   ScoreboardClientbound response;
   try {
+    packet.receive(connection_fd);
+
+    state.cdebug << "[Scoreboard] Received request" << std::endl;
+
     auto scoreboard_str = state.scoreboard.toString();
     if (scoreboard_str.has_value()) {
       response.status = ScoreboardClientbound::status::OK;
@@ -262,6 +266,10 @@ void handle_scoreboard(int connection_fd, GameServerState &state) {
           << "[Scoreboard] There are no won games, sending empty scoreboard"
           << std::endl;
     }
+  } catch (InvalidPacketException &e) {
+    state.cdebug << "[Scoreboard] Invalid packet" << std::endl;
+    // Propagate error to reply with "ERR", since there is no error code here
+    throw;
   } catch (std::exception &e) {
     std::cerr << "[Scoreboard] There was an unhandled exception that prevented "
                  "the server from handling a scoreboard request:"
@@ -274,13 +282,13 @@ void handle_scoreboard(int connection_fd, GameServerState &state) {
 
 void handle_state(int connection_fd, GameServerState &state) {
   StateServerbound packet;
-  packet.receive(connection_fd);
-
-  state.cdebug << playerTag(packet.player_id) << "Requested game state"
-               << std::endl;
-
   StateClientbound response;
   try {
+    packet.receive(connection_fd);
+
+    state.cdebug << playerTag(packet.player_id) << "Requested game state"
+                 << std::endl;
+
     ServerGameSync game = state.getGame(packet.player_id);
 
     if (game->isOnGoing()) {
@@ -303,6 +311,9 @@ void handle_state(int connection_fd, GameServerState &state) {
     response.status = StateClientbound::status::NOK;
     state.cdebug << playerTag(packet.player_id) << "Game not found"
                  << std::endl;
+  } catch (InvalidPacketException &e) {
+    response.status = StateClientbound::status::NOK;
+    state.cdebug << "[State] Invalid packet" << std::endl;
   } catch (std::exception &e) {
     std::cerr
         << "[State] There was an unhandled exception that prevented the server "
