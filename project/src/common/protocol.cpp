@@ -640,9 +640,10 @@ void HintClientbound::send(int fd) {
   stream << HintClientbound::ID << " ";
   if (status == OK) {
     stream << "OK ";
-    // TODO read from file system
-    stream << "hint.txt 4 "
-           << "test";
+    stream << file_name << " " << getFileSize(file_path.value()) << " ";
+    writeString(fd, stream.str());
+    sendImage(fd, file_path.value());
+
   } else if (status == NOK) {
     stream << "NOK";
   } else {
@@ -721,4 +722,47 @@ void wait_for_packet(UdpPacket &packet, int socket) {
 void write_player_id(std::stringstream &buffer, const uint32_t player_id) {
   buffer << std::setfill('0') << std::setw(PLAYER_ID_MAX_LEN) << player_id;
   buffer.copyfmt(std::ios(NULL));  // reset formatting
+}
+
+// function to read a image file to a buffer and send the buffer to a client
+void sendImage(int connection_fd, std::filesystem::path image_path) {
+  // Open the file
+  std::ifstream image_file(image_path, std::ios::binary);
+  if (!image_file) {
+    std::cerr << "Error opening image file: " << image_path << std::endl;
+    return;
+  }
+  // Read the file into a buffer and send it over the socket in chunks
+  char buffer[FILE_BUFFER_LEN];
+  while (image_file) {
+    image_file.read(buffer, FILE_BUFFER_LEN);
+    ssize_t bytes_read = (ssize_t)image_file.gcount();
+    ssize_t bytes_sent = 0;
+    while (bytes_sent < bytes_read) {
+      ssize_t sent = send(connection_fd, buffer + bytes_sent,
+                          (size_t)(bytes_read - bytes_sent), 0);
+      if (sent < 0) {
+        std::cerr << "Error sending data over socket" << std::endl;
+        return;
+      }
+      bytes_sent += sent;
+    }
+  }
+  image_file.close();
+}
+
+// function to get the size of a file
+uint32_t getFileSize(std::filesystem::path file_path) {
+  // Open the file
+  std::ifstream image_file(file_path, std::ios::binary);
+  if (!image_file) {
+    std::cerr << "Error opening file to get it's size" << file_path
+              << std::endl;
+    return (uint32_t)-1;
+  }
+  // Get the size of the file
+  image_file.seekg(0, std::ios::end);
+  uint32_t file_size = (uint32_t)image_file.tellg();
+  image_file.close();
+  return file_size;
 }

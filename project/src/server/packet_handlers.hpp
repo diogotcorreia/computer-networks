@@ -41,4 +41,6 @@ void handle_scoreboard(int connection_fd, GameServerState &state);
 
 void handle_state(int connection_fd, GameServerState &state);
 
+void handle_hint(int connection_fd, GameServerState &state);
+
 #endif

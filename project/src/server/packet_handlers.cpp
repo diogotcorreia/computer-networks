@@ -1,5 +1,6 @@
 #include "packet_handlers.hpp"
 
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 
@@ -308,6 +309,42 @@ void handle_state(int connection_fd, GameServerState &state) {
         << "[State] There was an unhandled exception that prevented the server "
            "from handling a state request:"
         << e.what() << std::endl;
+    return;
+  }
+
+  response.send(connection_fd);
+}
+
+void handle_hint(int connection_fd, GameServerState &state) {
+  HintServerbound packet;
+  packet.receive(connection_fd);
+
+  state.cdebug << playerTag(packet.player_id) << "Requested hint" << std::endl;
+
+  HintClientbound response;
+  try {
+    ServerGameSync game = state.getGame(packet.player_id);
+
+    if (game->isOnGoing()) {
+      response.status = HintClientbound::status::OK;
+      response.file_path = game->getHintFilePath();
+      response.file_name = game->getHintFileName();
+      state.cdebug << playerTag(packet.player_id)
+                   << "Fulfilling hint request: sending hint." << std::endl;
+    } else {
+      response.status = HintClientbound::status::NOK;
+      state.cdebug << playerTag(packet.player_id)
+                   << "Fulfilling hint request: game had already ended."
+                   << std::endl;
+    }
+  } catch (NoGameFoundException &e) {
+    response.status = HintClientbound::status::NOK;
+    state.cdebug << playerTag(packet.player_id) << "Game not found"
+                 << std::endl;
+  } catch (std::exception &e) {
+    std::cerr << "[Hint] There was an unhandled exception that prevented the "
+                 "server from handling a hint request:"
+              << e.what() << std::endl;
     return;
   }
 

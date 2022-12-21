@@ -4,7 +4,9 @@
 #include <sys/socket.h>
 
 #include <cstdint>
+#include <filesystem>
 #include <memory>
+#include <optional>
 #include <sstream>
 #include <stdexcept>
 #include <vector>
@@ -265,6 +267,7 @@ class HintClientbound : public TcpPacket {
   enum status { OK, NOK };
   static constexpr const char *ID = "RHL";
   status status;
+  std::optional<std::filesystem::path> file_path;
   std::string file_name;
 
   void send(int fd);
@@ -277,5 +280,9 @@ void send_packet(UdpPacket &packet, int socket, struct sockaddr *address,
 void wait_for_packet(UdpPacket &packet, int socket);
 
 void write_player_id(std::stringstream &buffer, const uint32_t player_id);
+
+void sendImage(int connection_fd, std::filesystem::path image_path);
+
+uint32_t getFileSize(std::filesystem::path file_path);
 
 #endif

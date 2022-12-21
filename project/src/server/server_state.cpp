@@ -39,6 +39,7 @@ void GameServerState::registerPacketHandlers() {
   // TCP
   tcp_packet_handlers.insert({ScoreboardServerbound::ID, handle_scoreboard});
   tcp_packet_handlers.insert({StateServerbound::ID, handle_state});
+  tcp_packet_handlers.insert({HintServerbound::ID, handle_hint});
 }
 
 void GameServerState::setup_sockets() {
