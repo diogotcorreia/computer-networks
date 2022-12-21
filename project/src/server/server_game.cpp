@@ -1,7 +1,11 @@
 #include "server_game.hpp"
 
+#include <algorithm>
 #include <cstring>
+#include <iomanip>
 #include <stdexcept>
+
+#include "common/constants.hpp"
 
 ServerGame::ServerGame(uint32_t __playerId, std::string __word,
                        std::optional<std::filesystem::path> __hint_path)
@@ -133,6 +137,65 @@ uint32_t ServerGame::getScore() {
     return 0;
   }
   return (uint32_t)(getGoodTrials() * 100 / (currentTrial - 1));
+}
+
+std::string ServerGame::getStateString() {
+  std::stringstream state;
+  if (isOnGoing()) {
+    state << "     Active game found for player " << std::setfill('0')
+          << std::setw(PLAYER_ID_MAX_LEN) << playerId << std::endl;
+  } else {
+    state << "     Last finalized game for player " << std::setfill('0')
+          << std::setw(PLAYER_ID_MAX_LEN) << playerId << std::endl;
+    state << "     Word: " << word << "; Hint file: " << getHintFileName()
+          << std::endl;
+  }
+
+  if (plays.size() == 0) {
+    state << "     Game started - no transactions found" << std::endl;
+  } else {
+    state << "     --- Transactions found: " << plays.size() << " ---"
+          << std::endl;
+  }
+
+  auto next_word = word_guesses.begin();
+  for (char play : plays) {
+    if (play == 0) {
+      state << "     Word guess: " << *next_word << std::endl;
+      ++next_word;
+    } else {
+      state << "     Letter trial: " << play << " - ";
+      if (word.find(play) != std::string::npos) {
+        state << "TRUE";
+      } else {
+        state << "FALSE";
+      }
+      state << std::endl;
+    }
+  }
+
+  if (isOnGoing()) {
+    state << "     Solved so far: ";
+    for (char c : word) {
+      if (std::find(plays.begin(), plays.end(), c) != plays.end()) {
+        state << c;
+      } else {
+        state << '-';
+      }
+    }
+  } else {
+    state << "     Termination: ";
+    if (hasWon()) {
+      state << "WIN";
+    } else if (hasLost()) {
+      state << "FAIL";
+    } else {
+      state << "QUIT";
+    }
+  }
+  state << std::endl;
+
+  return state.str();
 }
 
 std::string ServerGame::getWord() {

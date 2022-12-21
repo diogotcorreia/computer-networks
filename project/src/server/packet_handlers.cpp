@@ -1,5 +1,6 @@
 #include "packet_handlers.hpp"
 
+#include <iomanip>
 #include <iostream>
 
 #include "common/protocol.hpp"
@@ -211,6 +212,7 @@ void handle_scoreboard(int connection_fd, GameServerState &state) {
     auto scoreboard_str = state.scoreboard.toString();
     if (scoreboard_str.has_value()) {
       response.status = ScoreboardClientbound::status::OK;
+      response.file_name = "scoreboard.txt";
       response.file_data = scoreboard_str.value();
     } else {
       response.status = ScoreboardClientbound::status::EMPTY;
@@ -236,12 +238,18 @@ void handle_state(int connection_fd, GameServerState &state) {
   try {
     ServerGameSync game = state.getGame(packet.player_id);
 
-    // TODO
-    response.status = StateClientbound::status::ACT;
-    response.file_name = "state.txt";
-    response.file_data = game->getWord();
+    if (game->isOnGoing()) {
+      response.status = StateClientbound::status::ACT;
+    } else {
+      response.status = StateClientbound::status::FIN;
+    }
+    std::stringstream file_name;
+    file_name << "state_" << std::setfill('0') << std::setw(PLAYER_ID_MAX_LEN)
+              << game->getPlayerId() << ".txt";
+    response.file_name = file_name.str();
+    response.file_data = game->getStateString();
   } catch (NoGameFoundException &e) {
-    // TODO
+    response.status = StateClientbound::status::NOK;
   } catch (std::exception &e) {
     std::cerr << "There was an unhandled exception that prevented the server "
                  "from handling a state request:"
