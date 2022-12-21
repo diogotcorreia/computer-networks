@@ -775,7 +775,6 @@ void sendFile(int connection_fd, std::filesystem::path file_path) {
 }
 
 uint32_t getFileSize(std::filesystem::path file_path) {
-  // Open the file
   try {
     return (uint32_t)std::filesystem::file_size(file_path);
   } catch (...) {
