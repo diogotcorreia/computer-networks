@@ -3,7 +3,9 @@
 
 #include <netdb.h>
 
+#include <filesystem>
 #include <iostream>
+#include <optional>
 #include <sstream>
 #include <unordered_map>
 
@@ -15,6 +17,11 @@ class Address {
   int socket;
   struct sockaddr_in addr;
   socklen_t size;
+};
+
+struct Word {
+  std::string word;
+  std::optional<std::filesystem::path> hint_path;
 };
 
 class DebugStream {
@@ -63,8 +70,11 @@ class GameServerState {
   std::unordered_map<std::string, UdpPacketHandler> udp_packet_handlers;
   std::unordered_map<std::string, TcpPacketHandler> tcp_packet_handlers;
   std::unordered_map<uint32_t, ServerGame> games;
+  std::vector<Word> words;
   std::mutex gamesLock;
-  std::string word_file_path;
+  std::string word_file_dir;
+  uint32_t current_word_index = 0;
+  bool select_sequentially;
   void setup_sockets();
 
  public:
@@ -76,10 +86,12 @@ class GameServerState {
   DebugStream cdebug;
 
   GameServerState(std::string& __word_file_path, std::string& port,
-                  bool __verbose);
+                  bool __verbose, bool __select_sequentially);
   ~GameServerState();
   void resolveServerAddress(std::string& port);
   void registerPacketHandlers();
+  void registerWords(std::string& __word_file_path);
+  Word& selectRandomWord();
   void callUdpPacketHandler(std::string packet_id, std::stringstream& stream,
                             Address& addr_from);
   void callTcpPacketHandler(std::string packet_id, int connection_fd);

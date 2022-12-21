@@ -1,7 +1,9 @@
 #ifndef SERVER_GAME_H
 #define SERVER_GAME_H
 
+#include <filesystem>
 #include <mutex>
+#include <optional>
 #include <stdexcept>
 #include <vector>
 
@@ -10,6 +12,7 @@
 class ServerGame : public Game {
  private:
   std::string word;
+  std::optional<std::filesystem::path> hint_path;
   uint32_t lettersRemaining;
   std::vector<char> plays;
   std::vector<std::string> word_guesses;
@@ -19,7 +22,8 @@ class ServerGame : public Game {
  public:
   std::mutex lock;
 
-  ServerGame(uint32_t playerId);
+  ServerGame(uint32_t __playerId, std::string __word,
+             std::optional<std::filesystem::path> __hint_path);
   ~ServerGame();
   std::vector<uint32_t> guessLetter(char letter, uint32_t trial);
   bool guessWord(std::string& word, uint32_t trial);
@@ -28,6 +32,8 @@ class ServerGame : public Game {
   bool hasStarted();
   uint32_t getScore();
   std::string getWord();
+  std::optional<std::filesystem::path> getHintFilePath();
+  std::string getHintFileName();
 };
 
 class ServerGameSync {
