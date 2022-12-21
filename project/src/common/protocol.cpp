@@ -548,7 +548,6 @@ void ScoreboardClientbound::receive(int fd) {
     readSpace(fd);
     readAndSaveToFile(fd, file_name, file_size);
   } else if (status_str == "EMPTY") {
-    readSpace(fd);
     this->status = EMPTY;
   } else {
     throw InvalidPacketException();
