@@ -3,6 +3,8 @@
 #include <iomanip>
 #include <sstream>
 
+#include "common/constants.hpp"
+
 ScoreboardEntry::ScoreboardEntry(ServerGame &game) {
   score = game.getScore();
   playerId = game.getPlayerId();
@@ -52,9 +54,9 @@ std::optional<std::string> Scoreboard::toString() {
     i++;
     file << std::right << std::setfill(' ') << std::setw(2) << i << " - "
          << std::setfill(' ') << std::setw(3) << it->score << "  "
-         << std::setfill('0') << std::setw(6) << it->playerId << "  "
-         << std::setfill(' ') << std::left << std::setw(38) << it->word << "  "
-         << std::setfill(' ') << std::setw(2) << it->goodTrials
+         << std::setfill('0') << std::setw(PLAYER_ID_MAX_LEN) << it->playerId
+         << "  " << std::setfill(' ') << std::left << std::setw(38) << it->word
+         << "  " << std::setfill(' ') << std::setw(2) << it->goodTrials
          << "            " << std::setfill(' ') << std::setw(2)
          << it->totalTrials << std::endl;
   }

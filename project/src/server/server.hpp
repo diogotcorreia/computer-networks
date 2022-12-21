@@ -13,6 +13,7 @@ class ServerConfig {
   std::string port = DEFAULT_PORT;  // TODO consider parsing port as int
   bool help = false;
   bool verbose = false;
+  bool test = false;
 
   ServerConfig(int argc, char* argv[]);
   void printHelp(std::ostream& stream);

@@ -290,8 +290,9 @@ void handle_scoreboard(int connection_fd, GameServerState &state) {
     auto scoreboard_str = state.scoreboard.toString();
     if (scoreboard_str.has_value()) {
       response.status = ScoreboardClientbound::status::OK;
-      state.cdebug << "[Scoreboard] Fulfilling request." << std::endl;
+      response.file_name = "scoreboard.txt";
       response.file_data = scoreboard_str.value();
+      state.cdebug << "[Scoreboard] Fulfilling request." << std::endl;
     } else {
       response.status = ScoreboardClientbound::status::EMPTY;
       state.cdebug
@@ -322,14 +323,26 @@ void handle_state(int connection_fd, GameServerState &state) {
     ServerGameSync game = state.getGame(packet.player_id);
 
     // TODO
-    response.status = StateClientbound::status::ACT;
-    response.file_name = "state.txt";
-    response.file_data = game->getWord();
-    state.cdebug << "[Player " << std::setfill('0')
-                 << std::setw(PLAYER_ID_MAX_LEN) << packet.player_id
-                 << "] Fulfilling state request." << std::endl;
+    if (game->isOnGoing()) {
+      response.status = StateClientbound::status::ACT;
+      state.cdebug << "[Player " << std::setfill('0')
+                   << std::setw(PLAYER_ID_MAX_LEN) << packet.player_id
+                   << "] Fulfilling state request: sending active game."
+                   << std::endl;
+    } else {
+      response.status = StateClientbound::status::FIN;
+      state.cdebug << "[Player " << std::setfill('0')
+                   << std::setw(PLAYER_ID_MAX_LEN) << packet.player_id
+                   << "] Fulfilling state request. sending last finished game."
+                   << std::endl;
+    }
+    std::stringstream file_name;
+    file_name << "state_" << std::setfill('0') << std::setw(PLAYER_ID_MAX_LEN)
+              << game->getPlayerId() << ".txt";
+    response.file_name = file_name.str();
+    response.file_data = game->getStateString();
   } catch (NoGameFoundException &e) {
-    // TODO
+    response.status = StateClientbound::status::NOK;
   } catch (std::exception &e) {
     std::cerr
         << "[State] There was an unhandled exception that prevented the server "
