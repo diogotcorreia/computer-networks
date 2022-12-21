@@ -16,6 +16,12 @@ int main(int argc, char *argv[]) {
                         config.test);
   state.registerPacketHandlers();
 
+  if (config.test) {
+    std::cout << "Words will be selected sequentially" << std::endl;
+  } else {
+    std::cout << "Words will be selected randomly" << std::endl;
+  }
+
   state.cdebug << "Verbose mode is active" << std::endl << std::endl;
 
   std::thread tcp_thread(main_tcp, std::ref(state));
