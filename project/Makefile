@@ -86,5 +86,8 @@ player: src/client/player
 clean:
 	rm -f $(OBJECTS) $(TARGETS) $(TARGET_EXECS) project.zip
 
+clean-gamedata:
+	rm -rf .gamedata
+
 package:
 	zip project.zip $(SOURCES) $(HEADERS) Makefile .clang-format

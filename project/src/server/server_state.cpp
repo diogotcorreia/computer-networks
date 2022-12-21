@@ -18,6 +18,7 @@ GameServerState::GameServerState(std::string &__word_file_path,
   this->setup_sockets();
   this->resolveServerAddress(port);
   this->registerWords(__word_file_path);
+  this->scoreboard.loadFromFile();
   srand((uint32_t)time(NULL));  // Initialize rand seed
 }
 
