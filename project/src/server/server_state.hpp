@@ -73,7 +73,7 @@ class GameServerState {
   std::mutex gamesLock;
   std::string word_file_dir;
   uint32_t current_word_index = 0;
-  bool test;
+  bool select_sequentially;
   void setup_sockets();
 
  public:
@@ -84,7 +84,7 @@ class GameServerState {
   DebugStream cdebug;
 
   GameServerState(std::string& __word_file_path, std::string& port,
-                  bool __verbose, bool __test);
+                  bool __verbose, bool __select_sequentially);
   ~GameServerState();
   void resolveServerAddress(std::string& port);
   void registerPacketHandlers();

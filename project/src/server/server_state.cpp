@@ -11,9 +11,10 @@
 #include "packet_handlers.hpp"
 
 GameServerState::GameServerState(std::string &__word_file_path,
-                                 std::string &port, bool __verbose, bool __test)
-    : cdebug{DebugStream(__verbose)} {
-  this->test = __test;
+                                 std::string &port, bool __verbose,
+                                 bool __select_sequentially)
+    : cdebug{DebugStream(__verbose)},
+      select_sequentially{__select_sequentially} {
   this->setup_sockets();
   this->resolveServerAddress(port);
   this->registerWords(__word_file_path);
@@ -150,7 +151,7 @@ void GameServerState::registerWords(std::string &__word_file_path) {
 
 Word &GameServerState::selectRandomWord() {
   uint32_t index;
-  if (test) {
+  if (select_sequentially) {
     index = (this->current_word_index) % (uint32_t)this->words.size();
     this->current_word_index = index + 1;
   } else {
