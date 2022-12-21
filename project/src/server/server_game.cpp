@@ -175,14 +175,7 @@ std::string ServerGame::getStateString() {
   }
 
   if (isOnGoing()) {
-    state << "     Solved so far: ";
-    for (char c : word) {
-      if (std::find(plays.begin(), plays.end(), c) != plays.end()) {
-        state << c;
-      } else {
-        state << '-';
-      }
-    }
+    state << "     Solved so far: " << getWordProgress();
   } else {
     state << "     Termination: ";
     if (hasWon()) {
@@ -200,6 +193,18 @@ std::string ServerGame::getStateString() {
 
 std::string ServerGame::getWord() {
   return word;
+}
+
+std::string ServerGame::getWordProgress() {
+  std::string result;
+  for (char c : word) {
+    if (std::find(plays.begin(), plays.end(), c) != plays.end()) {
+      result += c;
+    } else {
+      result += '-';
+    }
+  }
+  return result;
 }
 
 std::optional<std::filesystem::path> ServerGame::getHintFilePath() {

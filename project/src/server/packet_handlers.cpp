@@ -69,13 +69,13 @@ void handle_guess_letter(std::stringstream &buffer, Address &addr_from,
     } else if (game->hasWon()) {
       response.status = GuessLetterClientbound::status::WIN;
       state.scoreboard.addGame(game.game);
-      state.cdebug << playerTag(packet.player_id) << "Won the game"
-                   << std::endl;
+      state.cdebug << playerTag(packet.player_id) << "Won the game. Word was '"
+                   << game->getWord() << "'" << std::endl;
     } else {
       response.status = GuessLetterClientbound::status::OK;
       state.cdebug << playerTag(packet.player_id) << "Correct letter '"
                    << packet.guess << "'. Trial " << response.trial
-                   << ". Progress: " << game->getWord() << std::endl;
+                   << ". Progress: " << game->getWordProgress() << std::endl;
     }
     response.pos = found;
   } catch (NoGameFoundException &e) {
@@ -137,7 +137,7 @@ void handle_guess_word(std::stringstream &buffer, Address &addr_from,
     } else {
       response.status = GuessWordClientbound::status::NOK;
       state.cdebug << playerTag(packet.player_id) << "Guess was wrong. Trial "
-                   << response.trial << " Progress: " << game->getWord()
+                   << response.trial << " Progress: " << game->getWordProgress()
                    << std::endl;
     }
   } catch (NoGameFoundException &e) {

@@ -33,6 +33,7 @@ class ServerGame : public Game {
   uint32_t getScore();
   std::string getStateString();
   std::string getWord();
+  std::string getWordProgress();
   std::optional<std::filesystem::path> getHintFilePath();
   std::string getHintFileName();
 };
