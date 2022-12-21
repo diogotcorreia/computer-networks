@@ -69,7 +69,7 @@ void wait_for_udp_packet(GameServerState &server_state) {
   std::cout << "Receiving incoming UDP message from " << addr_str << ":"
             << ntohs(addr_from.addr.sin_port) << std::endl;
 
-  stream << buffer;
+  stream.write(buffer, n);
 
   return handle_packet(stream, addr_from, server_state);
 }
