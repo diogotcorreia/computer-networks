@@ -402,6 +402,7 @@ void RevealWordClientbound::deserialize(std::stringstream &buffer) {
   readPacketId(buffer, RevealWordClientbound::ID);
   readSpace(buffer);
   word = readAlphabeticalString(buffer, wordLen);
+  readPacketDelimiter(buffer);
 };
 
 void TcpPacket::writeString(int fd, const std::string &str) {
