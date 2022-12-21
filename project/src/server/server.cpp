@@ -114,6 +114,9 @@ void wait_for_tcp_packet(GameServerState &server_state, WorkerPool &pool) {
       accept(server_state.tcp_socket_fd, (struct sockaddr *)&addr_from.addr,
              &addr_from.size);
   if (connection_fd < 0) {
+    if (errno == EAGAIN) {  // timeout, just go around and keep listening
+      return;
+    }
     perror("accept");
     std::cerr << "[ERROR] Failed to accept a connection" << std::endl;
     return;
