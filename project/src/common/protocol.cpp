@@ -718,7 +718,7 @@ void wait_for_packet(UdpPacket &packet, int socket) {
     exit(EXIT_FAILURE);
   }
 
-  data << buffer;
+  data.write(buffer, n);
 
   packet.deserialize(data);
 }
