@@ -62,6 +62,20 @@ void GameServerState::setup_sockets() {
     perror("Failed to set socket options");
     exit(EXIT_FAILURE);
   }
+  struct timeval read_timeout;
+  read_timeout.tv_sec = TCP_READ_TIMEOUT_SECONDS;
+  if (setsockopt(this->tcp_socket_fd, SOL_SOCKET, SO_RCVTIMEO, &read_timeout,
+                 sizeof(read_timeout)) < 0) {
+    perror("Failed to set socket options");
+    exit(EXIT_FAILURE);
+  }
+  struct timeval write_timeout;
+  write_timeout.tv_sec = TCP_WRITE_TIMEOUT_SECONDS;
+  if (setsockopt(this->tcp_socket_fd, SOL_SOCKET, SO_SNDTIMEO, &write_timeout,
+                 sizeof(write_timeout)) < 0) {
+    perror("Failed to set socket options");
+    exit(EXIT_FAILURE);
+  }
 }
 
 void GameServerState::resolveServerAddress(std::string &port) {
