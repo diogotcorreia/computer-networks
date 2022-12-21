@@ -147,7 +147,8 @@ std::string ServerGame::getStateString() {
   } else {
     state << "     Last finalized game for player " << std::setfill('0')
           << std::setw(PLAYER_ID_MAX_LEN) << playerId << std::endl;
-    state << "     Word: " << word << "; Hint file: TODO" << std::endl;  // TODO
+    state << "     Word: " << word << "; Hint file: " << getHintFileName()
+          << std::endl;
   }
 
   if (plays.size() == 0) {
