@@ -70,6 +70,7 @@ void GameServerState::resolveServerAddress(std::string &port) {
   memset(&hints, 0, sizeof hints);
   hints.ai_family = AF_INET;       // IPv4
   hints.ai_socktype = SOCK_DGRAM;  // UDP socket
+  hints.ai_flags = AI_PASSIVE;     // Listen on 0.0.0.0
   if (getaddrinfo(NULL, port_str, &hints, &this->server_udp_addr) != 0) {
     // TODO consider using exceptions (?)
     perror("Failed to get address for UDP connection");
@@ -87,6 +88,7 @@ void GameServerState::resolveServerAddress(std::string &port) {
   memset(&hints, 0, sizeof hints);
   hints.ai_family = AF_INET;        // IPv4
   hints.ai_socktype = SOCK_STREAM;  // TCP socket
+  hints.ai_flags = AI_PASSIVE;      // Listen on 0.0.0.0
   if (getaddrinfo(NULL, port.c_str(), &hints, &this->server_tcp_addr) != 0) {
     // TODO consider using exceptions (?)
     perror("Failed to get address for TCP connection");
