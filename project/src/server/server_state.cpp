@@ -18,6 +18,7 @@ GameServerState::GameServerState(std::string &__word_file_path,
   this->setup_sockets();
   this->resolveServerAddress(port);
   this->registerWords(__word_file_path);
+  this->scoreboard.loadFromFile();
   srand((uint32_t)time(NULL));  // Initialize rand seed
 }
 
@@ -93,7 +94,7 @@ void GameServerState::resolveServerAddress(std::string &port) {
   if (getaddrinfo(NULL, port.c_str(), &hints, &this->server_tcp_addr) != 0) {
     // TODO consider using exceptions (?)
     perror("Failed to get address for TCP connection");
-    exit(1);
+    exit(EXIT_FAILURE);
   }
 
   if (bind(this->tcp_socket_fd, this->server_tcp_addr->ai_addr,
@@ -124,6 +125,15 @@ void GameServerState::registerWords(std::string &__word_file_path) {
       auto split_index = line.find(' ');
       Word word;
       word.word = line.substr(0, split_index);
+
+      if (word.word.length() < WORD_MIN_LEN ||
+          word.word.length() > WORD_MAX_LEN) {
+        std::cerr << "[WARNING] Word '" << word.word << "' is not between "
+                  << WORD_MIN_LEN << " and " << WORD_MAX_LEN
+                  << " characters long. Ignoring" << std::endl;
+        continue;
+      }
+
       if (split_index != std::string::npos) {
         std::filesystem::path hint_file_path(word_file_path);
         hint_file_path.remove_filename().append(line.substr(split_index + 1));
@@ -141,6 +151,12 @@ void GameServerState::registerWords(std::string &__word_file_path) {
         word.hint_path = std::nullopt;
       }
       this->words.push_back(word);
+    }
+
+    if (words.size() == 0) {
+      std::cerr << "[FATAL] There are no valid words in the provided word file"
+                << std::endl;
+      exit(EXIT_FAILURE);
     }
 
     std::cout << "Loaded " << words.size() << " word(s)" << std::endl;
@@ -169,9 +185,8 @@ void GameServerState::callUdpPacketHandler(std::string packet_id,
                                            Address &addr_from) {
   auto handler = this->udp_packet_handlers.find(packet_id);
   if (handler == this->udp_packet_handlers.end()) {
-    // TODO add exception
-    std::cout << "Unknown Packet ID" << std::endl;
-    return;
+    cdebug << "Received unknown Packet ID" << std::endl;
+    throw InvalidPacketException();
   }
 
   handler->second(stream, addr_from, *this);
@@ -181,9 +196,8 @@ void GameServerState::callTcpPacketHandler(std::string packet_id,
                                            int connection_fd) {
   auto handler = this->tcp_packet_handlers.find(packet_id);
   if (handler == this->tcp_packet_handlers.end()) {
-    // TODO add exception
-    std::cout << "Unknown Packet ID" << std::endl;
-    return;
+    cdebug << "Received unknown Packet ID" << std::endl;
+    throw InvalidPacketException();
   }
 
   handler->second(connection_fd, *this);

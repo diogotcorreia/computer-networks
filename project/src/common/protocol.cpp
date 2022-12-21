@@ -51,6 +51,10 @@ void UdpPacket::readSpace(std::stringstream &buffer) {
 
 void UdpPacket::readPacketDelimiter(std::stringstream &buffer) {
   readChar(buffer, '\n');
+  buffer.peek();
+  if (!buffer.eof()) {
+    throw InvalidPacketException();
+  }
 }
 
 std::string UdpPacket::readString(std::stringstream &buffer, uint32_t max_len) {
@@ -398,6 +402,18 @@ void RevealWordClientbound::deserialize(std::stringstream &buffer) {
   readPacketId(buffer, RevealWordClientbound::ID);
   readSpace(buffer);
   word = readAlphabeticalString(buffer, wordLen);
+  readPacketDelimiter(buffer);
+};
+
+std::stringstream ErrorUdpPacket::serialize() {
+  std::stringstream buffer;
+  buffer << ErrorUdpPacket::ID << std::endl;
+  return buffer;
+};
+
+void ErrorUdpPacket::deserialize(std::stringstream &buffer) {
+  (void)buffer;
+  // unimplemented
 };
 
 void TcpPacket::writeString(int fd, const std::string &str) {
@@ -673,6 +689,16 @@ void HintClientbound::receive(int fd) {
   readPacketDelimiter(fd);
 }
 
+void ErrorTcpPacket::send(int fd) {
+  writeString(fd, ErrorTcpPacket::ID);
+  writeString(fd, "\n");
+}
+
+void ErrorTcpPacket::receive(int fd) {
+  (void)fd;
+  // unimplemented
+}
+
 // Packet sending and receiving
 void send_packet(UdpPacket &packet, int socket, struct sockaddr *address,
                  socklen_t addrlen) {
@@ -714,7 +740,7 @@ void wait_for_packet(UdpPacket &packet, int socket) {
     exit(EXIT_FAILURE);
   }
 
-  data << buffer;
+  data.write(buffer, n);
 
   packet.deserialize(data);
 }

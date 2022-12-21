@@ -188,6 +188,14 @@ class RevealWordClientbound : public UdpPacket {
   void deserialize(std::stringstream &buffer);
 };
 
+class ErrorUdpPacket : public UdpPacket {
+ public:
+  static constexpr const char *ID = "ERR";
+
+  std::stringstream serialize();
+  void deserialize(std::stringstream &buffer);
+};
+
 class TcpPacket {
  private:
   char delimiter = 0;
@@ -269,6 +277,14 @@ class HintClientbound : public TcpPacket {
   status status;
   std::optional<std::filesystem::path> file_path;
   std::string file_name;
+
+  void send(int fd);
+  void receive(int fd);
+};
+
+class ErrorTcpPacket : public TcpPacket {
+ public:
+  static constexpr const char *ID = "ERR";
 
   void send(int fd);
   void receive(int fd);
