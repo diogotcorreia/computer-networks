@@ -7,10 +7,10 @@
 
 #include "common/constants.hpp"
 
-ServerGame::ServerGame(uint32_t __playerId) {
+ServerGame::ServerGame(uint32_t __playerId, std::string __word,
+                       std::optional<std::filesystem::path> __hint_path)
+    : word{__word}, hint_path{__hint_path} {
   this->playerId = __playerId;
-  // TODO: Get word from file
-  word = "test";
   size_t word_len = word.size();
   // TODO: Get max errors from one liner
   if (word_len <= 6) {
@@ -199,4 +199,15 @@ std::string ServerGame::getStateString() {
 
 std::string ServerGame::getWord() {
   return word;
+}
+
+std::optional<std::filesystem::path> ServerGame::getHintFilePath() {
+  return hint_path;
+}
+
+std::string ServerGame::getHintFileName() {
+  if (hint_path.has_value()) {
+    return std::string(hint_path.value().filename());
+  }
+  return std::string();
 }
