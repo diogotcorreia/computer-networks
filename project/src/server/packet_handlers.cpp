@@ -12,23 +12,28 @@ void handle_start_game(std::stringstream &buffer, Address &addr_from,
 
   try {
     packet.deserialize(buffer);
-    state.cdebug << "Received request to start new game from player '"
-                 << packet.player_id << "'" << std::endl;
+    state.cdebug << playerTag(packet.player_id) << "Asked to start game"
+                 << std::endl;
 
     ServerGameSync game = state.createGame(packet.player_id);
 
     response.status = ReplyStartGameClientbound::OK;
     response.n_letters = game->getWordLen();
     response.max_errors = game->getMaxErrors();
+
+    state.cdebug << playerTag(packet.player_id) << "Game started with word '"
+                 << game->getWord() << "' and with " << game->getMaxErrors()
+                 << " errors allowed" << std::endl;
   } catch (GameAlreadyStartedException &e) {
-    state.cdebug << "Player id has already started a game" << std::endl;
+    state.cdebug << playerTag(packet.player_id) << "Game already started"
+                 << std::endl;
     response.status = ReplyStartGameClientbound::NOK;
   } catch (InvalidPacketException &e) {
-    state.cdebug << "Invalid packet" << std::endl;
+    state.cdebug << "[Start Game] Invalid packet received" << std::endl;
     response.status = ReplyStartGameClientbound::ERR;
   } catch (std::exception &e) {
-    std::cerr << "There was an unhandled exception that prevented the server "
-                 "from starting a new game:"
+    std::cerr << "[Start Game] There was an unhandled exception that prevented "
+                 "the server from starting a new game:"
               << e.what() << std::endl;
     return;
   }
@@ -44,8 +49,8 @@ void handle_guess_letter(std::stringstream &buffer, Address &addr_from,
   try {
     packet.deserialize(buffer);
 
-    state.cdebug << "Received request to guess letter '" << packet.guess
-                 << "' from player '" << packet.player_id << "'" << std::endl;
+    state.cdebug << playerTag(packet.player_id) << "Guessed letter '"
+                 << packet.guess << "'" << std::endl;
 
     ServerGameSync game = state.getGame(packet.player_id);
 
@@ -56,31 +61,46 @@ void handle_guess_letter(std::stringstream &buffer, Address &addr_from,
 
     if (game->hasLost()) {
       response.status = GuessLetterClientbound::status::OVR;
+      state.cdebug << playerTag(packet.player_id) << "Game lost" << std::endl;
     } else if (found.size() == 0) {
       response.status = GuessLetterClientbound::status::NOK;
+      state.cdebug << playerTag(packet.player_id) << "Wrong letter '"
+                   << packet.guess << "'" << std::endl;
     } else if (game->hasWon()) {
       response.status = GuessLetterClientbound::status::WIN;
       state.scoreboard.addGame(game.game);
+      state.cdebug << playerTag(packet.player_id) << "Won the game. Word was '"
+                   << game->getWord() << "'" << std::endl;
     } else {
       response.status = GuessLetterClientbound::status::OK;
+      state.cdebug << playerTag(packet.player_id) << "Correct letter '"
+                   << packet.guess << "'. Trial " << response.trial
+                   << ". Progress: " << game->getWordProgress() << std::endl;
     }
     response.pos = found;
   } catch (NoGameFoundException &e) {
     response.status = GuessLetterClientbound::status::ERR;
+    state.cdebug << playerTag(packet.player_id) << "No game found" << std::endl;
   } catch (DuplicateLetterGuessException &e) {
     response.status = GuessLetterClientbound::status::DUP;
     response.trial -= 1;
+    state.cdebug << playerTag(packet.player_id) << "Guessed duplicate letter '"
+                 << packet.guess << "'" << std::endl;
   } catch (InvalidTrialException &e) {
     response.status = GuessLetterClientbound::status::INV;
     response.trial -= 1;
+    state.cdebug << playerTag(packet.player_id) << "Invalid trial "
+                 << packet.trial << std::endl;
   } catch (GameHasEndedException &e) {
     response.status = GuessLetterClientbound::status::ERR;
+    state.cdebug << playerTag(packet.player_id) << "Game has ended"
+                 << std::endl;
   } catch (InvalidPacketException &e) {
-    state.cdebug << "Invalid packet" << std::endl;
     response.status = GuessLetterClientbound::status::ERR;
+    state.cdebug << "[Guess Letter] Invalid packet received" << std::endl;
   } catch (std::exception &e) {
-    std::cerr << "There was an unhandled exception that prevented the server "
-                 "from handling a letter guess:"
+    std::cerr << "[Guess Letter] There was an unhandled exception that "
+                 "prevented the server from handling a letter guess:"
               << e.what() << std::endl;
     return;
   }
@@ -96,8 +116,8 @@ void handle_guess_word(std::stringstream &buffer, Address &addr_from,
   try {
     packet.deserialize(buffer);
 
-    state.cdebug << "Received request to guess word '" << packet.guess
-                 << "' from player '" << packet.player_id << "'" << std::endl;
+    state.cdebug << playerTag(packet.player_id) << "Guessed word '"
+                 << packet.guess << "'" << std::endl;
 
     ServerGameSync game = state.getGame(packet.player_id);
 
@@ -108,28 +128,42 @@ void handle_guess_word(std::stringstream &buffer, Address &addr_from,
 
     if (game->hasLost()) {
       response.status = GuessWordClientbound::status::OVR;
+      state.cdebug << playerTag(packet.player_id) << "Game lost" << std::endl;
     } else if (correct) {
       response.status = GuessWordClientbound::status::WIN;
       state.scoreboard.addGame(game.game);
+      state.cdebug << playerTag(packet.player_id) << "Guess was correct"
+                   << std::endl;
     } else {
       response.status = GuessWordClientbound::status::NOK;
+      state.cdebug << playerTag(packet.player_id) << "Guess was wrong. Trial "
+                   << response.trial << " Progress: " << game->getWordProgress()
+                   << std::endl;
     }
   } catch (NoGameFoundException &e) {
     response.status = GuessWordClientbound::status::ERR;
+    state.cdebug << playerTag(packet.player_id) << "No game found" << std::endl;
   } catch (DuplicateWordGuessException &e) {
     response.status = GuessWordClientbound::status::DUP;
     response.trial -= 1;
+    state.cdebug << playerTag(packet.player_id) << "Guessed duplicate word '"
+                 << packet.guess << "'" << std::endl;
   } catch (InvalidTrialException &e) {
     response.status = GuessWordClientbound::status::INV;
     response.trial -= 1;
+    state.cdebug << playerTag(packet.player_id)
+                 << "Invalid trial sent. Trial sent: " << packet.trial
+                 << ". Correct trial: " << (response.trial + 1) << std::endl;
   } catch (GameHasEndedException &e) {
     response.status = GuessWordClientbound::status::ERR;
+    state.cdebug << playerTag(packet.player_id) << "Game has ended"
+                 << std::endl;
   } catch (InvalidPacketException &e) {
-    state.cdebug << "Invalid packet" << std::endl;
+    state.cdebug << "[Guess Word] Invalid packet" << std::endl;
     response.status = GuessWordClientbound::status::ERR;
   } catch (std::exception &e) {
-    std::cerr << "There was an unhandled exception that prevented the server "
-                 "from handling a word guess:"
+    std::cerr << "[Guess Word] There was an unhandled exception that prevented "
+                 "the server from handling a word guess:"
               << e.what() << std::endl;
     return;
   }
@@ -145,25 +179,29 @@ void handle_quit_game(std::stringstream &buffer, Address &addr_from,
   try {
     packet.deserialize(buffer);
 
-    state.cdebug << "Received request to quit game from player '"
-                 << packet.player_id << "'" << std::endl;
+    state.cdebug << playerTag(packet.player_id) << "Quitting game" << std::endl;
 
     ServerGameSync game = state.getGame(packet.player_id);
 
     if (game->isOnGoing()) {
       game->finishGame();
       response.status = QuitGameClientbound::status::OK;
+      state.cdebug << playerTag(packet.player_id) << "Fulfilling quit request"
+                   << std::endl;
     } else {
       response.status = QuitGameClientbound::status::NOK;
+      state.cdebug << playerTag(packet.player_id) << "Game had already ended"
+                   << std::endl;
     }
   } catch (NoGameFoundException &e) {
     response.status = QuitGameClientbound::status::NOK;
+    state.cdebug << playerTag(packet.player_id) << "No game found" << std::endl;
   } catch (InvalidPacketException &e) {
-    state.cdebug << "Invalid packet" << std::endl;
+    state.cdebug << "[Quit] Invalid packet" << std::endl;
     response.status = QuitGameClientbound::status::ERR;
   } catch (std::exception &e) {
-    std::cerr << "There was an unhandled exception that prevented the server "
-                 "from handling a quit game request:"
+    std::cerr << "[Quit] There was an unhandled exception that prevented the "
+                 "server from handling a quit game request:"
               << e.what() << std::endl;
     return;
   }
@@ -177,22 +215,24 @@ void handle_reveal_word(std::stringstream &buffer, Address &addr_from,
   RevealWordServerbound packet;
   packet.deserialize(buffer);
 
-  state.cdebug << "Received request to reveal word from player '"
-               << packet.player_id << "'" << std::endl;
+  state.cdebug << playerTag(packet.player_id) << "Asked to reveal word"
+               << std::endl;
 
   RevealWordClientbound response;
   try {
     ServerGameSync game = state.getGame(packet.player_id);
 
-    state.cdebug << "Word is: " << game->getWord() << std::endl;
+    state.cdebug << playerTag(packet.player_id) << "Word is " << game->getWord()
+                 << std::endl;
 
     response.word = game->getWord();
   } catch (NoGameFoundException &e) {
     // The protocol says we should not reply if there is not an on-going game
+    state.cdebug << playerTag(packet.player_id) << "No game found" << std::endl;
     return;
   } catch (std::exception &e) {
-    std::cerr << "There was an unhandled exception that prevented the server "
-                 "from handling a word reveal:"
+    std::cerr << "[Reveal] There was an unhandled exception that prevented the "
+                 "server from handling a word reveal:"
               << e.what() << std::endl;
     return;
   }
@@ -205,7 +245,7 @@ void handle_scoreboard(int connection_fd, GameServerState &state) {
   ScoreboardServerbound packet;
   packet.receive(connection_fd);  // handle outside try and propagate error
 
-  state.cdebug << "Received request for scoreboard" << std::endl;
+  state.cdebug << "[Scoreboard] Received request" << std::endl;
 
   ScoreboardClientbound response;
   try {
@@ -214,12 +254,17 @@ void handle_scoreboard(int connection_fd, GameServerState &state) {
       response.status = ScoreboardClientbound::status::OK;
       response.file_name = "scoreboard.txt";
       response.file_data = scoreboard_str.value();
+      state.cdebug << "[Scoreboard] Sending back scoreboard as per request"
+                   << std::endl;
     } else {
       response.status = ScoreboardClientbound::status::EMPTY;
+      state.cdebug
+          << "[Scoreboard] There are no won games, sending empty scoreboard"
+          << std::endl;
     }
   } catch (std::exception &e) {
-    std::cerr << "There was an unhandled exception that prevented the server "
-                 "from handling a scoreboard request:"
+    std::cerr << "[Scoreboard] There was an unhandled exception that prevented "
+                 "the server from handling a scoreboard request:"
               << e.what() << std::endl;
     return;
   }
@@ -231,17 +276,24 @@ void handle_state(int connection_fd, GameServerState &state) {
   StateServerbound packet;
   packet.receive(connection_fd);
 
-  state.cdebug << "Received request to show game state from player '"
-               << packet.player_id << "'" << std::endl;
+  state.cdebug << playerTag(packet.player_id) << "Requested game state"
+               << std::endl;
 
   StateClientbound response;
   try {
     ServerGameSync game = state.getGame(packet.player_id);
 
+    // TODO
     if (game->isOnGoing()) {
       response.status = StateClientbound::status::ACT;
+      state.cdebug << playerTag(packet.player_id)
+                   << "Fulfilling state request: sending active game."
+                   << std::endl;
     } else {
       response.status = StateClientbound::status::FIN;
+      state.cdebug << playerTag(packet.player_id)
+                   << "Fulfilling state request: sending last finished game."
+                   << std::endl;
     }
     std::stringstream file_name;
     file_name << "state_" << std::setfill('0') << std::setw(PLAYER_ID_MAX_LEN)
@@ -250,10 +302,13 @@ void handle_state(int connection_fd, GameServerState &state) {
     response.file_data = game->getStateString();
   } catch (NoGameFoundException &e) {
     response.status = StateClientbound::status::NOK;
+    state.cdebug << playerTag(packet.player_id) << "Game not found"
+                 << std::endl;
   } catch (std::exception &e) {
-    std::cerr << "There was an unhandled exception that prevented the server "
-                 "from handling a state request:"
-              << e.what() << std::endl;
+    std::cerr
+        << "[State] There was an unhandled exception that prevented the server "
+           "from handling a state request:"
+        << e.what() << std::endl;
     return;
   }
 
