@@ -656,10 +656,11 @@ void HintClientbound::send(int fd) {
   stream << HintClientbound::ID << " ";
   if (status == OK) {
     stream << "OK ";
-    stream << file_name << " " << getFileSize(file_path.value()) << " ";
+    stream << file_name << " " << getFileSize(file_path) << " ";
     writeString(fd, stream.str());
-    sendImage(fd, file_path.value());
-
+    stream.str(std::string());
+    stream.clear();
+    sendFile(fd, file_path);
   } else if (status == NOK) {
     stream << "NOK";
   } else {
@@ -750,45 +751,34 @@ void write_player_id(std::stringstream &buffer, const uint32_t player_id) {
   buffer.copyfmt(std::ios(NULL));  // reset formatting
 }
 
-// function to read a image file to a buffer and send the buffer to a client
-void sendImage(int connection_fd, std::filesystem::path image_path) {
-  // Open the file
-  std::ifstream image_file(image_path, std::ios::binary);
-  if (!image_file) {
-    std::cerr << "Error opening image file: " << image_path << std::endl;
-    return;
+void sendFile(int connection_fd, std::filesystem::path file_path) {
+  std::ifstream file(file_path, std::ios::in | std::ios::binary);
+  if (!file) {
+    std::cerr << "Error opening file: " << file_path << std::endl;
+    throw PacketSerializationException();
   }
-  // Read the file into a buffer and send it over the socket in chunks
+
   char buffer[FILE_BUFFER_LEN];
-  while (image_file) {
-    image_file.read(buffer, FILE_BUFFER_LEN);
-    ssize_t bytes_read = (ssize_t)image_file.gcount();
+  while (file) {
+    file.read(buffer, FILE_BUFFER_LEN);
+    ssize_t bytes_read = (ssize_t)file.gcount();
     ssize_t bytes_sent = 0;
     while (bytes_sent < bytes_read) {
       ssize_t sent = send(connection_fd, buffer + bytes_sent,
                           (size_t)(bytes_read - bytes_sent), 0);
       if (sent < 0) {
-        std::cerr << "Error sending data over socket" << std::endl;
-        return;
+        throw PacketSerializationException();
       }
       bytes_sent += sent;
     }
   }
-  image_file.close();
 }
 
-// function to get the size of a file
 uint32_t getFileSize(std::filesystem::path file_path) {
   // Open the file
-  std::ifstream image_file(file_path, std::ios::binary);
-  if (!image_file) {
-    std::cerr << "Error opening file to get it's size" << file_path
-              << std::endl;
-    return (uint32_t)-1;
+  try {
+    return (uint32_t)std::filesystem::file_size(file_path);
+  } catch (...) {
+    throw PacketSerializationException();
   }
-  // Get the size of the file
-  image_file.seekg(0, std::ios::end);
-  uint32_t file_size = (uint32_t)image_file.tellg();
-  image_file.close();
-  return file_size;
 }
