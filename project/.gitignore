@@ -6,6 +6,9 @@ player
 *.o
 *.zip
 
+# Game data
+.gamedata/
+
 # Files sent from server
 *.txt
 *.jpg

@@ -2,6 +2,7 @@
 #define SCOREBOARD_H
 
 #include <cstdint>
+#include <fstream>
 #include <optional>
 #include <set>
 #include <shared_mutex>
@@ -18,6 +19,8 @@ class ScoreboardEntry {
   uint32_t totalTrials;
 
   ScoreboardEntry(ServerGame& game);
+  ScoreboardEntry(std::ifstream& file);
+  void serializeEntry(std::ofstream& file);
 
   bool operator<(const ScoreboardEntry& r) const {  // Comparison function
     return score < r.score || (score == r.score && totalTrials > r.totalTrials);
@@ -31,6 +34,8 @@ class Scoreboard {
   std::multiset<ScoreboardEntry> entries;
 
   void addGame(ServerGame& game);
+  void saveToFile();
+  void loadFromFile();
   std::optional<std::string> toString();
 };
 
