@@ -12,9 +12,8 @@
 
 GameServerState::GameServerState(std::string &__word_file_path,
                                  std::string &port, bool __verbose,
-                                 bool __select_sequentially)
-    : select_sequentially{__select_sequentially},
-      cdebug{DebugStream(__verbose)} {
+                                 bool __select_randomly)
+    : select_randomly{__select_randomly}, cdebug{DebugStream(__verbose)} {
   this->setup_sockets();
   this->resolveServerAddress(port);
   this->registerWords(__word_file_path);
@@ -187,11 +186,11 @@ void GameServerState::registerWords(std::string &__word_file_path) {
 
 Word &GameServerState::selectRandomWord() {
   uint32_t index;
-  if (select_sequentially) {
+  if (select_randomly) {
+    index = (uint32_t)rand() % (uint32_t)this->words.size();
+  } else {
     index = (this->current_word_index) % (uint32_t)this->words.size();
     this->current_word_index = index + 1;
-  } else {
-    index = (uint32_t)rand() % (uint32_t)this->words.size();
   }
   return this->words[index];
 }
