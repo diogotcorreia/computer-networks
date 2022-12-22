@@ -79,8 +79,6 @@ class GameServerState {
   void setup_sockets();
 
  public:
-  pthread_cond_t server_cond;
-  pthread_mutex_t server_lock;
   int udp_socket_fd;
   int tcp_socket_fd;
   struct addrinfo* server_udp_addr;

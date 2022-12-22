@@ -57,7 +57,6 @@ void set_signals(GameServerState &state) {
     perror("Sending signal");
     exit(EXIT_FAILURE);
   }
-
   // ignore SIGPIPE
   signal(SIGPIPE, SIG_IGN);
 }
