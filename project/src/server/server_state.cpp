@@ -144,8 +144,7 @@ void GameServerState::registerWords(std::string &__word_file_path) {
 
     std::ifstream word_file(word_file_path);
     if (!word_file.is_open()) {
-      perror("Failed to open word file");
-      exit(EXIT_FAILURE);
+      throw UnrecoverableError("Failed to open word file");
     }
 
     std::string line;

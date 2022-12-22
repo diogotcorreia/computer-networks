@@ -42,10 +42,12 @@ int main(int argc, char *argv[]) {
                      "application. Retrying..."
                   << std::endl
                   << e.what() << std::endl;
+        ex_trial++;
       } catch (...) {
         std::cerr << "Encountered unrecoverable error while running the "
                      "application. Retrying..."
                   << std::endl;
+        ex_trial++;
       }
       if (ex_trial >= EXCEPTION_RETRY_MAX) {
         std::cerr << "Max trials reached, shutting down..." << std::endl;
@@ -92,10 +94,12 @@ void main_tcp(GameServerState &state) {
                    "application. Retrying..."
                 << std::endl
                 << e.what() << std::endl;
+      ex_trial++;
     } catch (...) {
       std::cerr << "Encountered unrecoverable error while running the "
                    "application. Retrying..."
                 << std::endl;
+      ex_trial++;
     }
     if (ex_trial >= EXCEPTION_RETRY_MAX) {
       std::cerr << "Max trials reached, shutting down..." << std::endl;
@@ -124,8 +128,7 @@ void wait_for_udp_packet(GameServerState &server_state) {
     if (errno == EAGAIN) {
       return;
     }
-    perror("recvfrom");
-    exit(EXIT_FAILURE);
+    throw UnrecoverableError("Failed to receive UDP message (recvfrom)", errno);
   }
   addr_from.socket = server_state.udp_socket_fd;
 

@@ -782,12 +782,10 @@ void ErrorTcpPacket::receive(int fd) {
 void send_packet(UdpPacket &packet, int socket, struct sockaddr *address,
                  socklen_t addrlen) {
   const std::stringstream buffer = packet.serialize();
-  // ERROR HERE: address type changes in client and server
   ssize_t n = sendto(socket, buffer.str().c_str(), buffer.str().length(), 0,
                      address, addrlen);
   if (n == -1) {
-    perror("sendto");
-    exit(EXIT_FAILURE);
+    throw UnrecoverableError("Failed to send UDP packet", errno);
   }
 }
 

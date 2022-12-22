@@ -28,12 +28,10 @@ void setup_signal_handlers() {
   sa.sa_flags = 0;
 
   if (sigaction(SIGINT, &sa, NULL) == -1) {
-    perror("Setting SIGINT signal handler");
-    exit(EXIT_FAILURE);
+    throw UnrecoverableError("Setting SIGINT signal handler", errno);
   }
   if (sigaction(SIGTERM, &sa, NULL) == -1) {
-    perror("Setting SIGTERM signal handler");
-    exit(EXIT_FAILURE);
+    throw UnrecoverableError("Setting SIGTERM signal handler", errno);
   }
 
   // ignore SIGPIPE

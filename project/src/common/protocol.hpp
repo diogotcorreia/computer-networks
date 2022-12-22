@@ -38,8 +38,8 @@ class PacketSerializationException : public std::runtime_error {
  public:
   PacketSerializationException()
       : std::runtime_error(
-            "There was an error while preparing a request to the game server, "
-            "please try again and restart the client if the problem "
+            "There was an error while preparing a request, "
+            "please try again and restart the application if the problem "
             "persists.") {}
 };
 
