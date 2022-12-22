@@ -242,8 +242,17 @@ ServerGameSync GameServerState::createGame(uint32_t player_id) {
   Word &word = this->selectRandomWord();
   // Some C++ magic to create an instance of the class inside the map, without
   // moving it, since mutexes can't be moved
-  games.emplace(std::piecewise_construct, std::forward_as_tuple(player_id),
-                std::forward_as_tuple(player_id, word.word, word.hint_path));
+  auto inserted = games.emplace(
+      std::piecewise_construct, std::forward_as_tuple(player_id),
+      std::forward_as_tuple(player_id, word.word, word.hint_path));
+
+  if (inserted.first->second.loadFromFile(true)) {
+    // Loaded from file successfully, recheck if it has started
+    if (inserted.first->second.hasStarted()) {
+      throw GameAlreadyStartedException();
+    }
+    return ServerGameSync(inserted.first->second);
+  }
 
   return ServerGameSync(games.at(player_id));
 }
@@ -253,7 +262,21 @@ ServerGameSync GameServerState::getGame(uint32_t player_id) {
 
   auto game = games.find(player_id);
   if (game == games.end()) {
-    throw NoGameFoundException();
+    // Try to load from disk
+
+    // Some C++ magic to create an instance of the class inside the map, without
+    // moving it, since mutexes can't be moved
+    auto inserted = games.emplace(
+        std::piecewise_construct, std::forward_as_tuple(player_id),
+        std::forward_as_tuple(player_id, std::string(), std::nullopt));
+
+    if (!inserted.first->second.loadFromFile(false)) {
+      // Failed to load, throw exception
+      games.erase(inserted.first);
+      throw NoGameFoundException();
+    }
+
+    return ServerGameSync(inserted.first->second);
   }
 
   return ServerGameSync(game->second);
