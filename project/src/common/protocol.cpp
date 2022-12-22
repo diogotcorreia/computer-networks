@@ -417,7 +417,7 @@ void RevealWordClientbound::deserialize(std::stringstream &buffer) {
   buffer >> std::noskipws;
   readPacketId(buffer, RevealWordClientbound::ID);
   readSpace(buffer);
-  word = readAlphabeticalString(buffer, wordLen);
+  word = readAlphabeticalString(buffer, WORD_MAX_LEN);
   readPacketDelimiter(buffer);
 };
 

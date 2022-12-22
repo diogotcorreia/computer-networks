@@ -189,7 +189,6 @@ class RevealWordServerbound : public UdpPacket {
 class RevealWordClientbound : public UdpPacket {
  public:
   static constexpr const char *ID = "RRV";
-  uint32_t wordLen;
   std::string word;
 
   std::stringstream serialize();

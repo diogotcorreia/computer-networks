@@ -10,51 +10,66 @@
 
 #include <iostream>
 
+#include "common/common.hpp"
+
 bool is_shutting_down = false;
 
 int main(int argc, char *argv[]) {
-  setup_signal_handlers();
+  try {
+    setup_signal_handlers();
 
-  ClientConfig config(argc, argv);
-  if (config.help) {
-    config.printHelp(std::cout);
-    exit(EXIT_SUCCESS);
-  }
-  PlayerState state(config.host, config.port);
-
-  CommandManager commandManager;
-  registerCommands(commandManager);
-
-  commandManager.printHelp();
-
-  while (!std::cin.eof() && !is_shutting_down) {
-    commandManager.waitForCommand(state);
-  }
-
-  std::cout
-      << std::endl
-      << "Shutting down... Press CTRL + C again to forcefully close the player."
-      << std::endl;
-
-  if (state.hasActiveGame()) {
-    std::cout << "Player has an active game, will attempt to quit it."
-              << std::endl;
-    try {
-      QuitGameServerbound packet;
-      QuitGameClientbound reply;
-      packet.player_id = state.game->getPlayerId();
-      is_shutting_down = false;  // otherwise can't send packets
-      state.sendUdpPacketAndWaitForReply(packet, reply);
-      if (reply.status == QuitGameClientbound::status::ERR) {
-        throw std::runtime_error("Server replied with ERR");
-      }
-      std::cout << "Game quit successfully." << std::endl;
-    } catch (...) {
-      std::cerr << "Failed to quit game. Exiting anyway..." << std::endl;
+    ClientConfig config(argc, argv);
+    if (config.help) {
+      config.printHelp(std::cout);
+      return EXIT_SUCCESS;
     }
+    PlayerState state(config.host, config.port);
+
+    CommandManager commandManager;
+    registerCommands(commandManager);
+
+    commandManager.printHelp();
+
+    while (!std::cin.eof() && !is_shutting_down) {
+      commandManager.waitForCommand(state);
+    }
+
+    std::cout << std::endl
+              << "Shutting down... Press CTRL + C again to forcefully close "
+                 "the player."
+              << std::endl;
+
+    if (state.hasActiveGame()) {
+      std::cout << "Player has an active game, will attempt to quit it."
+                << std::endl;
+      try {
+        QuitGameServerbound packet;
+        QuitGameClientbound reply;
+        packet.player_id = state.game->getPlayerId();
+        is_shutting_down = false;  // otherwise can't send packets
+        state.sendUdpPacketAndWaitForReply(packet, reply);
+        if (reply.status == QuitGameClientbound::status::ERR) {
+          throw std::runtime_error("Server replied with ERR");
+        }
+        std::cout << "Game quit successfully." << std::endl;
+      } catch (...) {
+        std::cerr << "Failed to quit game. Exiting anyway..." << std::endl;
+      }
+    }
+
+  } catch (std::exception &e) {
+    std::cerr << "Encountered unrecoverable error while running the "
+                 "application. Shutting down..."
+              << std::endl
+              << e.what() << std::endl;
+    return EXIT_FAILURE;
+  } catch (...) {
+    std::cerr << "Encountered unrecoverable error while running the "
+                 "application. Shutting down..."
+              << std::endl;
   }
 
-  return 0;
+  return EXIT_SUCCESS;
 }
 
 void setup_signal_handlers() {
@@ -119,6 +134,20 @@ ClientConfig::ClientConfig(int argc, char *argv[]) {
         printHelp(std::cerr);
         exit(EXIT_FAILURE);
     }
+  }
+
+  for (char c : port) {
+    if (!std::isdigit(static_cast<unsigned char>(c))) {
+      throw UnrecoverableError("Invalid port: not a number");
+    }
+  }
+
+  try {
+    if (std::stoi(port) > ((1 << 16) - 1)) {
+      throw std::runtime_error("");
+    }
+  } catch (...) {
+    throw UnrecoverableError("Invalid port: it must be, at maximum, 65535");
   }
 }
 
