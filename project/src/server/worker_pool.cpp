@@ -49,6 +49,9 @@ void Worker::execute() {
                 << " encountered an unknown exception while running."
                 << std::endl;
     }
+
+    pool->server_state.cdebug << "[Worker #" << worker_id
+                              << "] Closing connection..." << std::endl;
     close(tcp_socket_fd);
     to_execute = false;
     pool->freeWorker(worker_id);

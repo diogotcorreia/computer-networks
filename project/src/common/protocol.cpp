@@ -431,8 +431,16 @@ void ErrorUdpPacket::deserialize(std::stringstream &buffer) {
 };
 
 void TcpPacket::writeString(int fd, const std::string &str) {
-  if (write(fd, str.c_str(), str.length()) != (ssize_t)str.length()) {
-    throw PacketSerializationException();
+  const char *buffer = str.c_str();
+  ssize_t bytes_to_send = (ssize_t)str.length();
+  ssize_t bytes_sent = 0;
+  while (bytes_sent < bytes_to_send) {
+    ssize_t sent =
+        write(fd, buffer + bytes_sent, (size_t)(bytes_to_send - bytes_sent));
+    if (sent < 0) {
+      throw PacketSerializationException();
+    }
+    bytes_sent += sent;
   }
 }
 
@@ -803,8 +811,8 @@ void sendFile(int connection_fd, std::filesystem::path file_path) {
     ssize_t bytes_read = (ssize_t)file.gcount();
     ssize_t bytes_sent = 0;
     while (bytes_sent < bytes_read) {
-      ssize_t sent = send(connection_fd, buffer + bytes_sent,
-                          (size_t)(bytes_read - bytes_sent), 0);
+      ssize_t sent = write(connection_fd, buffer + bytes_sent,
+                           (size_t)(bytes_read - bytes_sent));
       if (sent < 0) {
         throw PacketSerializationException();
       }
