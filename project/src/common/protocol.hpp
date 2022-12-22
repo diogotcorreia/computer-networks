@@ -60,6 +60,13 @@ class IOException : public std::runtime_error {
             "IO error while reading/writting from/to filesystem") {}
 };
 
+// Thrown when an error related to I/O occurs
+class OperationCancelledException : public std::runtime_error {
+ public:
+  OperationCancelledException()
+      : std::runtime_error("Operation cancelled by user") {}
+};
+
 class UdpPacket {
  private:
   void readChar(std::stringstream &buffer, char chr);
@@ -213,7 +220,7 @@ class TcpPacket {
   uint32_t readInt(const int fd);
   uint32_t readPlayerId(const int fd);
   void readAndSaveToFile(const int fd, const std::string &file_name,
-                         const size_t file_size);
+                         const size_t file_size, const bool cancellable);
 
  public:
   virtual void send(int fd) = 0;

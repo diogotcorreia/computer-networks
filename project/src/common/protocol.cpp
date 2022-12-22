@@ -521,8 +521,9 @@ uint32_t TcpPacket::readPlayerId(const int fd) {
   return parse_packet_player_id(id_str);
 }
 
-void TcpPacket::readAndSaveToFile(int fd, const std::string &file_name,
-                                  const size_t file_size) {
+void TcpPacket::readAndSaveToFile(const int fd, const std::string &file_name,
+                                  const size_t file_size,
+                                  const bool cancellable) {
   std::ofstream file(file_name);
 
   if (!file.good()) {
@@ -533,19 +534,63 @@ void TcpPacket::readAndSaveToFile(int fd, const std::string &file_name,
   size_t to_read;
   ssize_t n;
   char buffer[FILE_BUFFER_LEN];
+
+  if (cancellable) {
+    std::cout << "Downloading file from server. Press ENTER to cancel download."
+              << std::endl;
+  }
+
+  bool skip_stdin = false;
   while (remaining_size > 0) {
-    to_read = std::min(remaining_size, (size_t)FILE_BUFFER_LEN);
-    n = read(fd, buffer, to_read);
-    if (n <= 0) {
-      file.close();
-      throw InvalidPacketException();
+    fd_set file_descriptors;
+    FD_ZERO(&file_descriptors);
+    FD_SET(fd, &file_descriptors);
+    if (!skip_stdin && cancellable) {
+      FD_SET(fileno(stdin), &file_descriptors);
     }
-    file.write(buffer, n);
-    if (!file.good()) {
-      file.close();
-      throw IOException();
+
+    struct timeval timeout;
+    timeout.tv_sec = TCP_READ_TIMEOUT_SECONDS;
+    timeout.tv_usec = 0;
+
+    int ready_fd = select(std::max(fd, fileno(stdin)) + 1, &file_descriptors,
+                          NULL, NULL, &timeout);
+    if (ready_fd == -1) {
+      perror("select");
+      throw ConnectionTimeoutException();
+    } else if (FD_ISSET(fd, &file_descriptors)) {
+      // Read from socket
+      to_read = std::min(remaining_size, (size_t)FILE_BUFFER_LEN);
+      n = read(fd, buffer, to_read);
+      if (n <= 0) {
+        file.close();
+        throw InvalidPacketException();
+      }
+      file.write(buffer, n);
+      if (!file.good()) {
+        file.close();
+        throw IOException();
+      }
+      remaining_size -= (size_t)n;
+
+      size_t downloaded_size = file_size - remaining_size;
+      if (((downloaded_size - (size_t)n) * 100 / file_size) %
+              PROGRESS_BAR_STEP_SIZE >
+          (downloaded_size * 100 / file_size) % PROGRESS_BAR_STEP_SIZE) {
+        std::cout << "Progress: " << downloaded_size * 100 / file_size << "%"
+                  << std::endl;
+      }
+    } else if (FD_ISSET(fileno(stdin), &file_descriptors)) {
+      if (std::cin.peek() != '\n') {
+        skip_stdin = true;
+        continue;
+      }
+      std::cin.get();
+      std::cout << "Cancelling TCP download" << std::endl;
+      throw OperationCancelledException();
+    } else {
+      throw ConnectionTimeoutException();
     }
-    remaining_size -= (size_t)n;
   }
 
   file.close();
@@ -589,7 +634,7 @@ void ScoreboardClientbound::receive(int fd) {
     readSpace(fd);
     uint32_t file_size = readInt(fd);
     readSpace(fd);
-    readAndSaveToFile(fd, file_name, file_size);
+    readAndSaveToFile(fd, file_name, file_size, false);
   } else if (status_str == "EMPTY") {
     this->status = EMPTY;
   } else {
@@ -611,8 +656,7 @@ void StateServerbound::receive(int fd) {
   readSpace(fd);
   player_id = readPlayerId(fd);
   if (player_id > PLAYER_ID_MAX) {
-    throw InvalidPacketException();  // TODO maybe need to verify that string is
-                                     // 6 digits
+    throw InvalidPacketException();
   }
   readPacketDelimiter(fd);
 }
@@ -655,7 +699,7 @@ void StateClientbound::receive(int fd) {
   readSpace(fd);
   uint32_t file_size = readInt(fd);
   readSpace(fd);
-  readAndSaveToFile(fd, file_name, file_size);
+  readAndSaveToFile(fd, file_name, file_size, false);
   readPacketDelimiter(fd);
 }
 
@@ -672,8 +716,7 @@ void HintServerbound::receive(int fd) {
   readSpace(fd);
   player_id = readPlayerId(fd);
   if (player_id > PLAYER_ID_MAX) {
-    throw InvalidPacketException();  // TODO maybe need to verify that string
-                                     // is 6 digits
+    throw InvalidPacketException();
   }
   readPacketDelimiter(fd);
 }
@@ -708,7 +751,7 @@ void HintClientbound::receive(int fd) {
     readSpace(fd);
     uint32_t file_size = readInt(fd);
     readSpace(fd);
-    readAndSaveToFile(fd, file_name, file_size);
+    readAndSaveToFile(fd, file_name, file_size, true);
   } else if (status_str == "NOK") {
     this->status = NOK;
   } else {
