@@ -15,7 +15,7 @@ class ServerConfig {
   std::string port = DEFAULT_PORT;
   bool help = false;
   bool verbose = false;
-  bool test = false;
+  bool random = false;
 
   ServerConfig(int argc, char* argv[]);
   void printHelp(std::ostream& stream);

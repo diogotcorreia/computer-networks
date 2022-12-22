@@ -19,14 +19,14 @@ int main(int argc, char *argv[]) {
       return EXIT_SUCCESS;
     }
     GameServerState state(config.wordFilePath, config.port, config.verbose,
-                          config.test);
+                          config.random);
     state.registerPacketHandlers();
 
     setup_signal_handlers();
-    if (config.test) {
-      std::cout << "Words will be selected sequentially" << std::endl;
-    } else {
+    if (config.random) {
       std::cout << "Words will be selected randomly" << std::endl;
+    } else {
+      std::cout << "Words will be selected sequentially" << std::endl;
     }
 
     state.cdebug << "Verbose mode is active" << std::endl << std::endl;
@@ -217,7 +217,7 @@ ServerConfig::ServerConfig(int argc, char *argv[]) {
   programPath = argv[0];
   int opt;
 
-  while ((opt = getopt(argc, argv, "-p:vht")) != -1) {
+  while ((opt = getopt(argc, argv, "-p:vhr")) != -1) {
     switch (opt) {
       case 'p':
         port = std::string(optarg);
@@ -229,8 +229,8 @@ ServerConfig::ServerConfig(int argc, char *argv[]) {
       case 'v':
         verbose = true;
         break;
-      case 't':
-        test = true;
+      case 'r':
+        random = true;
         break;
       case 1:
         // The `-` flag in `getopt` makes non-options behave as if they
@@ -266,6 +266,6 @@ void ServerConfig::printHelp(std::ostream &stream) {
   stream << "-p GSport\tSet port of Game Server. Default: " << DEFAULT_PORT
          << std::endl;
   stream << "-h\t\tEnable verbose mode." << std::endl;
-  stream << "-t\t\tEnable test mode. Words will be selected sequentially."
+  stream << "-r\t\tEnable random mode. Words will be selected randomly."
          << std::endl;
 }
