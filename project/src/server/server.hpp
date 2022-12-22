@@ -12,7 +12,7 @@ class ServerConfig {
  public:
   char* programPath;
   std::string wordFilePath;
-  std::string port = DEFAULT_PORT;  // TODO consider parsing port as int
+  std::string port = DEFAULT_PORT;
   bool help = false;
   bool verbose = false;
   bool test = false;
@@ -29,8 +29,5 @@ void handle_packet(std::stringstream& buffer, Address& addr_from,
                    GameServerState& server_state);
 
 void wait_for_tcp_packet(GameServerState& server_state, WorkerPool& pool);
-
-void setup_signal_handlers();
-void terminate_signal_handler(int sig);
 
 #endif

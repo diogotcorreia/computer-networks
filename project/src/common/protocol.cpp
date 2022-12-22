@@ -9,6 +9,8 @@
 #include <iostream>
 #include <string>
 
+#include "common.hpp"
+
 extern bool is_shutting_down;
 
 void UdpPacket::readPacketId(std::stringstream &buffer, const char *packet_id) {
@@ -269,7 +271,6 @@ void GuessWordServerbound::deserialize(std::stringstream &buffer) {
   readSpace(buffer);
   player_id = readPlayerId(buffer);
   readSpace(buffer);
-  // TODO improve the read string method
   guess = readAlphabeticalString(buffer, WORD_MAX_LEN);
   if (guess.length() < WORD_MIN_LEN || guess.length() > WORD_MAX_LEN) {
     throw InvalidPacketException();
@@ -804,9 +805,7 @@ void wait_for_packet(UdpPacket &packet, int socket) {
     throw OperationCancelledException();
   }
   if (ready_fd == -1) {
-    // TODO consider throwing exception instead
-    perror("select");
-    exit(EXIT_FAILURE);
+    throw UnrecoverableError("Failed waiting for UDP packet on select", errno);
   } else if (ready_fd == 0) {
     throw ConnectionTimeoutException();
   }
@@ -816,9 +815,8 @@ void wait_for_packet(UdpPacket &packet, int socket) {
 
   ssize_t n = recvfrom(socket, buffer, SOCKET_BUFFER_LEN, 0, NULL, NULL);
   if (n == -1) {
-    // TODO consider throwing exception instead
-    perror("recvfrom");
-    exit(EXIT_FAILURE);
+    throw UnrecoverableError("Failed waiting for UDP packet on recvfrom",
+                             errno);
   }
 
   data.write(buffer, n);

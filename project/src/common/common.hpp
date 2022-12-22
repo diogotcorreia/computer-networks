@@ -11,4 +11,9 @@ class UnrecoverableError : public std::runtime_error {
       : std::runtime_error(__what + ": " + strerror(__errno)) {}
 };
 
+void validate_port_number(std::string& port);
+
+void setup_signal_handlers();
+void terminate_signal_handler(int sig);
+
 #endif

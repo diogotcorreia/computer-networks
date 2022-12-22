@@ -24,7 +24,6 @@ class ServerGame : public Game {
 
   ServerGame(uint32_t __playerId, std::string __word,
              std::optional<std::filesystem::path> __hint_path);
-  ~ServerGame();
   std::vector<uint32_t> guessLetter(char letter, uint32_t trial);
   bool guessWord(std::string& word, uint32_t trial);
   bool hasLost();
