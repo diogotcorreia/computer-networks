@@ -35,8 +35,8 @@ int main(int argc, char *argv[]) {
     }
 
     std::cout << std::endl
-              << "Shutting down... Press CTRL + C again to forcefully close "
-                 "the player."
+              << "Shutting down... Press CTRL + C (again) to forcefully close "
+                 "the application."
               << std::endl;
 
     if (state.hasActiveGame()) {
