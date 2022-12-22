@@ -13,6 +13,7 @@ Worker::Worker() {
 Worker::~Worker() {
   lock.lock();
   shutdown = true;
+  cond.notify_one();
   lock.unlock();
   thread.join();
 }

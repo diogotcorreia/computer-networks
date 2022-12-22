@@ -23,10 +23,18 @@ GameServerState::GameServerState(std::string &__word_file_path,
 }
 
 GameServerState::~GameServerState() {
-  close(this->udp_socket_fd);
-  close(this->tcp_socket_fd);
-  freeaddrinfo(this->server_udp_addr);
-  freeaddrinfo(this->server_tcp_addr);
+  if (this->udp_socket_fd != -1) {
+    close(this->udp_socket_fd);
+  }
+  if (this->tcp_socket_fd != -1) {
+    close(this->tcp_socket_fd);
+  }
+  if (this->server_udp_addr != NULL) {
+    freeaddrinfo(this->server_udp_addr);
+  }
+  if (this->server_tcp_addr != NULL) {
+    freeaddrinfo(this->server_tcp_addr);
+  }
 }
 
 void GameServerState::registerPacketHandlers() {
@@ -50,6 +58,15 @@ void GameServerState::setup_sockets() {
     perror("Failed to create a UDP socket");
     exit(EXIT_FAILURE);
   }
+  struct timeval read_timeout_udp;
+  read_timeout_udp.tv_sec = SERVER_RECV_RESTART_TIMEOUT_SECONDS;
+  read_timeout_udp.tv_usec = 0;
+  if (setsockopt(this->udp_socket_fd, SOL_SOCKET, SO_RCVTIMEO,
+                 &read_timeout_udp, sizeof(read_timeout_udp)) < 0) {
+    // TODO consider using exceptions (?)
+    perror("Failed to set socket options");
+    exit(EXIT_FAILURE);
+  }
 
   // Create a TCP socket
   if ((this->tcp_socket_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
@@ -60,14 +77,16 @@ void GameServerState::setup_sockets() {
   const int enable = 1;
   if (setsockopt(this->tcp_socket_fd, SOL_SOCKET, SO_REUSEADDR, &enable,
                  sizeof(int)) < 0) {
+    // TODO consider using exceptions (?)
     perror("Failed to set socket options");
     exit(EXIT_FAILURE);
   }
   struct timeval read_timeout;
-  read_timeout.tv_sec = TCP_READ_TIMEOUT_SECONDS;
+  read_timeout.tv_sec = SERVER_RECV_RESTART_TIMEOUT_SECONDS;
   read_timeout.tv_usec = 0;
   if (setsockopt(this->tcp_socket_fd, SOL_SOCKET, SO_RCVTIMEO, &read_timeout,
                  sizeof(read_timeout)) < 0) {
+    // TODO consider using exceptions (?)
     perror("Failed to set socket options");
     exit(EXIT_FAILURE);
   }
@@ -76,6 +95,7 @@ void GameServerState::setup_sockets() {
   write_timeout.tv_usec = 0;
   if (setsockopt(this->tcp_socket_fd, SOL_SOCKET, SO_SNDTIMEO, &write_timeout,
                  sizeof(write_timeout)) < 0) {
+    // TODO consider using exceptions (?)
     perror("Failed to set socket options");
     exit(EXIT_FAILURE);
   }
@@ -280,4 +300,13 @@ ServerGameSync GameServerState::getGame(uint32_t player_id) {
   }
 
   return ServerGameSync(game->second);
+}
+
+bool GameServerState::getExitState() {
+  bool value = exit_state;
+  return value;
+}
+
+void GameServerState::setExitState() {
+  exit_state = true;
 }

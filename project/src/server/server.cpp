@@ -8,6 +8,8 @@
 
 #include "common/protocol.hpp"
 
+bool is_shutting_down = false;
+
 int main(int argc, char *argv[]) {
   ServerConfig config(argc, argv);
   if (config.help) {
@@ -18,6 +20,7 @@ int main(int argc, char *argv[]) {
                         config.test);
   state.registerPacketHandlers();
 
+  setup_signal_handlers();
   if (config.test) {
     std::cout << "Words will be selected sequentially" << std::endl;
   } else {
@@ -27,14 +30,43 @@ int main(int argc, char *argv[]) {
   state.cdebug << "Verbose mode is active" << std::endl << std::endl;
 
   std::thread tcp_thread(main_tcp, std::ref(state));
-  // TODO gracefully stop server
-  while (true) {
+  while (!is_shutting_down) {
     // TESTING: receiving and sending a packet
     wait_for_udp_packet(state);
   }
 
+  std::cout << "Shutting down UDP server..." << std::endl;
+
   // TODO find a way to signal the TCP thread to stop gracefully
   tcp_thread.join();
+}
+
+void setup_signal_handlers() {
+  // set SIGINT/SIGTERM handler to close server gracefully
+  struct sigaction sa;
+  sa.sa_handler = terminate_signal_handler;
+  sigemptyset(&sa.sa_mask);
+  sa.sa_flags = 0;
+
+  if (sigaction(SIGINT, &sa, NULL) == -1) {
+    perror("Setting SIGINT signal handler");
+    exit(EXIT_FAILURE);
+  }
+  if (sigaction(SIGTERM, &sa, NULL) == -1) {
+    perror("Setting SIGTERM signal handler");
+    exit(EXIT_FAILURE);
+  }
+
+  // ignore SIGPIPE
+  signal(SIGPIPE, SIG_IGN);
+}
+
+void terminate_signal_handler(int sig) {
+  (void)sig;
+  if (is_shutting_down) {
+    exit(EXIT_SUCCESS);
+  }
+  is_shutting_down = true;
 }
 
 void main_tcp(GameServerState &state) {
@@ -46,10 +78,14 @@ void main_tcp(GameServerState &state) {
     exit(EXIT_FAILURE);
   }
 
-  // TODO gracefully stop server
-  while (true) {
+  while (!is_shutting_down) {
     wait_for_tcp_packet(state, worker_pool);
   }
+
+  std::cout << "Shutting down TCP server... This might take a while if there "
+               "are open connections. Press CTRL + C again to forcefully close "
+               "the server."
+            << std::endl;
 }
 
 void wait_for_udp_packet(GameServerState &server_state) {
@@ -60,11 +96,17 @@ void wait_for_udp_packet(GameServerState &server_state) {
   addr_from.size = sizeof(addr_from.addr);
   ssize_t n = recvfrom(server_state.udp_socket_fd, buffer, SOCKET_BUFFER_LEN, 0,
                        (struct sockaddr *)&addr_from.addr, &addr_from.size);
-  addr_from.socket = server_state.udp_socket_fd;
+  if (is_shutting_down) {
+    return;
+  }
   if (n == -1) {
+    if (errno == EAGAIN) {
+      return;
+    }
     perror("recvfrom");
     exit(EXIT_FAILURE);
   }
+  addr_from.socket = server_state.udp_socket_fd;
 
   char addr_str[INET_ADDRSTRLEN + 1] = {0};
   inet_ntop(AF_INET, &addr_from.addr.sin_addr, addr_str, INET_ADDRSTRLEN);
@@ -113,6 +155,9 @@ void wait_for_tcp_packet(GameServerState &server_state, WorkerPool &pool) {
   int connection_fd =
       accept(server_state.tcp_socket_fd, (struct sockaddr *)&addr_from.addr,
              &addr_from.size);
+  if (is_shutting_down) {
+    return;
+  }
   if (connection_fd < 0) {
     if (errno == EAGAIN) {  // timeout, just go around and keep listening
       return;
@@ -120,6 +165,16 @@ void wait_for_tcp_packet(GameServerState &server_state, WorkerPool &pool) {
     perror("accept");
     std::cerr << "[ERROR] Failed to accept a connection" << std::endl;
     return;
+  }
+
+  struct timeval read_timeout;
+  read_timeout.tv_sec = TCP_READ_TIMEOUT_SECONDS;
+  read_timeout.tv_usec = 0;
+  if (setsockopt(connection_fd, SOL_SOCKET, SO_RCVTIMEO, &read_timeout,
+                 sizeof(read_timeout)) < 0) {
+    // TODO consider using exceptions (?)
+    perror("Failed to set socket options");
+    exit(EXIT_FAILURE);
   }
 
   char addr_str[INET_ADDRSTRLEN + 1] = {0};

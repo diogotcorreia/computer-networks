@@ -9,6 +9,8 @@
 #include <iostream>
 #include <string>
 
+extern bool is_shutting_down;
+
 void UdpPacket::readPacketId(std::stringstream &buffer, const char *packet_id) {
   char current_char;
   while (*packet_id != '\0') {
@@ -555,6 +557,11 @@ void TcpPacket::readAndSaveToFile(const int fd, const std::string &file_name,
 
     int ready_fd = select(std::max(fd, fileno(stdin)) + 1, &file_descriptors,
                           NULL, NULL, &timeout);
+    if (is_shutting_down) {
+      std::cout << "Cancelling TCP download, player is shutting down..."
+                << std::endl;
+      throw OperationCancelledException();
+    }
     if (ready_fd == -1) {
       perror("select");
       throw ConnectionTimeoutException();
@@ -793,6 +800,9 @@ void wait_for_packet(UdpPacket &packet, int socket) {
   timeout.tv_usec = 0;
 
   int ready_fd = select(socket + 1, &file_descriptors, NULL, NULL, &timeout);
+  if (is_shutting_down) {
+    throw OperationCancelledException();
+  }
   if (ready_fd == -1) {
     // TODO consider throwing exception instead
     perror("select");

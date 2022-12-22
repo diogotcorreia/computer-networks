@@ -10,11 +10,18 @@ PlayerState::PlayerState(std::string &hostname, std::string &port) {
 }
 
 PlayerState::~PlayerState() {
-  // TODO check return of close (?)
-  close(this->udp_socket_fd);
-  close(this->tcp_socket_fd);
-  freeaddrinfo(this->server_udp_addr);
-  freeaddrinfo(this->server_tcp_addr);
+  if (this->udp_socket_fd != -1) {
+    close(this->udp_socket_fd);
+  }
+  if (this->tcp_socket_fd != -1) {
+    close(this->tcp_socket_fd);
+  }
+  if (this->server_udp_addr != NULL) {
+    freeaddrinfo(this->server_udp_addr);
+  }
+  if (this->server_tcp_addr != NULL) {
+    freeaddrinfo(this->server_tcp_addr);
+  }
   delete this->game;
 }
 
@@ -100,6 +107,7 @@ void PlayerState::sendTcpPacketAndWaitForReply(TcpPacket &out_packet,
   openTcpSocket();
   sendTcpPacket(out_packet);
   waitForTcpPacket(in_packet);
+  // TODO ensure TCP socket is always closed
   closeTcpSocket();
 };
 

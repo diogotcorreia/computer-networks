@@ -1,6 +1,8 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
+#include <csignal>
+
 #include "commands.hpp"
 #include "common/constants.hpp"
 #include "common/game.hpp"
@@ -19,5 +21,7 @@ class ClientConfig {
 };
 
 void registerCommands(CommandManager& manager);
+void setup_signal_handlers();
+void terminate_signal_handler(int sig);
 
 #endif
