@@ -2,10 +2,13 @@
 
 #include <algorithm>
 #include <cstring>
+#include <fstream>
 #include <iomanip>
+#include <iostream>
 #include <stdexcept>
 
 #include "common/constants.hpp"
+#include "stream_utils.hpp"
 
 ServerGame::ServerGame(uint32_t __playerId, std::string __word,
                        std::optional<std::filesystem::path> __hint_path)
@@ -79,7 +82,7 @@ std::vector<uint32_t> ServerGame::guessLetter(char letter, uint32_t trial) {
   return found_indexes;
 }
 
-bool ServerGame::guessWord(std::string &word_guess, uint32_t trial) {
+bool ServerGame::guessWord(std::string& word_guess, uint32_t trial) {
   if (!isOnGoing()) {
     throw GameHasEndedException();
   }
@@ -216,4 +219,49 @@ std::string ServerGame::getHintFileName() {
     return std::string(hint_path.value().filename());
   }
   return std::string();
+}
+
+void ServerGame::saveToFile() {
+  try {
+    std::filesystem::path folder(GAMEDATA_FOLDER_NAME);
+    folder.append(GAMES_FOLDER_NAME);
+    std::filesystem::create_directories(folder);
+
+    std::stringstream file_name;
+    file_name << std::setfill('0') << std::setw(6) << playerId << ".dat";
+    std::filesystem::path file_sb(folder);
+    file_sb.append(file_name.str());
+
+    std::ofstream game_stream(file_sb, std::ios::out | std::ios::binary);
+
+    write_uint32_t(game_stream, playerId);
+    write_string(game_stream, word);
+    write_bool(game_stream, hint_path.has_value());
+    if (hint_path.has_value()) {
+      std::string hint_path_str = hint_path.value().string();
+      write_string(game_stream, hint_path_str);
+    }
+    write_uint32_t(game_stream, numErrors);
+    write_uint32_t(game_stream, currentTrial);
+    write_bool(game_stream, onGoing);
+    write_uint32_t(game_stream, maxErrors);
+    write_uint32_t(game_stream, (uint32_t)plays.size());
+    for (char c : plays) {
+      game_stream.put(c);
+    }
+    write_uint32_t(game_stream, (uint32_t)word_guesses.size());
+    for (std::string& guess : word_guesses) {
+      write_string(game_stream, guess);
+    }
+
+    // Derived:
+    // lettersRemaining
+    // wordLen
+  } catch (std::exception& e) {
+    std::cerr << "[ERROR] Failed to save game (player " << playerId
+              << ") to file: " << e.what() << std::endl;
+  } catch (...) {
+    std::cerr << "[ERROR] Failed to save game (player " << playerId
+              << ") to file: unknown" << std::endl;
+  }
 }

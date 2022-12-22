@@ -36,6 +36,7 @@ class ServerGame : public Game {
   std::string getWordProgress();
   std::optional<std::filesystem::path> getHintFilePath();
   std::string getHintFileName();
+  void saveToFile();
 };
 
 class ServerGameSync {
