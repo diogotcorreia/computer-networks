@@ -18,6 +18,8 @@
 #define PLAYER_ID_MAX_LEN (6)
 #define PLAYER_ID_MAX ((uint32_t)pow(10, PLAYER_ID_MAX_LEN) - 1)
 
+#define EXCEPTION_RETRY_MAX (3)
+
 #define FILE_BUFFER_LEN (512)
 
 #define PROGRESS_BAR_STEP_SIZE (10)

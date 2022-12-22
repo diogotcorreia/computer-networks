@@ -366,8 +366,6 @@ void RevealCommand::handle(std::string args, PlayerState& state) {
   packet_out.player_id = state.game->getPlayerId();
 
   RevealWordClientbound rrv;
-  rrv.wordLen =
-      state.game->getWordLen();  // TODO length should be infered from request
   state.sendUdpPacketAndWaitForReply(packet_out, rrv);
 
   std::cout << "Word: " << rrv.word << std::endl;

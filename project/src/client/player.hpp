@@ -13,7 +13,7 @@ class ClientConfig {
  public:
   char* program_path;
   std::string host = DEFAULT_HOSTNAME;
-  std::string port = DEFAULT_PORT;  // TODO consider parsing port as int
+  std::string port = DEFAULT_PORT;
   bool help = false;
 
   ClientConfig(int argc, char* argv[]);
@@ -21,7 +21,5 @@ class ClientConfig {
 };
 
 void registerCommands(CommandManager& manager);
-void setup_signal_handlers();
-void terminate_signal_handler(int sig);
 
 #endif

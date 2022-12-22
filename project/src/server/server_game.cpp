@@ -7,6 +7,7 @@
 #include <iostream>
 #include <stdexcept>
 
+#include "common/common.hpp"
 #include "common/constants.hpp"
 #include "stream_utils.hpp"
 
@@ -15,7 +16,6 @@ ServerGame::ServerGame(uint32_t __playerId, std::string __word,
     : word{__word}, hint_path{__hint_path} {
   this->playerId = __playerId;
   size_t word_len = word.size();
-  // TODO: Get max errors from one liner
   if (word_len <= 6) {
     this->maxErrors = 7;
   } else if (word_len <= 10) {
@@ -23,14 +23,10 @@ ServerGame::ServerGame(uint32_t __playerId, std::string __word,
   } else if (word_len <= 30) {
     this->maxErrors = 9;
   } else {
-    throw std::runtime_error("word is more than 30 characters");
+    throw UnrecoverableError("Word '" + word + "' is more than 30 characters");
   }
   this->wordLen = (uint32_t)word_len;
   this->lettersRemaining = wordLen;
-}
-
-ServerGame::~ServerGame() {
-  // TODO
 }
 
 // indexes start at 1

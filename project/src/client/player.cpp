@@ -10,79 +10,67 @@
 
 #include <iostream>
 
-bool is_shutting_down = false;
+#include "common/common.hpp"
+
+extern bool is_shutting_down;
 
 int main(int argc, char *argv[]) {
-  setup_signal_handlers();
+  try {
+    setup_signal_handlers();
 
-  ClientConfig config(argc, argv);
-  if (config.help) {
-    config.printHelp(std::cout);
-    exit(EXIT_SUCCESS);
-  }
-  PlayerState state(config.host, config.port);
-
-  CommandManager commandManager;
-  registerCommands(commandManager);
-
-  commandManager.printHelp();
-
-  while (!std::cin.eof() && !is_shutting_down) {
-    commandManager.waitForCommand(state);
-  }
-
-  std::cout
-      << std::endl
-      << "Shutting down... Press CTRL + C again to forcefully close the player."
-      << std::endl;
-
-  if (state.hasActiveGame()) {
-    std::cout << "Player has an active game, will attempt to quit it."
-              << std::endl;
-    try {
-      QuitGameServerbound packet;
-      QuitGameClientbound reply;
-      packet.player_id = state.game->getPlayerId();
-      is_shutting_down = false;  // otherwise can't send packets
-      state.sendUdpPacketAndWaitForReply(packet, reply);
-      if (reply.status == QuitGameClientbound::status::ERR) {
-        throw std::runtime_error("Server replied with ERR");
-      }
-      std::cout << "Game quit successfully." << std::endl;
-    } catch (...) {
-      std::cerr << "Failed to quit game. Exiting anyway..." << std::endl;
+    ClientConfig config(argc, argv);
+    if (config.help) {
+      config.printHelp(std::cout);
+      return EXIT_SUCCESS;
     }
+    PlayerState state(config.host, config.port);
+
+    CommandManager commandManager;
+    registerCommands(commandManager);
+
+    commandManager.printHelp();
+
+    while (!std::cin.eof() && !is_shutting_down) {
+      commandManager.waitForCommand(state);
+    }
+
+    std::cout << std::endl
+              << "Shutting down... Press CTRL + C (again) to forcefully close "
+                 "the application."
+              << std::endl;
+
+    if (state.hasActiveGame()) {
+      std::cout << "Player has an active game, will attempt to quit it."
+                << std::endl;
+      try {
+        QuitGameServerbound packet;
+        QuitGameClientbound reply;
+        packet.player_id = state.game->getPlayerId();
+        is_shutting_down = false;  // otherwise can't send packets
+        state.sendUdpPacketAndWaitForReply(packet, reply);
+        if (reply.status == QuitGameClientbound::status::ERR) {
+          throw std::runtime_error("Server replied with ERR");
+        }
+        std::cout << "Game quit successfully." << std::endl;
+      } catch (...) {
+        std::cerr << "Failed to quit game. Exiting anyway..." << std::endl;
+      }
+    }
+
+  } catch (std::exception &e) {
+    std::cerr << "Encountered unrecoverable error while running the "
+                 "application. Shutting down..."
+              << std::endl
+              << e.what() << std::endl;
+    return EXIT_FAILURE;
+  } catch (...) {
+    std::cerr << "Encountered unrecoverable error while running the "
+                 "application. Shutting down..."
+              << std::endl;
+    return EXIT_FAILURE;
   }
 
-  return 0;
-}
-
-void setup_signal_handlers() {
-  // set SIGINT/SIGTERM handler to close server gracefully
-  struct sigaction sa;
-  sa.sa_handler = terminate_signal_handler;
-  sigemptyset(&sa.sa_mask);
-  sa.sa_flags = 0;
-
-  if (sigaction(SIGINT, &sa, NULL) == -1) {
-    perror("Setting SIGINT signal handler");
-    exit(EXIT_FAILURE);
-  }
-  if (sigaction(SIGTERM, &sa, NULL) == -1) {
-    perror("Setting SIGTERM signal handler");
-    exit(EXIT_FAILURE);
-  }
-
-  // ignore SIGPIPE
-  signal(SIGPIPE, SIG_IGN);
-}
-
-void terminate_signal_handler(int sig) {
-  (void)sig;
-  if (is_shutting_down) {
-    exit(EXIT_SUCCESS);
-  }
-  is_shutting_down = true;
+  return EXIT_SUCCESS;
 }
 
 void registerCommands(CommandManager &manager) {
@@ -120,6 +108,8 @@ ClientConfig::ClientConfig(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
   }
+
+  validate_port_number(port);
 }
 
 void ClientConfig::printHelp(std::ostream &stream) {
