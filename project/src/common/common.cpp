@@ -12,11 +12,13 @@ void validate_port_number(std::string &port) {
   }
 
   try {
-    if (std::stoi(port) > ((1 << 16) - 1)) {
+    int32_t parsed_port = std::stoi(port);
+    if (parsed_port <= 0 || parsed_port > ((1 << 16) - 1)) {
       throw std::runtime_error("");
     }
   } catch (...) {
-    throw UnrecoverableError("Invalid port: it must be, at maximum, 65535");
+    throw UnrecoverableError(
+        "Invalid port: it must be a number between 1 and 65535");
   }
 }
 
