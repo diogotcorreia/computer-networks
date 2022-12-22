@@ -11,6 +11,7 @@ class PlayerState {
   int tcp_socket_fd;
   struct addrinfo* server_udp_addr;
   struct addrinfo* server_tcp_addr;
+  bool exit_state = false;
 
   void setupSockets();
   void resolveServerAddress(std::string& hostname, std::string& port);
@@ -33,6 +34,8 @@ class PlayerState {
                                     UdpPacket& in_packet);
   void sendTcpPacketAndWaitForReply(TcpPacket& out_packet,
                                     TcpPacket& in_packet);
+  void setExitState();
+  bool getExitState();
 };
 
 #endif

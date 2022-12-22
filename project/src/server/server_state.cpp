@@ -258,3 +258,16 @@ ServerGameSync GameServerState::getGame(uint32_t player_id) {
 
   return ServerGameSync(game->second);
 }
+
+bool GameServerState::getExitState() {
+  pthread_mutex_lock(&server_lock);
+  bool value = exit_state;
+  pthread_mutex_unlock(&server_lock);
+  return value;
+}
+
+void GameServerState::setExitState() {
+  pthread_mutex_lock(&server_lock);
+  exit_state = true;
+  pthread_mutex_unlock(&server_lock);
+}

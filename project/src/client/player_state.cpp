@@ -150,3 +150,11 @@ void PlayerState::closeTcpSocket() {
     exit(EXIT_FAILURE);
   }
 }
+
+void PlayerState::setExitState() {
+  this->exit_state = true;
+}
+
+bool PlayerState::getExitState() {
+  return this->exit_state;
+}

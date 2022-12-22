@@ -18,6 +18,7 @@ int main(int argc, char *argv[]) {
                         config.test);
   state.registerPacketHandlers();
 
+  set_signals(state);
   if (config.test) {
     std::cout << "Words will be selected sequentially" << std::endl;
   } else {
@@ -28,13 +29,44 @@ int main(int argc, char *argv[]) {
 
   std::thread tcp_thread(main_tcp, std::ref(state));
   // TODO gracefully stop server
-  while (true) {
+  while (!state.getExitState()) {
     // TESTING: receiving and sending a packet
     wait_for_udp_packet(state);
   }
 
   // TODO find a way to signal the TCP thread to stop gracefully
   tcp_thread.join();
+}
+
+void set_signals(GameServerState &state) {
+  // set SIGINT handler to close server gracefully
+  struct sigaction sa;
+  sa.sa_sigaction = sigint_handler;
+  sa.sa_flags = SA_SIGINFO;
+  sigemptyset(&sa.sa_mask);
+
+  if (sigaction(SIGINT, &sa, NULL) == -1) {
+    perror("Setting sigaction");
+    exit(EXIT_FAILURE);
+  }
+
+  // send state to the signal handler
+  union sigval value;
+  value.sival_ptr = &state;
+  if (sigqueue(getpid(), SIGINT, value) == -1) {
+    perror("Sending signal");
+    exit(EXIT_FAILURE);
+  }
+
+  // ignore SIGPIPE
+  signal(SIGPIPE, SIG_IGN);
+}
+
+void sigint_handler(int sig, siginfo_t *siginfo, void *context) {
+  (void)sig;
+  (void)context;
+  GameServerState *state = (GameServerState *)siginfo->si_value.sival_ptr;
+  state->setExitState();
 }
 
 void main_tcp(GameServerState &state) {
@@ -46,8 +78,7 @@ void main_tcp(GameServerState &state) {
     exit(EXIT_FAILURE);
   }
 
-  // TODO gracefully stop server
-  while (true) {
+  while (!state.getExitState()) {
     wait_for_tcp_packet(state, worker_pool);
   }
 }

@@ -23,10 +23,41 @@ int main(int argc, char *argv[]) {
 
   commandManager.printHelp();
 
-  while (!std::cin.eof()) {
+  while (!std::cin.eof() && !state.getExitState()) {
     commandManager.waitForCommand(state);
   }
   return 0;
+}
+
+void set_signals(PlayerState &state) {
+  // set SIGINT handler to close server gracefully
+  struct sigaction sa;
+  sa.sa_sigaction = sigint_handler;
+  sa.sa_flags = SA_SIGINFO;
+  sigemptyset(&sa.sa_mask);
+
+  if (sigaction(SIGINT, &sa, NULL) == -1) {
+    perror("Setting sigaction");
+    exit(EXIT_FAILURE);
+  }
+
+  // send state to the signal handler
+  union sigval value;
+  value.sival_ptr = &state;
+  if (sigqueue(getpid(), SIGINT, value) == -1) {
+    perror("Sending signal");
+    exit(EXIT_FAILURE);
+  }
+
+  // ignore SIGPIPE
+  signal(SIGPIPE, SIG_IGN);
+}
+
+void sigint_handler(int sig, siginfo_t *siginfo, void *context) {
+  (void)sig;
+  (void)context;
+  PlayerState *state = (PlayerState *)siginfo->si_value.sival_ptr;
+  state->setExitState();
 }
 
 void registerCommands(CommandManager &manager) {

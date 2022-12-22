@@ -75,9 +75,12 @@ class GameServerState {
   std::string word_file_dir;
   uint32_t current_word_index = 0;
   bool select_sequentially;
+  bool exit_state = false;
   void setup_sockets();
 
  public:
+  pthread_cond_t server_cond;
+  pthread_mutex_t server_lock;
   int udp_socket_fd;
   int tcp_socket_fd;
   struct addrinfo* server_udp_addr;
@@ -97,6 +100,8 @@ class GameServerState {
   void callTcpPacketHandler(std::string packet_id, int connection_fd);
   ServerGameSync getGame(uint32_t player_id);
   ServerGameSync createGame(uint32_t player_id);
+  bool getExitState();
+  void setExitState();
 };
 
 /** Exceptions **/
