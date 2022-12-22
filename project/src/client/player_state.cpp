@@ -107,6 +107,7 @@ void PlayerState::sendTcpPacketAndWaitForReply(TcpPacket &out_packet,
   openTcpSocket();
   sendTcpPacket(out_packet);
   waitForTcpPacket(in_packet);
+  // TODO ensure TCP socket is always closed
   closeTcpSocket();
 };
 

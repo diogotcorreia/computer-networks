@@ -31,7 +31,10 @@ int main(int argc, char *argv[]) {
     commandManager.waitForCommand(state);
   }
 
-  std::cout << std::endl << "Shutting down... " << std::endl;
+  std::cout
+      << std::endl
+      << "Shutting down... Press CTRL + C again to forcefully close the player."
+      << std::endl;
 
   if (state.hasActiveGame()) {
     std::cout << "Player has an active game, will attempt to quit it."
@@ -76,6 +79,9 @@ void setup_signal_handlers() {
 
 void terminate_signal_handler(int sig) {
   (void)sig;
+  if (is_shutting_down) {
+    exit(EXIT_SUCCESS);
+  }
   is_shutting_down = true;
 }
 

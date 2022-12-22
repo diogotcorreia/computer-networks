@@ -30,8 +30,7 @@ void handle_packet(std::stringstream& buffer, Address& addr_from,
 
 void wait_for_tcp_packet(GameServerState& server_state, WorkerPool& pool);
 
-void set_signals(GameServerState& state);
-
-void terminate_signal_handler(int sig, siginfo_t* siginfo, void* context);
+void setup_signal_handlers();
+void terminate_signal_handler(int sig);
 
 #endif
