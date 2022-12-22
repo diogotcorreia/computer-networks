@@ -15,6 +15,10 @@ void write_string(std::ostream &ostream, std::string &str) {
   }
 }
 
+void write_bool(std::ostream &ostream, bool b) {
+  ostream.put((char)(b ? 0xff : 0x00));
+}
+
 uint32_t read_uint32_t(std::istream &istream) {
   // stored as big-endian
   uint32_t result = istream.get() & 0xff;
@@ -33,4 +37,8 @@ std::string read_string(std::istream &istream) {
   }
 
   return result;
+}
+
+bool read_bool(std::istream &istream) {
+  return istream.get() != 0;
 }

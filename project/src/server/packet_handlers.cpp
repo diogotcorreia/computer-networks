@@ -22,6 +22,8 @@ void handle_start_game(std::stringstream &buffer, Address &addr_from,
     response.n_letters = game->getWordLen();
     response.max_errors = game->getMaxErrors();
 
+    game->saveToFile();
+
     state.cdebug << playerTag(packet.player_id) << "Game started with word '"
                  << game->getWord() << "' and with " << game->getMaxErrors()
                  << " errors allowed" << std::endl;
@@ -59,6 +61,8 @@ void handle_guess_letter(std::stringstream &buffer, Address &addr_from,
     auto found = game->guessLetter(packet.guess, packet.trial);
     // Must set trial again in case of replays
     response.trial = game->getCurrentTrial() - 1;
+
+    game->saveToFile();
 
     if (game->hasLost()) {
       response.status = GuessLetterClientbound::status::OVR;
@@ -127,6 +131,8 @@ void handle_guess_word(std::stringstream &buffer, Address &addr_from,
     // Must set trial again in case of replays
     response.trial = game->getCurrentTrial() - 1;
 
+    game->saveToFile();
+
     if (game->hasLost()) {
       response.status = GuessWordClientbound::status::OVR;
       state.cdebug << playerTag(packet.player_id) << "Game lost" << std::endl;
@@ -194,6 +200,9 @@ void handle_quit_game(std::stringstream &buffer, Address &addr_from,
       state.cdebug << playerTag(packet.player_id) << "Game had already ended"
                    << std::endl;
     }
+
+    game->saveToFile();
+
   } catch (NoGameFoundException &e) {
     response.status = QuitGameClientbound::status::NOK;
     state.cdebug << playerTag(packet.player_id) << "No game found" << std::endl;
