@@ -32,6 +32,6 @@ void wait_for_tcp_packet(GameServerState& server_state, WorkerPool& pool);
 
 void set_signals(GameServerState& state);
 
-void sigint_handler(int sig, siginfo_t* siginfo, void* context);
+void terminate_signal_handler(int sig, siginfo_t* siginfo, void* context);
 
 #endif

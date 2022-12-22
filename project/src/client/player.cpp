@@ -10,7 +10,11 @@
 
 #include <iostream>
 
+bool shutdown_client = false;
+
 int main(int argc, char *argv[]) {
+  setup_signal_handlers();
+
   ClientConfig config(argc, argv);
   if (config.help) {
     config.printHelp(std::cout);
@@ -23,41 +27,39 @@ int main(int argc, char *argv[]) {
 
   commandManager.printHelp();
 
-  while (!std::cin.eof() && !state.getExitState()) {
+  while (!std::cin.eof() && !shutdown_client) {
     commandManager.waitForCommand(state);
   }
+
+  std::cout << std::endl << "Shutting down... " << std::endl;
   return 0;
 }
 
-void set_signals(PlayerState &state) {
-  // set SIGINT handler to close server gracefully
+void setup_signal_handlers() {
+  // set SIGINT/SIGTERM handler to close server gracefully
   struct sigaction sa;
-  sa.sa_sigaction = sigint_handler;
-  sa.sa_flags = SA_SIGINFO;
+  sa.sa_handler = terminate_signal_handler;
   sigemptyset(&sa.sa_mask);
+  sa.sa_flags = 0;
 
   if (sigaction(SIGINT, &sa, NULL) == -1) {
-    perror("Setting sigaction");
+    perror("Setting SIGINT signal handler");
+    exit(EXIT_FAILURE);
+  }
+  if (sigaction(SIGTERM, &sa, NULL) == -1) {
+    perror("Setting SIGTERM signal handler");
     exit(EXIT_FAILURE);
   }
 
-  // send state to the signal handler
-  union sigval value;
-  value.sival_ptr = &state;
-  if (sigqueue(getpid(), SIGINT, value) == -1) {
-    perror("Sending signal");
-    exit(EXIT_FAILURE);
-  }
+  std::cout << "Setup signal handlers" << std::endl;
 
   // ignore SIGPIPE
   signal(SIGPIPE, SIG_IGN);
 }
 
-void sigint_handler(int sig, siginfo_t *siginfo, void *context) {
+void terminate_signal_handler(int sig) {
   (void)sig;
-  (void)context;
-  PlayerState *state = (PlayerState *)siginfo->si_value.sival_ptr;
-  state->setExitState();
+  shutdown_client = true;
 }
 
 void registerCommands(CommandManager &manager) {

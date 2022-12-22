@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
 void set_signals(GameServerState &state) {
   // set SIGINT handler to close server gracefully
   struct sigaction sa;
-  sa.sa_sigaction = sigint_handler;
+  sa.sa_sigaction = terminate_signal_handler;
   sa.sa_flags = SA_SIGINFO;
   sigemptyset(&sa.sa_mask);
 
@@ -61,7 +61,7 @@ void set_signals(GameServerState &state) {
   signal(SIGPIPE, SIG_IGN);
 }
 
-void sigint_handler(int sig, siginfo_t *siginfo, void *context) {
+void terminate_signal_handler(int sig, siginfo_t *siginfo, void *context) {
   (void)sig;
   (void)context;
   GameServerState *state = (GameServerState *)siginfo->si_value.sival_ptr;

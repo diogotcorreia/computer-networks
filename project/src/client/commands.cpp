@@ -45,6 +45,10 @@ void CommandManager::waitForCommand(PlayerState& state) {
   std::string line;
   std::getline(std::cin, line);
 
+  if (std::cin.eof()) {
+    return;
+  }
+
   auto splitIndex = line.find(' ');
 
   std::string commandName;
