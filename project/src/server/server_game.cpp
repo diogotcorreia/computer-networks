@@ -229,10 +229,10 @@ void ServerGame::saveToFile() {
 
     std::stringstream file_name;
     file_name << std::setfill('0') << std::setw(6) << playerId << ".dat";
-    std::filesystem::path file_sb(folder);
-    file_sb.append(file_name.str());
+    std::filesystem::path file_game(folder);
+    file_game.append(file_name.str());
 
-    std::ofstream game_stream(file_sb, std::ios::out | std::ios::binary);
+    std::ofstream game_stream(file_game, std::ios::out | std::ios::binary);
 
     write_uint32_t(game_stream, playerId);
     write_string(game_stream, word);
@@ -264,4 +264,95 @@ void ServerGame::saveToFile() {
     std::cerr << "[ERROR] Failed to save game (player " << playerId
               << ") to file: unknown" << std::endl;
   }
+}
+
+bool ServerGame::loadFromFile(bool on_going_only) {
+  try {
+    std::filesystem::path file_game(GAMEDATA_FOLDER_NAME);
+    file_game.append(GAMES_FOLDER_NAME);
+
+    std::stringstream file_name;
+    file_name << std::setfill('0') << std::setw(6) << playerId << ".dat";
+    file_game.append(file_name.str());
+
+    if (!std::filesystem::exists(file_game)) {
+      // File does not exist, avoid loading
+      return false;
+    }
+
+    std::ifstream game_stream(file_game, std::ios::in | std::ios::binary);
+
+    uint32_t new_player_id = read_uint32_t(game_stream);
+
+    if (new_player_id != playerId || !game_stream.good()) {
+      throw std::runtime_error(
+          "player ID of current game does not match the one in the saved file");
+    }
+
+    std::string new_word = read_string(game_stream);
+    bool has_hint = read_bool(game_stream);
+    std::string hint_path_str;
+    if (has_hint) {
+      hint_path_str = read_string(game_stream);
+    }
+    uint32_t new_num_errors = read_uint32_t(game_stream);
+    uint32_t new_current_trial = read_uint32_t(game_stream);
+    bool new_on_going = read_bool(game_stream);
+    uint32_t new_max_errors = read_uint32_t(game_stream);
+    uint32_t plays_size = read_uint32_t(game_stream);
+    std::vector<char> new_plays;
+    for (uint32_t i = 0; i < plays_size; ++i) {
+      new_plays.push_back((char)game_stream.get());
+    }
+    uint32_t word_guesses_size = read_uint32_t(game_stream);
+    std::vector<std::string> new_word_guesses;
+    for (uint32_t i = 0; i < word_guesses_size; ++i) {
+      new_word_guesses.push_back(read_string(game_stream));
+    }
+
+    if (!game_stream.good()) {
+      throw std::runtime_error("file content ended too early");
+    }
+
+    if (on_going_only && !new_on_going) {
+      return false;
+    }
+
+    word = new_word;
+    if (has_hint) {
+      hint_path = std::filesystem::path(hint_path_str);
+    } else {
+      hint_path = std::nullopt;
+    }
+
+    numErrors = new_num_errors;
+    currentTrial = new_current_trial;
+    onGoing = new_on_going;
+    maxErrors = new_max_errors;
+    plays = new_plays;
+    word_guesses = new_word_guesses;
+
+    // Derived:
+    wordLen = (uint32_t)word.length();
+    lettersRemaining = 0;
+    for (char c : word) {
+      if (std::find(plays.begin(), plays.end(), c) == plays.end()) {
+        lettersRemaining += 1;
+      }
+    }
+    if (word_guesses.size() >= 1 && word == word_guesses.back()) {
+      lettersRemaining = 0;
+    }
+
+    std::cout << "Loaded game for player " << playerId << " from file"
+              << std::endl;
+    return true;
+  } catch (std::exception& e) {
+    std::cerr << "[ERROR] Failed to save game (player " << playerId
+              << ") to file: " << e.what() << std::endl;
+  } catch (...) {
+    std::cerr << "[ERROR] Failed to save game (player " << playerId
+              << ") to file: unknown" << std::endl;
+  }
+  return false;
 }

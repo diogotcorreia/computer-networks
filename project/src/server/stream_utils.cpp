@@ -16,7 +16,7 @@ void write_string(std::ostream &ostream, std::string &str) {
 }
 
 void write_bool(std::ostream &ostream, bool b) {
-  ostream.put(b);
+  ostream.put((char)(b ? 0xff : 0x00));
 }
 
 uint32_t read_uint32_t(std::istream &istream) {

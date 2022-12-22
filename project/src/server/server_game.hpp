@@ -37,6 +37,7 @@ class ServerGame : public Game {
   std::optional<std::filesystem::path> getHintFilePath();
   std::string getHintFileName();
   void saveToFile();
+  bool loadFromFile(bool on_going_only);
 };
 
 class ServerGameSync {
