@@ -58,12 +58,21 @@ void UdpPacket::readPacketDelimiter(std::stringstream &buffer) {
 }
 
 std::string UdpPacket::readString(std::stringstream &buffer, uint32_t max_len) {
-  char str[max_len + 1];
-  buffer.get(str, max_len + 1, ' ');
-  if (!buffer.good()) {
-    throw InvalidPacketException();
+  std::string str;
+  uint32_t i = 0;
+  while (i < max_len) {
+    char c = (char)buffer.get();
+    if (!buffer.good()) {
+      throw InvalidPacketException();
+    }
+    if (c == ' ' || c == '\n') {
+      buffer.unget();
+      break;
+    }
+    str += c;
+    ++i;
   }
-  return std::string(str);
+  return str;
 }
 
 std::string UdpPacket::readAlphabeticalString(std::stringstream &buffer,
@@ -88,6 +97,11 @@ uint32_t UdpPacket::readInt(std::stringstream &buffer) {
   return (uint32_t)i;
 }
 
+uint32_t UdpPacket::readPlayerId(std::stringstream &buffer) {
+  std::string id_str = readString(buffer, 6);
+  return parse_packet_player_id(id_str);
+}
+
 // Packet type seriliazation and deserialization methods
 std::stringstream StartGameServerbound::serialize() {
   std::stringstream buffer;
@@ -101,7 +115,7 @@ void StartGameServerbound::deserialize(std::stringstream &buffer) {
   buffer >> std::noskipws;
   // Serverbound packets don't read their ID
   readSpace(buffer);
-  player_id = readInt(buffer);
+  player_id = readPlayerId(buffer);
   readPacketDelimiter(buffer);
 };
 
@@ -154,7 +168,7 @@ void GuessLetterServerbound::deserialize(std::stringstream &buffer) {
   buffer >> std::noskipws;
   // Serverbound packets don't read their ID
   readSpace(buffer);
-  player_id = readInt(buffer);
+  player_id = readPlayerId(buffer);
   readSpace(buffer);
   guess = readAlphabeticalChar(buffer);
   readSpace(buffer);
@@ -251,7 +265,7 @@ void GuessWordServerbound::deserialize(std::stringstream &buffer) {
   buffer >> std::noskipws;
   // Serverbound packets don't read their ID
   readSpace(buffer);
-  player_id = readInt(buffer);
+  player_id = readPlayerId(buffer);
   readSpace(buffer);
   // TODO improve the read string method
   guess = readAlphabeticalString(buffer, WORD_MAX_LEN);
@@ -338,7 +352,7 @@ void QuitGameServerbound::deserialize(std::stringstream &buffer) {
   buffer >> std::noskipws;
   // Serverbound packets don't read their ID
   readSpace(buffer);
-  player_id = readInt(buffer);
+  player_id = readPlayerId(buffer);
   readPacketDelimiter(buffer);
 };
 
@@ -387,7 +401,7 @@ void RevealWordServerbound::deserialize(std::stringstream &buffer) {
   buffer >> std::noskipws;
   // Serverbound packets don't read their ID
   readSpace(buffer);
-  player_id = readInt(buffer);
+  player_id = readPlayerId(buffer);
   readPacketDelimiter(buffer);
 };
 
@@ -494,6 +508,11 @@ uint32_t TcpPacket::readInt(const int fd) {
   }
 }
 
+uint32_t TcpPacket::readPlayerId(const int fd) {
+  std::string id_str = readString(fd);
+  return parse_packet_player_id(id_str);
+}
+
 void TcpPacket::readAndSaveToFile(int fd, const std::string &file_name,
                                   const size_t file_size) {
   std::ofstream file(file_name);
@@ -582,7 +601,7 @@ void StateServerbound::send(int fd) {
 void StateServerbound::receive(int fd) {
   // Serverbound packets don't read their ID
   readSpace(fd);
-  player_id = readInt(fd);
+  player_id = readPlayerId(fd);
   if (player_id > PLAYER_ID_MAX) {
     throw InvalidPacketException();  // TODO maybe need to verify that string is
                                      // 6 digits
@@ -643,7 +662,7 @@ void HintServerbound::send(int fd) {
 void HintServerbound::receive(int fd) {
   // Serverbound packets don't read their ID
   readSpace(fd);
-  player_id = readInt(fd);
+  player_id = readPlayerId(fd);
   if (player_id > PLAYER_ID_MAX) {
     throw InvalidPacketException();  // TODO maybe need to verify that string
                                      // is 6 digits
@@ -749,6 +768,26 @@ void wait_for_packet(UdpPacket &packet, int socket) {
 void write_player_id(std::stringstream &buffer, const uint32_t player_id) {
   buffer << std::setfill('0') << std::setw(PLAYER_ID_MAX_LEN) << player_id;
   buffer.copyfmt(std::ios(NULL));  // reset formatting
+}
+
+uint32_t parse_packet_player_id(std::string &id_str) {
+  if (id_str.length() != 6) {
+    throw InvalidPacketException();
+  }
+  for (char c : id_str) {
+    if (!isdigit(c)) {
+      throw InvalidPacketException();
+    }
+  }
+  try {
+    int i = std::stoi(id_str);
+    if (i < 0 || i > (int)PLAYER_ID_MAX) {
+      throw InvalidPacketException();
+    }
+    return (uint32_t)i;
+  } catch (...) {
+    throw InvalidPacketException();
+  }
 }
 
 void sendFile(int connection_fd, std::filesystem::path file_path) {

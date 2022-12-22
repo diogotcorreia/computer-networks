@@ -74,6 +74,7 @@ class UdpPacket {
   std::string readAlphabeticalString(std::stringstream &buffer,
                                      uint32_t max_len);
   uint32_t readInt(std::stringstream &buffer);
+  uint32_t readPlayerId(std::stringstream &buffer);
 
  public:
   virtual std::stringstream serialize() = 0;
@@ -210,6 +211,7 @@ class TcpPacket {
   void readPacketDelimiter(int fd);
   std::string readString(const int fd);
   uint32_t readInt(const int fd);
+  uint32_t readPlayerId(const int fd);
   void readAndSaveToFile(const int fd, const std::string &file_name,
                          const size_t file_size);
 
@@ -296,6 +298,8 @@ void send_packet(UdpPacket &packet, int socket, struct sockaddr *address,
 void wait_for_packet(UdpPacket &packet, int socket);
 
 void write_player_id(std::stringstream &buffer, const uint32_t player_id);
+
+uint32_t parse_packet_player_id(std::string &id_str);
 
 void sendFile(int connection_fd, std::filesystem::path image_path);
 
