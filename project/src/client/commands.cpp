@@ -8,6 +8,8 @@
 #include "client_game.hpp"
 #include "common/protocol.hpp"
 
+extern bool is_shutting_down;
+
 void CommandManager::printHelp() {
   std::cout << std::endl << "Available commands:" << std::endl << std::left;
 
@@ -44,6 +46,10 @@ void CommandManager::waitForCommand(PlayerState& state) {
 
   std::string line;
   std::getline(std::cin, line);
+
+  if (std::cin.eof() || is_shutting_down) {
+    return;
+  }
 
   auto splitIndex = line.find(' ');
 
@@ -346,7 +352,7 @@ void ExitCommand::handle(std::string args, PlayerState& state) {
         break;
     }
   }
-  exit(EXIT_SUCCESS);
+  is_shutting_down = true;
 }
 
 void RevealCommand::handle(std::string args, PlayerState& state) {
@@ -360,8 +366,6 @@ void RevealCommand::handle(std::string args, PlayerState& state) {
   packet_out.player_id = state.game->getPlayerId();
 
   RevealWordClientbound rrv;
-  rrv.wordLen =
-      state.game->getWordLen();  // TODO length should be infered from request
   state.sendUdpPacketAndWaitForReply(packet_out, rrv);
 
   std::cout << "Word: " << rrv.word << std::endl;

@@ -1,6 +1,8 @@
 #ifndef SERVER_H
 #define SERVER_H
 
+#include <csignal>
+
 #include "common/constants.hpp"
 #include "server_game.hpp"
 #include "server_state.hpp"
@@ -10,7 +12,7 @@ class ServerConfig {
  public:
   char* programPath;
   std::string wordFilePath;
-  std::string port = DEFAULT_PORT;  // TODO consider parsing port as int
+  std::string port = DEFAULT_PORT;
   bool help = false;
   bool verbose = false;
   bool random = false;

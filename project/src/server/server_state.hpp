@@ -78,10 +78,10 @@ class GameServerState {
   void setup_sockets();
 
  public:
-  int udp_socket_fd;
-  int tcp_socket_fd;
-  struct addrinfo* server_udp_addr;
-  struct addrinfo* server_tcp_addr;
+  int udp_socket_fd = -1;
+  int tcp_socket_fd = -1;
+  struct addrinfo* server_udp_addr = NULL;
+  struct addrinfo* server_tcp_addr = NULL;
   Scoreboard scoreboard;
   DebugStream cdebug;
 

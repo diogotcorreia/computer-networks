@@ -9,6 +9,10 @@
 #include <iostream>
 #include <string>
 
+#include "common.hpp"
+
+extern bool is_shutting_down;
+
 void UdpPacket::readPacketId(std::stringstream &buffer, const char *packet_id) {
   char current_char;
   while (*packet_id != '\0') {
@@ -267,7 +271,6 @@ void GuessWordServerbound::deserialize(std::stringstream &buffer) {
   readSpace(buffer);
   player_id = readPlayerId(buffer);
   readSpace(buffer);
-  // TODO improve the read string method
   guess = readAlphabeticalString(buffer, WORD_MAX_LEN);
   if (guess.length() < WORD_MIN_LEN || guess.length() > WORD_MAX_LEN) {
     throw InvalidPacketException();
@@ -415,7 +418,7 @@ void RevealWordClientbound::deserialize(std::stringstream &buffer) {
   buffer >> std::noskipws;
   readPacketId(buffer, RevealWordClientbound::ID);
   readSpace(buffer);
-  word = readAlphabeticalString(buffer, wordLen);
+  word = readAlphabeticalString(buffer, WORD_MAX_LEN);
   readPacketDelimiter(buffer);
 };
 
@@ -555,6 +558,11 @@ void TcpPacket::readAndSaveToFile(const int fd, const std::string &file_name,
 
     int ready_fd = select(std::max(fd, fileno(stdin)) + 1, &file_descriptors,
                           NULL, NULL, &timeout);
+    if (is_shutting_down) {
+      std::cout << "Cancelling TCP download, player is shutting down..."
+                << std::endl;
+      throw OperationCancelledException();
+    }
     if (ready_fd == -1) {
       perror("select");
       throw ConnectionTimeoutException();
@@ -774,12 +782,10 @@ void ErrorTcpPacket::receive(int fd) {
 void send_packet(UdpPacket &packet, int socket, struct sockaddr *address,
                  socklen_t addrlen) {
   const std::stringstream buffer = packet.serialize();
-  // ERROR HERE: address type changes in client and server
   ssize_t n = sendto(socket, buffer.str().c_str(), buffer.str().length(), 0,
                      address, addrlen);
   if (n == -1) {
-    perror("sendto");
-    exit(EXIT_FAILURE);
+    throw UnrecoverableError("Failed to send UDP packet", errno);
   }
 }
 
@@ -793,10 +799,11 @@ void wait_for_packet(UdpPacket &packet, int socket) {
   timeout.tv_usec = 0;
 
   int ready_fd = select(socket + 1, &file_descriptors, NULL, NULL, &timeout);
+  if (is_shutting_down) {
+    throw OperationCancelledException();
+  }
   if (ready_fd == -1) {
-    // TODO consider throwing exception instead
-    perror("select");
-    exit(EXIT_FAILURE);
+    throw UnrecoverableError("Failed waiting for UDP packet on select", errno);
   } else if (ready_fd == 0) {
     throw ConnectionTimeoutException();
   }
@@ -806,9 +813,8 @@ void wait_for_packet(UdpPacket &packet, int socket) {
 
   ssize_t n = recvfrom(socket, buffer, SOCKET_BUFFER_LEN, 0, NULL, NULL);
   if (n == -1) {
-    // TODO consider throwing exception instead
-    perror("recvfrom");
-    exit(EXIT_FAILURE);
+    throw UnrecoverableError("Failed waiting for UDP packet on recvfrom",
+                             errno);
   }
 
   data.write(buffer, n);

@@ -6,50 +6,111 @@
 #include <iostream>
 #include <thread>
 
+#include "common/common.hpp"
 #include "common/protocol.hpp"
 
+extern bool is_shutting_down;
+
 int main(int argc, char *argv[]) {
-  ServerConfig config(argc, argv);
-  if (config.help) {
-    config.printHelp(std::cout);
-    exit(EXIT_SUCCESS);
+  try {
+    ServerConfig config(argc, argv);
+    if (config.help) {
+      config.printHelp(std::cout);
+      return EXIT_SUCCESS;
+    }
+    GameServerState state(config.wordFilePath, config.port, config.verbose,
+                          config.random);
+    state.registerPacketHandlers();
+
+    setup_signal_handlers();
+    if (config.random) {
+      std::cout << "Words will be selected randomly" << std::endl;
+    } else {
+      std::cout << "Words will be selected sequentially" << std::endl;
+    }
+
+    state.cdebug << "Verbose mode is active" << std::endl << std::endl;
+
+    std::thread tcp_thread(main_tcp, std::ref(state));
+    uint32_t ex_trial = 0;
+    while (!is_shutting_down) {
+      try {
+        wait_for_udp_packet(state);
+        ex_trial = 0;
+      } catch (std::exception &e) {
+        std::cerr << "Encountered unrecoverable error while running the "
+                     "application. Retrying..."
+                  << std::endl
+                  << e.what() << std::endl;
+        ex_trial++;
+      } catch (...) {
+        std::cerr << "Encountered unrecoverable error while running the "
+                     "application. Retrying..."
+                  << std::endl;
+        ex_trial++;
+      }
+      if (ex_trial >= EXCEPTION_RETRY_MAX) {
+        std::cerr << "Max trials reached, shutting down..." << std::endl;
+        is_shutting_down = true;
+      }
+    }
+
+    std::cout << "Shutting down UDP server..." << std::endl;
+
+    tcp_thread.join();
+  } catch (std::exception &e) {
+    std::cerr << "Encountered unrecoverable error while running the "
+                 "application. Shutting down..."
+              << std::endl
+              << e.what() << std::endl;
+    return EXIT_FAILURE;
+  } catch (...) {
+    std::cerr << "Encountered unrecoverable error while running the "
+                 "application. Shutting down..."
+              << std::endl;
+    return EXIT_FAILURE;
   }
-  GameServerState state(config.wordFilePath, config.port, config.verbose,
-                        config.random);
-  state.registerPacketHandlers();
 
-  if (config.random) {
-    std::cout << "Words will be selected randomly" << std::endl;
-  } else {
-    std::cout << "Words will be selected sequentially" << std::endl;
-  }
-
-  state.cdebug << "Verbose mode is active" << std::endl << std::endl;
-
-  std::thread tcp_thread(main_tcp, std::ref(state));
-  // TODO gracefully stop server
-  while (true) {
-    // TESTING: receiving and sending a packet
-    wait_for_udp_packet(state);
-  }
-
-  // TODO find a way to signal the TCP thread to stop gracefully
-  tcp_thread.join();
+  return EXIT_SUCCESS;
 }
 
 void main_tcp(GameServerState &state) {
   WorkerPool worker_pool(state);
 
   if (listen(state.tcp_socket_fd, TCP_MAX_QUEUE_SIZE) < 0) {
-    perror("listen");
+    perror("Error while executing listen");
     std::cerr << "TCP server is being shutdown..." << std::endl;
-    exit(EXIT_FAILURE);
+    is_shutting_down = true;
+    return;
   }
 
-  // TODO gracefully stop server
-  while (true) {
-    wait_for_tcp_packet(state, worker_pool);
+  uint32_t ex_trial = 0;
+  while (!is_shutting_down) {
+    try {
+      wait_for_tcp_packet(state, worker_pool);
+      ex_trial = 0;
+    } catch (std::exception &e) {
+      std::cerr << "Encountered unrecoverable error while running the "
+                   "application. Retrying..."
+                << std::endl
+                << e.what() << std::endl;
+      ex_trial++;
+    } catch (...) {
+      std::cerr << "Encountered unrecoverable error while running the "
+                   "application. Retrying..."
+                << std::endl;
+      ex_trial++;
+    }
+    if (ex_trial >= EXCEPTION_RETRY_MAX) {
+      std::cerr << "Max trials reached, shutting down..." << std::endl;
+      is_shutting_down = true;
+    }
   }
+
+  std::cout << "Shutting down TCP server... This might take a while if there "
+               "are open connections. Press CTRL + C again to forcefully close "
+               "the server."
+            << std::endl;
 }
 
 void wait_for_udp_packet(GameServerState &server_state) {
@@ -60,11 +121,16 @@ void wait_for_udp_packet(GameServerState &server_state) {
   addr_from.size = sizeof(addr_from.addr);
   ssize_t n = recvfrom(server_state.udp_socket_fd, buffer, SOCKET_BUFFER_LEN, 0,
                        (struct sockaddr *)&addr_from.addr, &addr_from.size);
-  addr_from.socket = server_state.udp_socket_fd;
-  if (n == -1) {
-    perror("recvfrom");
-    exit(EXIT_FAILURE);
+  if (is_shutting_down) {
+    return;
   }
+  if (n == -1) {
+    if (errno == EAGAIN) {
+      return;
+    }
+    throw UnrecoverableError("Failed to receive UDP message (recvfrom)", errno);
+  }
+  addr_from.socket = server_state.udp_socket_fd;
 
   char addr_str[INET_ADDRSTRLEN + 1] = {0};
   inet_ntop(AF_INET, &addr_from.addr.sin_addr, addr_str, INET_ADDRSTRLEN);
@@ -113,13 +179,23 @@ void wait_for_tcp_packet(GameServerState &server_state, WorkerPool &pool) {
   int connection_fd =
       accept(server_state.tcp_socket_fd, (struct sockaddr *)&addr_from.addr,
              &addr_from.size);
+  if (is_shutting_down) {
+    return;
+  }
   if (connection_fd < 0) {
     if (errno == EAGAIN) {  // timeout, just go around and keep listening
       return;
     }
-    perror("accept");
-    std::cerr << "[ERROR] Failed to accept a connection" << std::endl;
-    return;
+    throw UnrecoverableError("[ERROR] Failed to accept a connection", errno);
+  }
+
+  struct timeval read_timeout;
+  read_timeout.tv_sec = TCP_READ_TIMEOUT_SECONDS;
+  read_timeout.tv_usec = 0;
+  if (setsockopt(connection_fd, SOL_SOCKET, SO_RCVTIMEO, &read_timeout,
+                 sizeof(read_timeout)) < 0) {
+    throw UnrecoverableError("Failed to set TCP read timeout socket option",
+                             errno);
   }
 
   char addr_str[INET_ADDRSTRLEN + 1] = {0};
@@ -130,9 +206,10 @@ void wait_for_tcp_packet(GameServerState &server_state, WorkerPool &pool) {
   try {
     pool.delegateConnection(connection_fd);
   } catch (std::exception &e) {
-    std::cerr << "[ERROR] Failed to delegate connection to worker: " << e.what()
-              << " Closing connection." << std::endl;
     close(connection_fd);
+    throw UnrecoverableError(
+        std::string("Failed to delegate connection to worker: ") + e.what() +
+        "\nClosing connection.");
   }
 }
 
@@ -177,6 +254,8 @@ ServerConfig::ServerConfig(int argc, char *argv[]) {
     printHelp(std::cerr);
     exit(EXIT_FAILURE);
   }
+
+  validate_port_number(port);
 }
 
 void ServerConfig::printHelp(std::ostream &stream) {

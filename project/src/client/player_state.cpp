@@ -3,6 +3,9 @@
 #include <unistd.h>
 
 #include <cstring>
+#include <iostream>
+
+#include "common/common.hpp"
 
 PlayerState::PlayerState(std::string &hostname, std::string &port) {
   this->setupSockets();
@@ -10,11 +13,18 @@ PlayerState::PlayerState(std::string &hostname, std::string &port) {
 }
 
 PlayerState::~PlayerState() {
-  // TODO check return of close (?)
-  close(this->udp_socket_fd);
-  close(this->tcp_socket_fd);
-  freeaddrinfo(this->server_udp_addr);
-  freeaddrinfo(this->server_tcp_addr);
+  if (this->udp_socket_fd != -1) {
+    close(this->udp_socket_fd);
+  }
+  if (this->tcp_socket_fd != -1) {
+    close(this->tcp_socket_fd);
+  }
+  if (this->server_udp_addr != NULL) {
+    freeaddrinfo(this->server_udp_addr);
+  }
+  if (this->server_tcp_addr != NULL) {
+    freeaddrinfo(this->server_tcp_addr);
+  }
   delete this->game;
 }
 
@@ -36,15 +46,14 @@ void PlayerState::startGame(ClientGame *__game) {
 void PlayerState::setupSockets() {
   // Create a UDP socket
   if ((this->udp_socket_fd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
-    // TODO consider using exceptions (?)
-    perror("Failed to create a UDP socket");
-    exit(EXIT_FAILURE);
+    throw UnrecoverableError("Failed to create a UDP socket", errno);
   }
 }
 
 void PlayerState::resolveServerAddress(std::string &hostname,
                                        std::string &port) {
   struct addrinfo hints;
+  int addr_res;
   const char *host = hostname.c_str();
   const char *port_str = port.c_str();
 
@@ -52,20 +61,22 @@ void PlayerState::resolveServerAddress(std::string &hostname,
   memset(&hints, 0, sizeof hints);
   hints.ai_family = AF_INET;       // IPv4
   hints.ai_socktype = SOCK_DGRAM;  // UDP socket
-  if (getaddrinfo(host, port_str, &hints, &this->server_udp_addr) != 0) {
-    // TODO consider using exceptions (?)
-    perror("Failed to get address for UDP connection");
-    exit(EXIT_FAILURE);
+  if ((addr_res =
+           getaddrinfo(host, port_str, &hints, &this->server_udp_addr)) != 0) {
+    throw UnrecoverableError(
+        std::string("Failed to get address for UDP connection: ") +
+        gai_strerror(addr_res));
   }
 
   // Get TCP address
   memset(&hints, 0, sizeof hints);
   hints.ai_family = AF_INET;        // IPv4
   hints.ai_socktype = SOCK_STREAM;  // TCP socket
-  if (getaddrinfo(host, port_str, &hints, &this->server_tcp_addr) != 0) {
-    // TODO consider using exceptions (?)
-    perror("Failed to get address for TCP connection");
-    exit(EXIT_FAILURE);
+  if ((addr_res =
+           getaddrinfo(host, port_str, &hints, &this->server_tcp_addr)) != 0) {
+    throw UnrecoverableError(
+        std::string("Failed to get address for TCP connection: ") +
+        gai_strerror(addr_res));
   }
 }
 
@@ -97,9 +108,14 @@ void PlayerState::waitForUdpPacket(UdpPacket &packet) {
 
 void PlayerState::sendTcpPacketAndWaitForReply(TcpPacket &out_packet,
                                                TcpPacket &in_packet) {
-  openTcpSocket();
-  sendTcpPacket(out_packet);
-  waitForTcpPacket(in_packet);
+  try {
+    openTcpSocket();
+    sendTcpPacket(out_packet);
+    waitForTcpPacket(in_packet);
+  } catch (...) {
+    closeTcpSocket();
+    throw;
+  }
   closeTcpSocket();
 };
 
@@ -109,44 +125,40 @@ void PlayerState::sendTcpPacket(TcpPacket &packet) {
     throw ConnectionTimeoutException();
   }
   packet.send(tcp_socket_fd);
-  // TODO does this need closing?
 }
 
 void PlayerState::waitForTcpPacket(TcpPacket &packet) {
   packet.receive(tcp_socket_fd);
-  // TODO does this need closing?
 }
 
 void PlayerState::openTcpSocket() {
   if ((this->tcp_socket_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-    // TODO consider using exceptions (?)
-    perror("Failed to create a TCP socket");
-    exit(EXIT_FAILURE);
+    throw UnrecoverableError("Failed to create a TCP socket", errno);
   }
   struct timeval read_timeout;
   read_timeout.tv_sec = TCP_READ_TIMEOUT_SECONDS;
   read_timeout.tv_usec = 0;
   if (setsockopt(this->tcp_socket_fd, SOL_SOCKET, SO_RCVTIMEO, &read_timeout,
                  sizeof(read_timeout)) < 0) {
-    // TODO consider using exceptions (?)
-    perror("Failed to set socket options");
-    exit(EXIT_FAILURE);
+    throw UnrecoverableError("Failed to set TCP read timeout socket option",
+                             errno);
   }
   struct timeval write_timeout;
   write_timeout.tv_sec = TCP_WRITE_TIMEOUT_SECONDS;
   write_timeout.tv_usec = 0;
   if (setsockopt(this->tcp_socket_fd, SOL_SOCKET, SO_SNDTIMEO, &write_timeout,
                  sizeof(write_timeout)) < 0) {
-    // TODO consider using exceptions (?)
-    perror("Failed to set socket options");
-    exit(EXIT_FAILURE);
+    throw UnrecoverableError("Failed to set TCP send timeout socket option",
+                             errno);
   }
 }
 
 void PlayerState::closeTcpSocket() {
   if (close(this->tcp_socket_fd) != 0) {
-    // TODO consider using exceptions (?)
-    perror("Failed to close TCP socket");
-    exit(EXIT_FAILURE);
+    if (errno == EBADF) {
+      // was already closed
+      return;
+    }
+    throw UnrecoverableError("Failed to close TCP socket", errno);
   }
 }

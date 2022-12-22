@@ -7,10 +7,10 @@
 #include "common/protocol.hpp"
 
 class PlayerState {
-  int udp_socket_fd;
-  int tcp_socket_fd;
-  struct addrinfo* server_udp_addr;
-  struct addrinfo* server_tcp_addr;
+  int udp_socket_fd = -1;
+  int tcp_socket_fd = -1;
+  struct addrinfo* server_udp_addr = NULL;
+  struct addrinfo* server_tcp_addr = NULL;
 
   void setupSockets();
   void resolveServerAddress(std::string& hostname, std::string& port);
