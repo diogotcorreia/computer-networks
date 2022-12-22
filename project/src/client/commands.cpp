@@ -8,6 +8,8 @@
 #include "client_game.hpp"
 #include "common/protocol.hpp"
 
+extern bool is_shutting_down;
+
 void CommandManager::printHelp() {
   std::cout << std::endl << "Available commands:" << std::endl << std::left;
 
@@ -45,7 +47,7 @@ void CommandManager::waitForCommand(PlayerState& state) {
   std::string line;
   std::getline(std::cin, line);
 
-  if (std::cin.eof()) {
+  if (std::cin.eof() || is_shutting_down) {
     return;
   }
 
@@ -350,7 +352,7 @@ void ExitCommand::handle(std::string args, PlayerState& state) {
         break;
     }
   }
-  exit(EXIT_SUCCESS);
+  is_shutting_down = true;
 }
 
 void RevealCommand::handle(std::string args, PlayerState& state) {

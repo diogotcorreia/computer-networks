@@ -16,10 +16,10 @@ PlayerState::~PlayerState() {
   if (this->tcp_socket_fd != -1) {
     close(this->tcp_socket_fd);
   }
-  if (this->server_udp_addr == NULL) {
+  if (this->server_udp_addr != NULL) {
     freeaddrinfo(this->server_udp_addr);
   }
-  if (this->server_tcp_addr == NULL) {
+  if (this->server_tcp_addr != NULL) {
     freeaddrinfo(this->server_tcp_addr);
   }
   delete this->game;

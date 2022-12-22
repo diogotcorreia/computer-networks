@@ -10,7 +10,7 @@
 
 #include <iostream>
 
-bool shutdown_client = false;
+bool is_shutting_down = false;
 
 int main(int argc, char *argv[]) {
   setup_signal_handlers();
@@ -27,11 +27,30 @@ int main(int argc, char *argv[]) {
 
   commandManager.printHelp();
 
-  while (!std::cin.eof() && !shutdown_client) {
+  while (!std::cin.eof() && !is_shutting_down) {
     commandManager.waitForCommand(state);
   }
 
   std::cout << std::endl << "Shutting down... " << std::endl;
+
+  if (state.hasActiveGame()) {
+    std::cout << "Player has an active game, will attempt to quit it."
+              << std::endl;
+    try {
+      QuitGameServerbound packet;
+      QuitGameClientbound reply;
+      packet.player_id = state.game->getPlayerId();
+      is_shutting_down = false;  // otherwise can't send packets
+      state.sendUdpPacketAndWaitForReply(packet, reply);
+      if (reply.status == QuitGameClientbound::status::ERR) {
+        throw std::runtime_error("Server replied with ERR");
+      }
+      std::cout << "Game quit successfully." << std::endl;
+    } catch (...) {
+      std::cerr << "Failed to quit game. Exiting anyway..." << std::endl;
+    }
+  }
+
   return 0;
 }
 
@@ -51,15 +70,13 @@ void setup_signal_handlers() {
     exit(EXIT_FAILURE);
   }
 
-  std::cout << "Setup signal handlers" << std::endl;
-
   // ignore SIGPIPE
   signal(SIGPIPE, SIG_IGN);
 }
 
 void terminate_signal_handler(int sig) {
   (void)sig;
-  shutdown_client = true;
+  is_shutting_down = true;
 }
 
 void registerCommands(CommandManager &manager) {

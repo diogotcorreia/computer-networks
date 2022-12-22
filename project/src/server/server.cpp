@@ -8,6 +8,8 @@
 
 #include "common/protocol.hpp"
 
+bool is_shutting_down = false;
+
 int main(int argc, char *argv[]) {
   ServerConfig config(argc, argv);
   if (config.help) {
@@ -18,7 +20,7 @@ int main(int argc, char *argv[]) {
                         config.test);
   state.registerPacketHandlers();
 
-  set_signals(state);
+  // set_signals(state);
   if (config.test) {
     std::cout << "Words will be selected sequentially" << std::endl;
   } else {
