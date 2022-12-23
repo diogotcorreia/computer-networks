@@ -90,4 +90,5 @@ clean-gamedata:
 	rm -rf .gamedata
 
 package:
-	zip project.zip $(SOURCES) $(HEADERS) Makefile .clang-format
+	cp README.md readme.txt
+	zip project.zip $(SOURCES) $(HEADERS) Makefile .clang-format readme.txt *.xlsx
